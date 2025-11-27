@@ -2,8 +2,8 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>報告神器 V16：日曆整合版</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>報告神器 V17：手機電腦雙棲版</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         :root {
@@ -29,25 +29,34 @@
             background: #1e293b; color: white; padding: 10px 20px;
             display: flex; justify-content: space-between; align-items: center;
             z-index: 2000; box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            height: 50px; /* 固定高度 */
         }
 
-        .tool-title { font-weight: bold; font-size: 1.1rem; display: flex; align-items: center; gap: 10px; }
+        .tool-title { font-weight: bold; font-size: 1.1rem; display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
         .save-status { font-size: 0.8rem; color: #94a3b8; margin-left: 10px; }
-        .tool-btn-group { display: flex; gap: 10px; }
+        
+        .tool-btn-group { 
+            display: flex; gap: 10px; 
+            overflow-x: auto; /* 允許橫向捲動 */
+            -webkit-overflow-scrolling: touch;
+            margin-left: 20px; padding-right: 10px;
+            align-items: center; height: 100%;
+        }
+        
+        /* 隱藏捲軸但保留功能 */
+        .tool-btn-group::-webkit-scrollbar { display: none; }
         
         .tool-btn {
             background: #334155; border: 1px solid #475569; color: white;
-            padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 0.95rem;
+            padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 0.9rem;
             display: flex; align-items: center; gap: 6px; transition: 0.2s;
+            white-space: nowrap; /* 禁止按鈕文字換行 */
+            flex-shrink: 0; /* 禁止按鈕被壓縮 */
         }
         .tool-btn:hover { background: #475569; }
         .tool-btn.highlight { background: #7c3aed; border-color: #6d28d9; }
-        .tool-btn.highlight:hover { background: #6d28d9; }
         .tool-btn.camera-btn { background: #059669; border-color: #047857; }
-        .tool-btn.camera-btn:hover { background: #047857; }
-        /* 日曆按鈕色 */
         .tool-btn.cal-btn { background: #ea580c; border-color: #c2410c; }
-        .tool-btn.cal-btn:hover { background: #c2410c; }
 
         /* --- 左側圖形工具箱 --- */
         .toolbox {
@@ -75,17 +84,20 @@
         }
 
         .timeline { position: relative; padding: 20px 0; }
+        /* 電腦版：線在中間 */
         .timeline::before {
             content: ''; position: absolute; top: 10px; bottom: 10px; left: 50%;
             width: 4px; background: #e5e7eb; transform: translateX(-50%);
-            border-radius: 2px; z-index: 0;
+            border-radius: 2px; z-index: 0; transition: left 0.3s;
         }
 
         .timeline-item {
             position: relative; margin-bottom: 30px; width: 100%;
             display: flex; justify-content: center; transition: all 0.5s ease;
         }
-        .timeline-item .card { width: 45%; transition: margin 0.3s; }
+        .timeline-item .card { width: 45%; transition: margin 0.3s, width 0.3s; }
+        
+        /* 電腦版：左右交錯 */
         .timeline-item:nth-child(odd) .card { margin-right: 50%; border-right: 4px solid transparent; }
         .timeline-item:nth-child(even) .card { margin-left: 50%; border-left: 4px solid transparent; }
         
@@ -115,21 +127,24 @@
         .date-input {
             border: 1px solid #cbd5e1; background: #f8fafc; padding: 4px 8px; border-radius: 6px;
             font-family: inherit; font-size: 0.85rem; color: #334155; outline: none; cursor: pointer;
+            width: 110px; /* 固定寬度避免手機跑版 */
         }
         .label-input {
             border: none; border-bottom: 1px dashed #cbd5e1; padding: 4px 8px; font-weight: bold;
             color: var(--primary); font-size: 0.9rem; outline: none; flex: 1; min-width: 80px;
         }
 
-        .range-container { display: none; align-items: center; gap: 5px; font-size: 0.85rem; color: #555; }
+        .range-container { display: none; align-items: center; gap: 5px; font-size: 0.85rem; color: #555; flex-wrap: wrap;}
         .range-label { font-weight: bold; color: #64748b; font-size: 0.8rem; margin-right: 2px; }
         .timeline-item.range-mode .single-date { display: none; }
         .timeline-item.range-mode .range-container { display: flex; }
 
         .content { line-height: 1.6; color: #4b5563; outline: none; min-height: 1.5em; font-size: 0.95rem; }
+        
+        /* 電腦版：點點在中間 */
         .dot {
             position: absolute; left: 50%; top: 25px; width: 14px; height: 14px; background: white;
-            border: 4px solid #ccc; border-radius: 50%; transform: translateX(-50%); z-index: 20;
+            border: 4px solid #ccc; border-radius: 50%; transform: translateX(-50%); z-index: 20; transition: left 0.3s;
         }
 
         .controls {
@@ -148,6 +163,7 @@
             background: var(--primary); color: white; border-radius: 30px;
             font-size: 1rem; border: none; cursor: pointer;
             box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3);
+            width: 100%; max-width: 300px;
         }
 
         .sticky-note, .sticker { position: absolute; z-index: 100; display: flex; flex-direction: column; cursor: grab; }
@@ -163,6 +179,50 @@
         .sticker-del { position: absolute; top: -10px; right: -10px; width: 20px; height: 20px; background: red; color: white; border-radius: 50%; display: none; align-items: center; justify-content: center; cursor: pointer; font-size: 12px; }
         .sticker:hover .sticker-del { display: flex; }
 
+
+        /* =========================================
+           📱 手機版專屬 CSS (響應式設計)
+           ========================================= */
+        @media screen and (max-width: 768px) {
+            /* 調整主區域 */
+            body { padding: 10px; }
+            .main-area { margin-top: 50px; padding: 10px 0; }
+
+            /* 隱藏不適合手機的工具 (工具箱、便利貼、貼紙) */
+            .toolbox, .sticky-note, .sticker { display: none !important; }
+
+            /* 調整時間軸線條：移到最左邊 */
+            .timeline::before { left: 20px; transform: none; }
+            .dot { left: 20px; transform: none; margin-left: -7px; }
+
+            /* 調整卡片排版：全部靠右，垂直排列 */
+            .timeline-item { flex-direction: column; align-items: flex-end; width: 100%; margin-left: 0; }
+            
+            /* 強制覆蓋所有卡片樣式 */
+            .timeline-item .card, 
+            .timeline-item:nth-child(odd) .card, 
+            .timeline-item:nth-child(even) .card,
+            .timeline-item.force-left .card,
+            .timeline-item.force-right .card {
+                width: calc(100% - 50px) !important; /* 扣掉左邊線條空間 */
+                margin: 0 0 20px 0 !important;
+                border-left: none !important;
+                border-right: none !important;
+            }
+
+            /* 手機上卡片控制項直接顯示 (不用hover，因為手機沒hover) */
+            .controls { opacity: 1; background: rgba(243, 244, 246, 0.8); position: relative; top: 0; right: 0; justify-content: flex-end; margin-bottom: 10px; }
+            /* 隱藏手機不需要的定位按鈕 (因為手機只有一種排版) */
+            .controls button[title*="靠"], .controls button[title*="移"] { display: none; }
+
+            /* 標題與日期垂直排列，避免擠壓 */
+            .header-row { align-items: flex-start; }
+            .label-input { width: 100%; margin-top: 5px; }
+
+            /* 調整按鈕大小，方便手指點擊 */
+            .btn-icon { width: 32px; height: 32px; font-size: 16px; }
+        }
+
         @media print { .toolbar, .toolbox, .controls, .add-main, .note-header, .sticker-del { display: none !important; } .sticky-note, .sticker { box-shadow: none; border: 1px solid transparent; } }
         body.screenshot-mode .toolbar, body.screenshot-mode .toolbox, body.screenshot-mode .controls, body.screenshot-mode .note-header, body.screenshot-mode .sticker-del, body.screenshot-mode .add-main { display: none !important; }
 
@@ -172,16 +232,16 @@
 
     <div class="toolbar">
         <div class="tool-title">
-            🧠 思緒管理 V16
+            🧠 V17
             <span class="save-status" id="saveStatus"></span>
         </div>
         <div class="tool-btn-group">
-            <button class="tool-btn cal-btn" onclick="exportToCSV()" title="下載 Google 日曆專用 CSV 檔案">📅 轉存日曆(CSV)</button>
-            <button class="tool-btn highlight" onclick="sortByDate()" title="按日期排序">📅 日期排序</button>
-            <button class="tool-btn" onclick="copyText()" title="複製文字大綱">📋 複製文字</button>
-            <button class="tool-btn camera-btn" onclick="takeScreenshot()" title="存成圖片">📸 截圖下載</button>
-            <button class="tool-btn" onclick="downloadJSON()" style="opacity:0.8; font-size: 0.8rem">📥 備份</button>
-            <button class="tool-btn" onclick="document.getElementById('fileInput').click()" style="opacity:0.8; font-size: 0.8rem">📤 讀取</button>
+            <button class="tool-btn cal-btn" onclick="exportToCSV()">📅 CSV</button>
+            <button class="tool-btn highlight" onclick="sortByDate()">📅 排序</button>
+            <button class="tool-btn" onclick="copyText()">📋 文字</button>
+            <button class="tool-btn camera-btn" onclick="takeScreenshot()">📸 截圖</button>
+            <button class="tool-btn" onclick="downloadJSON()">📥 備份</button>
+            <button class="tool-btn" onclick="document.getElementById('fileInput').click()">📤 讀取</button>
             <input type="file" id="fileInput" hidden onchange="loadJSON(this)">
         </div>
     </div>
@@ -207,16 +267,15 @@
         const container = document.getElementById('container');
         const saveStatus = document.getElementById('saveStatus');
 
-        // 預設資料
         const defaultData = [
-            { id: 1, pos: 'left', mode: 'normal', color: 'blue', status: 0, label: '單筆加入', date_single: '2025-01-01', date_start: '', date_end: '', content: '點右上角的橘色 📅 按鈕，可以直接把這個行程加到 Google 日曆！' },
-            { id: 2, pos: 'right', mode: 'range', color: 'green', status: 0, label: '整批匯出', date_single: '', date_start: '2025-02-01', date_end: '2025-02-05', content: '點上方的「📅 轉存日曆(CSV)」，可以下載一個檔案，去 Google 日曆匯入就能一次新增所有行程。' }
+            { id: 1, pos: 'left', mode: 'normal', color: 'blue', status: 0, label: '手機版', date_single: '2025-01-01', date_start: '', date_end: '', content: '用手機打開這個網頁看看！你會發現排版變成了垂直一條線，字體也變大了。' },
+            { id: 2, pos: 'right', mode: 'range', color: 'green', status: 0, label: '功能隱藏', date_single: '', date_start: '2025-02-01', date_end: '2025-02-05', content: '在手機上，左邊的圖形工具箱會自動隱藏，讓畫面更乾淨。但按鈕列可以左右滑動喔！' }
         ];
 
         function init() {
-            const savedData = localStorage.getItem('timeline_v16_data');
-            const savedNotes = localStorage.getItem('timeline_v16_notes');
-            const savedStickers = localStorage.getItem('timeline_v16_stickers');
+            const savedData = localStorage.getItem('timeline_v17_data');
+            const savedNotes = localStorage.getItem('timeline_v17_notes');
+            const savedStickers = localStorage.getItem('timeline_v17_stickers');
 
             if (savedData) renderFromData(JSON.parse(savedData));
             else renderFromData(defaultData);
@@ -225,72 +284,41 @@
             if (savedStickers) renderStickers(JSON.parse(savedStickers));
         }
 
-        /* --- 📅 Google 日曆整合功能 (New!) --- */
-        
-        // 1. 單筆加入 Google Calendar
-        window.addToGoogleCal = function(btn) {
+        // --- 核心與工具 --- 
+        function addToGoogleCal(btn) {
             const itemEl = btn.closest('.timeline-item');
             const isRange = itemEl.classList.contains('range-mode');
-            
             let title = itemEl.querySelector('.label-input').value || '未命名事件';
             let desc = itemEl.querySelector('.content').innerText;
-            
             let startDate, endDate;
-            
-            if (isRange) {
-                startDate = itemEl.querySelector('.date-start').value;
-                endDate = itemEl.querySelector('.date-end').value;
-            } else {
-                startDate = itemEl.querySelector('.single-date').value;
-                endDate = startDate;
-            }
-
+            if (isRange) { startDate = itemEl.querySelector('.date-start').value; endDate = itemEl.querySelector('.date-end').value; } 
+            else { startDate = itemEl.querySelector('.single-date').value; endDate = startDate; }
             if(!startDate) { alert('請先選擇日期！'); return; }
-
-            // 格式化日期為 YYYYMMDD
             const startStr = startDate.replace(/-/g, '');
-            
-            // 計算結束日期 (全天事件，結束日期需+1天)
-            let endObj = new Date(endDate);
-            endObj.setDate(endObj.getDate() + 1);
+            let endObj = new Date(endDate); endObj.setDate(endObj.getDate() + 1);
             const endStr = endObj.toISOString().slice(0,10).replace(/-/g, '');
-
             const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${startStr}/${endStr}&details=${encodeURIComponent(desc)}`;
-            
             window.open(url, '_blank');
         }
 
-        // 2. 匯出 CSV (整批)
-        window.exportToCSV = function() {
+        function exportToCSV() {
             let csvContent = "Subject,Start Date,End Date,All Day Event,Description\n";
-            
             gatherData().forEach(item => {
-                let title = (item.label || '未命名事件').replace(/,/g, '，'); // 避免逗號破壞 CSV
+                let title = (item.label || '未命名事件').replace(/,/g, '，');
                 let desc = item.content.replace(/,/g, '，').replace(/\n/g, ' '); 
-                
                 let start = item.mode === 'range' ? item.date_start : item.date_single;
                 let end = item.mode === 'range' ? item.date_end : item.date_single;
-
                 if(start && end) {
-                    // Google CSV 的 End Date 對於全天事件也是要 +1 天比較保險，或是直接用同天
-                    // 這裡為了簡單，我們輸出原本日期，Google 日曆匯入時通常會自動判斷為當天
-                    // 為了最精確，我們還是手動 +1 天做為結束日
-                    let endObj = new Date(end);
-                    endObj.setDate(endObj.getDate() + 1);
+                    let endObj = new Date(end); endObj.setDate(endObj.getDate() + 1);
                     let endNextDay = endObj.toISOString().slice(0,10);
-
                     csvContent += `${title},${start},${endNextDay},True,${desc}\n`;
                 }
             });
-
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement("a");
-            const url = URL.createObjectURL(blob);
-            link.setAttribute("href", url);
-            link.setAttribute("download", `google_calendar_import_${new Date().toISOString().slice(0,10)}.csv`);
+            link.href = URL.createObjectURL(blob);
+            link.download = `google_calendar_import_${new Date().toISOString().slice(0,10)}.csv`;
             link.click();
-            
-            alert('CSV 檔案已下載！\n\n請到 Google 日曆網頁版：\n設定 -> 匯入與匯出 -> 上傳這個檔案即可。');
         }
 
         function createNodeElement(item) {
@@ -307,17 +335,15 @@
                         <button class="btn-icon bg-gray" onclick="togglePos(this,'left')" title="靠左">⬅️</button>
                         <button class="btn-icon bg-gray" onclick="togglePos(this,'right')" title="靠右">➡️</button>
                         <button class="btn-icon bg-blue" onclick="toggleRange(this)" title="切換時段">↔️</button>
-                        <button class="btn-icon bg-orange" onclick="addToGoogleCal(this)" title="加到 Google 日曆">📅</button>
+                        <button class="btn-icon bg-orange" onclick="addToGoogleCal(this)" title="加到日曆">📅</button>
                         <button class="btn-icon bg-red" onclick="deleteNode(this)" title="刪除">×</button>
                     </div>
                     <div class="card-body">
                         <div class="header-row">
                             <input type="date" class="date-input single-date" value="${item.date_single}" onchange="autoSave()" title="日期">
                             <div class="range-container">
-                                <span class="range-label">起:</span>
-                                <input type="date" class="date-input date-start" value="${item.date_start}" onchange="autoSave()" title="開始">
-                                <span class="range-label">迄:</span>
-                                <input type="date" class="date-input date-end" value="${item.date_end}" onchange="autoSave()" title="結束">
+                                <span class="range-label">起:</span><input type="date" class="date-input date-start" value="${item.date_start}" onchange="autoSave()">
+                                <span class="range-label">迄:</span><input type="date" class="date-input date-end" value="${item.date_end}" onchange="autoSave()">
                             </div>
                             <input type="text" class="label-input" value="${item.label}" placeholder="標題" oninput="autoSave()">
                         </div>
@@ -327,7 +353,6 @@
             return div;
         }
 
-        /* --- 既有功能 (複製, 截圖, 存檔, 貼紙) --- */
         function copyText() {
             let text = "【時間軸報告】\n\n";
             gatherData().forEach(item => {
@@ -361,7 +386,6 @@
             div.innerHTML = `${stickerSVGs[sticker.type]}<div class="sticker-del" onclick="deleteSticker(this)">✕</div>`; div.onmousedown = function(e) { dragMouseDown(e, div); }; document.body.appendChild(div);
         }
         function deleteSticker(btn) { btn.closest('.sticker').remove(); autoSave(); event.stopPropagation(); }
-
         function addStickyNote() { createStickyElement({ id: Date.now(), x: 250, y: 200 + window.scrollY, content: '' }); autoSave(); }
         function createStickyElement(note) {
             const div = document.createElement('div'); div.className = 'sticky-note'; div.style.left = note.x + 'px'; div.style.top = note.y + 'px'; div.setAttribute('id', 'note-' + note.id);
@@ -405,12 +429,12 @@
         function gatherNotes(){const n=[]; document.querySelectorAll('.sticky-note').forEach(el=>{n.push({id:el.id.replace('note-',''),x:el.offsetLeft,y:el.offsetTop,content:el.querySelector('.note-content').value});}); return n;}
         function gatherStickers(){const l=[]; document.querySelectorAll('.sticker').forEach(el=>{l.push({id:el.id.replace('sticker-',''),type:el.dataset.type,x:el.offsetLeft,y:el.offsetTop});}); return l;}
         function autoSave() {
-            localStorage.setItem('timeline_v16_data', JSON.stringify(gatherData()));
-            localStorage.setItem('timeline_v16_notes', JSON.stringify(gatherNotes()));
-            localStorage.setItem('timeline_v16_stickers', JSON.stringify(gatherStickers()));
+            localStorage.setItem('timeline_v17_data', JSON.stringify(gatherData()));
+            localStorage.setItem('timeline_v17_notes', JSON.stringify(gatherNotes()));
+            localStorage.setItem('timeline_v17_stickers', JSON.stringify(gatherStickers()));
             saveStatus.innerText = '已儲存'; setTimeout(() => saveStatus.innerText = '', 2000);
         }
-        window.downloadJSON=function(){const d={timeline:gatherData(),notes:gatherNotes(),stickers:gatherStickers(),version:'v16'}; const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([JSON.stringify(d,null,2)],{type:'application/json;charset=utf-8'})); a.download=`timeline_v16_${new Date().toISOString().slice(0,10)}.json`; a.click();}
+        window.downloadJSON=function(){const d={timeline:gatherData(),notes:gatherNotes(),stickers:gatherStickers(),version:'v17'}; const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([JSON.stringify(d,null,2)],{type:'application/json;charset=utf-8'})); a.download=`timeline_v17_${new Date().toISOString().slice(0,10)}.json`; a.click();}
         window.loadJSON=function(inp){const f=inp.files[0]; if(!f)return; const r=new FileReader(); r.onload=function(e){try{const j=JSON.parse(e.target.result); if(j.timeline){renderFromData(j.timeline); if(j.notes)renderNotes(j.notes); if(j.stickers)renderStickers(j.stickers); autoSave(); alert('讀取成功');}}catch(x){alert('格式錯誤');}}; r.readAsText(f);}
 
         init();
