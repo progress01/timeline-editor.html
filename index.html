@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>報告神器 V14：清楚標示版</title>
+    <title>報告神器 V15：清楚標示版</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         :root {
@@ -46,16 +46,14 @@
         .tool-btn.camera-btn { background: #059669; border-color: #047857; }
         .tool-btn.camera-btn:hover { background: #047857; }
 
-        /* --- 左側圖形工具箱 (加寬+文字版) --- */
+        /* --- 左側圖形工具箱 --- */
         .toolbox {
-            position: fixed; top: 80px; left: 20px; width: 80px; /* 加寬 */
+            position: fixed; top: 80px; left: 20px; width: 80px;
             background: white; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);
             display: flex; flex-direction: column; gap: 8px; padding: 15px 5px;
             z-index: 1900; align-items: center;
         }
         .toolbox-header { font-size: 0.8rem; color: #64748b; font-weight:bold; margin: 5px 0 2px 0; border-bottom: 1px solid #eee; width: 100%; text-align: center; padding-bottom: 2px;}
-        
-        /* 工具按鈕樣式優化 */
         .tool-item {
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             width: 60px; padding: 5px 0; cursor: pointer; border-radius: 6px; transition: 0.2s;
@@ -97,7 +95,6 @@
             position: relative; z-index: 10; border-top: 5px solid var(--primary);
         }
         
-        /* 顏色與狀態 */
         .card[data-color="blue"] { border-top-color: #4f46e5; }
         .card[data-color="green"] { border-top-color: #10b981; background: #f0fdf4; }
         .card[data-color="red"] { border-top-color: #ef4444; background: #fef2f2; }
@@ -107,14 +104,12 @@
             position: absolute; top: 15px; left: 15px; width: 14px; height: 14px;
             border-radius: 50%; cursor: pointer; border: 2px solid rgba(0,0,0,0.1);
         }
-        .status-0 { background: #9ca3af; } /* 灰 */
-        .status-1 { background: #f59e0b; } /* 黃 */
-        .status-2 { background: #10b981; } /* 綠 */
-        .status-3 { background: #ef4444; } /* 紅 */
+        .status-0 { background: #9ca3af; } .status-1 { background: #f59e0b; } .status-2 { background: #10b981; } .status-3 { background: #ef4444; }
 
         .card-body { margin-top: 15px; }
         .header-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
 
+        /* 日期輸入框樣式 */
         .date-input {
             border: 1px solid #cbd5e1; background: #f8fafc; padding: 4px 8px; border-radius: 6px;
             font-family: inherit; font-size: 0.85rem; color: #334155; outline: none; cursor: pointer;
@@ -124,7 +119,10 @@
             color: var(--primary); font-size: 0.9rem; outline: none; flex: 1; min-width: 80px;
         }
 
+        /* --- 時段模式標示增強 --- */
         .range-container { display: none; align-items: center; gap: 5px; font-size: 0.85rem; color: #555; }
+        .range-label { font-weight: bold; color: #64748b; font-size: 0.8rem; margin-right: 2px; } /* 新增標籤樣式 */
+        
         .timeline-item.range-mode .single-date { display: none; }
         .timeline-item.range-mode .range-container { display: flex; }
 
@@ -134,7 +132,7 @@
             border: 4px solid #ccc; border-radius: 50%; transform: translateX(-50%); z-index: 20;
         }
 
-        /* 卡片上的控制按鈕 (加強 title 顯示) */
+        /* 卡片按鈕提示優化 */
         .controls {
             position: absolute; top: 5px; right: 5px; display: flex; gap: 3px;
             opacity: 0; transition: opacity 0.2s; background: rgba(255,255,255,0.95); padding: 3px; border-radius: 4px;
@@ -195,46 +193,46 @@
 
     <div class="toolbar">
         <div class="tool-title">
-            🧠 思緒管理 V14
+            🧠 思緒管理 V15
             <span class="save-status" id="saveStatus"></span>
         </div>
         <div class="tool-btn-group">
-            <button class="tool-btn highlight" onclick="sortByDate()">📅 日期排序</button>
-            <button class="tool-btn" onclick="copyText()">📋 複製文字</button>
-            <button class="tool-btn camera-btn" onclick="takeScreenshot()">📸 截圖下載</button>
-            <button class="tool-btn" onclick="downloadJSON()" style="opacity:0.8">📥 備份</button>
-            <button class="tool-btn" onclick="document.getElementById('fileInput').click()" style="opacity:0.8">📤 讀取</button>
+            <button class="tool-btn highlight" onclick="sortByDate()" title="將卡片按日期重新排列">📅 日期排序</button>
+            <button class="tool-btn" onclick="copyText()" title="複製包含便利貼的純文字">📋 複製文字</button>
+            <button class="tool-btn camera-btn" onclick="takeScreenshot()" title="存成圖片下載">📸 截圖下載</button>
+            <button class="tool-btn" onclick="downloadJSON()" style="opacity:0.8" title="下載備份檔">📥 備份</button>
+            <button class="tool-btn" onclick="document.getElementById('fileInput').click()" style="opacity:0.8" title="讀取備份檔">📤 讀取</button>
             <input type="file" id="fileInput" hidden onchange="loadJSON(this)">
         </div>
     </div>
 
     <div class="toolbox">
         <div class="toolbox-header">便利貼</div>
-        <div class="tool-item" onclick="addStickyNote()">
+        <div class="tool-item" onclick="addStickyNote()" title="新增便利貼">
             <span class="tool-icon">📝</span>
             <span class="tool-text">新增</span>
         </div>
         
         <div class="toolbox-header">箭頭</div>
-        <div class="tool-item" onclick="addSticker('arrow-right')">
+        <div class="tool-item" onclick="addSticker('arrow-right')" title="右箭頭">
             <span class="tool-icon">➡️</span>
             <span class="tool-text">向右</span>
         </div>
-        <div class="tool-item" onclick="addSticker('arrow-down')">
+        <div class="tool-item" onclick="addSticker('arrow-down')" title="下箭頭">
             <span class="tool-icon">⬇️</span>
             <span class="tool-text">向下</span>
         </div>
-        <div class="tool-item" onclick="addSticker('arrow-left')">
+        <div class="tool-item" onclick="addSticker('arrow-left')" title="左箭頭">
             <span class="tool-icon">⬅️</span>
             <span class="tool-text">向左</span>
         </div>
         
         <div class="toolbox-header">重點</div>
-        <div class="tool-item" onclick="addSticker('circle-red')">
+        <div class="tool-item" onclick="addSticker('circle-red')" title="紅圈圈">
             <span class="tool-icon">⭕</span>
             <span class="tool-text">紅圈</span>
         </div>
-        <div class="tool-item" onclick="addSticker('rect-blue')">
+        <div class="tool-item" onclick="addSticker('rect-blue')" title="藍方框">
             <span class="tool-icon">🟦</span>
             <span class="tool-text">藍框</span>
         </div>
@@ -251,14 +249,14 @@
 
         // 預設資料
         const defaultData = [
-            { id: 1, pos: 'left', mode: 'normal', color: 'blue', status: 0, label: '功能介紹', date_single: '2025-01-01', date_start: '', date_end: '', content: '1. 左邊工具箱現在有文字了！\n2. 卡片上的小按鈕，滑鼠移過去會顯示功能名稱。' },
-            { id: 2, pos: 'right', mode: 'range', color: 'green', status: 0, label: '文字複製', date_single: '', date_start: '2025-02-01', date_end: '2025-02-05', content: '點上方的「📋 複製文字」，會包含這裡的內容 + 螢幕上的便利貼。' }
+            { id: 1, pos: 'left', mode: 'normal', color: 'blue', status: 0, label: '按鈕說明', date_single: '2025-01-01', date_start: '', date_end: '', content: '現在把滑鼠移到右上角的小按鈕上，會顯示「中文說明」囉！' },
+            { id: 2, pos: 'right', mode: 'range', color: 'green', status: 0, label: '時段標示', date_single: '', date_start: '2025-02-01', date_end: '2025-02-05', content: '看看上面的日期，現在有「起」跟「迄」的文字，是不是清楚多了？' }
         ];
 
         function init() {
-            const savedData = localStorage.getItem('timeline_v14_data');
-            const savedNotes = localStorage.getItem('timeline_v14_notes');
-            const savedStickers = localStorage.getItem('timeline_v14_stickers');
+            const savedData = localStorage.getItem('timeline_v15_data');
+            const savedNotes = localStorage.getItem('timeline_v15_notes');
+            const savedStickers = localStorage.getItem('timeline_v15_stickers');
 
             if (savedData) renderFromData(JSON.parse(savedData));
             else renderFromData(defaultData);
@@ -267,47 +265,60 @@
             if (savedStickers) renderStickers(JSON.parse(savedStickers));
         }
 
-        /* --- 📋 複製文字 (格式優化) --- */
+        function createNodeElement(item) {
+            const div = document.createElement('div');
+            div.className = `timeline-item ${item.pos==='left'?'force-left':item.pos==='right'?'force-right':''} ${item.mode==='range'?'range-mode':''}`;
+            div.innerHTML = `
+                <div class="dot"></div>
+                <div class="card" data-color="${item.color}">
+                    <div class="status-dot status-${item.status}" onclick="cycleStatus(this)" title="點擊切換狀態：灰(待辦) > 黃(進行) > 綠(完成) > 紅(卡關)"></div>
+                    <div class="controls">
+                        <button class="btn-icon bg-gray" onclick="changeColor(this)" title="更換卡片顏色">🎨</button>
+                        <button class="btn-icon bg-gray" onclick="moveNode(this,'up')" title="向上移動">⬆️</button>
+                        <button class="btn-icon bg-gray" onclick="moveNode(this,'down')" title="向下移動">⬇️</button>
+                        <button class="btn-icon bg-gray" onclick="togglePos(this,'left')" title="強制靠左">⬅️</button>
+                        <button class="btn-icon bg-gray" onclick="togglePos(this,'right')" title="強制靠右">➡️</button>
+                        <button class="btn-icon bg-blue" onclick="toggleRange(this)" title="切換模式：單日 / 起訖時段">↔️</button>
+                        <button class="btn-icon bg-red" onclick="deleteNode(this)" title="刪除此卡片">×</button>
+                    </div>
+                    <div class="card-body">
+                        <div class="header-row">
+                            <input type="date" class="date-input single-date" value="${item.date_single}" onchange="autoSave()" title="選擇日期">
+                            <div class="range-container">
+                                <span class="range-label">起:</span>
+                                <input type="date" class="date-input date-start" value="${item.date_start}" onchange="autoSave()" title="開始日期">
+                                <span class="range-label">迄:</span>
+                                <input type="date" class="date-input date-end" value="${item.date_end}" onchange="autoSave()" title="結束日期">
+                            </div>
+                            <input type="text" class="label-input" value="${item.label}" placeholder="輸入標題" oninput="autoSave()">
+                        </div>
+                        <div class="content" contenteditable="true" oninput="autoSave()">${item.content}</div>
+                    </div>
+                </div>`;
+            return div;
+        }
+
+        /* --- 核心與其他功能 (與前版相同) --- */
         function copyText() {
             let text = "【時間軸報告】\n\n";
             gatherData().forEach(item => {
-                let dateStr = item.mode === 'range' ? `${item.date_start} ~ ${item.date_end}` : item.date_single;
+                let dateStr = item.mode === 'range' ? `(起)${item.date_start} ~ (迄)${item.date_end}` : item.date_single;
                 let statusIcon = ['⚪', '🟡', '🟢', '🔴'][item.status]; 
-                let statusText = ['待辦', '進行中', '完成', '卡關'][item.status];
-                
-                text += `${statusIcon} ${dateStr} [${item.label || '無標題'}]\n`;
-                text += `   ${item.content}\n\n`;
+                text += `${statusIcon} ${dateStr} [${item.label || '無標題'}]\n   ${item.content}\n\n`;
             });
-
             const notes = gatherNotes();
-            if(notes.length > 0) {
-                text += "----------------\n【隨手筆記】\n";
-                notes.forEach(note => {
-                    text += `• ${note.content.replace(/\n/g, ' ')}\n`;
-                });
-            }
-
-            navigator.clipboard.writeText(text).then(() => {
-                alert('複製成功！\n\n包含：\n1. 時間軸上的所有內容\n2. 螢幕上的便利貼\n\n請去 Line/Word 按貼上。');
-            });
+            if(notes.length > 0) { text += "----------------\n【隨手筆記】\n"; notes.forEach(note => { text += `• ${note.content.replace(/\n/g, ' ')}\n`; }); }
+            navigator.clipboard.writeText(text).then(() => { alert('複製成功！可直接貼上 Line/Word。'); });
         }
 
-        /* --- 📸 截圖 --- */
         function takeScreenshot() {
-            document.body.classList.add('screenshot-mode');
-            window.scrollTo(0, 0); 
-            saveStatus.innerText = '處理中...';
+            document.body.classList.add('screenshot-mode'); window.scrollTo(0, 0); saveStatus.innerText = '截圖中...';
             html2canvas(document.body, { backgroundColor: '#f3f4f6', scale: 2, useCORS: true }).then(canvas => {
-                const link = document.createElement('a');
-                link.download = `report_${new Date().toISOString().slice(0,10)}.png`;
-                link.href = canvas.toDataURL();
-                link.click();
-                document.body.classList.remove('screenshot-mode');
-                saveStatus.innerText = '';
+                const link = document.createElement('a'); link.download = `report_${new Date().toISOString().slice(0,10)}.png`; link.href = canvas.toDataURL(); link.click();
+                document.body.classList.remove('screenshot-mode'); saveStatus.innerText = '';
             }).catch(err => { document.body.classList.remove('screenshot-mode'); alert('截圖錯誤'); });
         }
 
-        /* --- 🎨 貼紙 --- */
         const stickerSVGs = {
             'arrow-right': '<svg viewBox="0 0 100 100" fill="none" stroke="#334155" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 50h80m-30-30l30 30-30 30"/></svg>',
             'arrow-down': '<svg viewBox="0 0 100 100" fill="none" stroke="#334155" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"><path d="M50 10v80m-30-30l30 30 30-30"/></svg>',
@@ -327,7 +338,6 @@
         }
         function deleteSticker(btn) { btn.closest('.sticker').remove(); autoSave(); event.stopPropagation(); }
 
-        /* --- 📝 便利貼 --- */
         function addStickyNote() { createStickyElement({ id: Date.now(), x: 250, y: 200 + window.scrollY, content: '' }); autoSave(); }
         function createStickyElement(note) {
             const div = document.createElement('div'); div.className = 'sticky-note';
@@ -337,7 +347,6 @@
         }
         function deleteSticky(btn) { if(confirm('刪除?')) { btn.closest('.sticky-note').remove(); autoSave(); } }
 
-        /* --- 拖曳 --- */
         let pos1=0,pos2=0,pos3=0,pos4=0;
         window.dragMouseDown = function(e, elmnt) {
             if(e.target.tagName==='BUTTON'||e.target.tagName==='TEXTAREA'||e.target.className==='sticker-del') return;
@@ -346,37 +355,10 @@
             document.onmousemove = function(e) { e = e || window.event; e.preventDefault(); pos1=pos3-e.clientX; pos2=pos4-e.clientY; pos3=e.clientX; pos4=e.clientY; elmnt.style.top=(elmnt.offsetTop-pos2)+"px"; elmnt.style.left=(elmnt.offsetLeft-pos1)+"px"; };
         }
 
-        /* --- 時間軸核心 --- */
         function renderFromData(data) { container.innerHTML = ''; data.forEach(item => container.appendChild(createNodeElement(item))); }
-        function createNodeElement(item) {
-            const div = document.createElement('div');
-            div.className = `timeline-item ${item.pos==='left'?'force-left':item.pos==='right'?'force-right':''} ${item.mode==='range'?'range-mode':''}`;
-            div.innerHTML = `
-                <div class="dot"></div>
-                <div class="card" data-color="${item.color}">
-                    <div class="status-dot status-${item.status}" onclick="cycleStatus(this)" title="狀態切換 (待辦/進行/完成/卡關)"></div>
-                    <div class="controls">
-                        <button class="btn-icon bg-gray" onclick="changeColor(this)" title="更換顏色">🎨</button>
-                        <button class="btn-icon bg-gray" onclick="moveNode(this,'up')" title="上移">⬆️</button>
-                        <button class="btn-icon bg-gray" onclick="moveNode(this,'down')" title="下移">⬇️</button>
-                        <button class="btn-icon bg-gray" onclick="togglePos(this,'left')" title="靠左">⬅️</button>
-                        <button class="btn-icon bg-gray" onclick="togglePos(this,'right')" title="靠右">➡️</button>
-                        <button class="btn-icon bg-blue" onclick="toggleRange(this)" title="切換時段/單日">↔️</button>
-                        <button class="btn-icon bg-red" onclick="deleteNode(this)" title="刪除">×</button>
-                    </div>
-                    <div class="card-body">
-                        <div class="header-row">
-                            <input type="date" class="date-input single-date" value="${item.date_single}" onchange="autoSave()" title="日期">
-                            <div class="range-container"><input type="date" class="date-input date-start" value="${item.date_start}" onchange="autoSave()">➜<input type="date" class="date-input date-end" value="${item.date_end}" onchange="autoSave()"></div>
-                            <input type="text" class="label-input" value="${item.label}" placeholder="標題" oninput="autoSave()">
-                        </div>
-                        <div class="content" contenteditable="true" oninput="autoSave()">${item.content}</div>
-                    </div>
-                </div>`;
-            return div;
-        }
-
-        /* --- 功能函數 --- */
+        function renderNotes(n){document.querySelectorAll('.sticky-note').forEach(e=>e.remove());n.forEach(x=>createStickyElement(x));}
+        function renderStickers(s){document.querySelectorAll('.sticker').forEach(e=>e.remove());s.forEach(x=>createStickerElement(x));}
+        
         window.sortByDate = function() {
             const items = Array.from(container.children);
             items.sort((a,b)=>{ const gd=(el)=>new Date(el.classList.contains('range-mode')?el.querySelector('.date-start').value:el.querySelector('.single-date').value).getTime()||9e13; return gd(a)-gd(b); });
@@ -386,7 +368,7 @@
         window.changeColor=function(btn){const card=btn.closest('.card'); const c=['blue','green','yellow','red']; card.setAttribute('data-color', c[(c.indexOf(card.getAttribute('data-color'))+1)%4]); autoSave();}
         window.togglePos=function(btn,dir){const i=btn.closest('.timeline-item'); if(dir==='left'){i.classList.add('force-left');i.classList.remove('force-right');}else{i.classList.add('force-right');i.classList.remove('force-left');} autoSave();}
         window.toggleRange=function(btn){btn.closest('.timeline-item').classList.toggle('range-mode'); autoSave();}
-        window.deleteNode=function(btn){if(confirm('刪除此卡片?')){btn.closest('.timeline-item').remove(); autoSave();}}
+        window.deleteNode=function(btn){if(confirm('刪除?')){btn.closest('.timeline-item').remove(); autoSave();}}
         window.moveNode=function(btn,dir){const i=btn.closest('.timeline-item'); if(dir==='up'&&i.previousElementSibling)i.parentNode.insertBefore(i,i.previousElementSibling);else if(dir==='down'&&i.nextElementSibling)i.parentNode.insertBefore(i,i.nextElementSibling.nextSibling); autoSave();}
         document.getElementById('mainAddBtn').addEventListener('click',()=>{const t=new Date().toISOString().split('T')[0]; container.appendChild(createNodeElement({id:Date.now(),pos:'auto',mode:'normal',color:'blue',status:0,label:'',date_single:t,date_start:t,date_end:t,content:'內容...'})); window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'}); autoSave();});
         
@@ -398,19 +380,16 @@
                 items.push({pos, mode:el.classList.contains('range-mode')?'range':'normal', color:card.getAttribute('data-color'), status, label:el.querySelector('.label-input').value, date_single:el.querySelector('.single-date').value, date_start:el.querySelector('.date-start').value, date_end:el.querySelector('.date-end').value, content:el.querySelector('.content').innerText});
             }); return items;
         }
-        function autoSave() {
-            localStorage.setItem('timeline_v14_data', JSON.stringify(gatherData()));
-            localStorage.setItem('timeline_v14_notes', JSON.stringify(gatherNotes()));
-            localStorage.setItem('timeline_v14_stickers', JSON.stringify(gatherStickers()));
-            saveStatus.innerText = '已儲存'; setTimeout(() => saveStatus.innerText = '', 2000);
-        }
         function gatherNotes(){const n=[]; document.querySelectorAll('.sticky-note').forEach(el=>{n.push({id:el.id.replace('note-',''),x:el.offsetLeft,y:el.offsetTop,content:el.querySelector('.note-content').value});}); return n;}
         function gatherStickers(){const l=[]; document.querySelectorAll('.sticker').forEach(el=>{l.push({id:el.id.replace('sticker-',''),type:el.dataset.type,x:el.offsetLeft,y:el.offsetTop});}); return l;}
-        function renderNotes(n){document.querySelectorAll('.sticky-note').forEach(e=>e.remove());n.forEach(x=>createStickyElement(x));}
-        function renderStickers(s){document.querySelectorAll('.sticker').forEach(e=>e.remove());s.forEach(x=>createStickerElement(x));}
-        
-        window.downloadJSON=function(){const d={timeline:gatherData(),notes:gatherNotes(),stickers:gatherStickers(),version:'v14'}; const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([JSON.stringify(d,null,2)],{type:'application/json;charset=utf-8'})); a.download=`timeline_v14_${new Date().toISOString().slice(0,10)}.json`; a.click();}
-        window.loadJSON=function(inp){const f=inp.files[0]; if(!f)return; const r=new FileReader(); r.onload=function(e){try{const j=JSON.parse(e.target.result); if(j.timeline){renderFromData(j.timeline); if(j.notes)renderNotes(j.notes); if(j.stickers)renderStickers(j.stickers); autoSave(); alert('讀取成功');}}catch(x){alert('檔案格式錯誤');}}; r.readAsText(f);}
+        function autoSave() {
+            localStorage.setItem('timeline_v15_data', JSON.stringify(gatherData()));
+            localStorage.setItem('timeline_v15_notes', JSON.stringify(gatherNotes()));
+            localStorage.setItem('timeline_v15_stickers', JSON.stringify(gatherStickers()));
+            saveStatus.innerText = '已儲存'; setTimeout(() => saveStatus.innerText = '', 2000);
+        }
+        window.downloadJSON=function(){const d={timeline:gatherData(),notes:gatherNotes(),stickers:gatherStickers(),version:'v15'}; const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([JSON.stringify(d,null,2)],{type:'application/json;charset=utf-8'})); a.download=`timeline_v15_${new Date().toISOString().slice(0,10)}.json`; a.click();}
+        window.loadJSON=function(inp){const f=inp.files[0]; if(!f)return; const r=new FileReader(); r.onload=function(e){try{const j=JSON.parse(e.target.result); if(j.timeline){renderFromData(j.timeline); if(j.notes)renderNotes(j.notes); if(j.stickers)renderStickers(j.stickers); autoSave(); alert('讀取成功');}}catch(x){alert('格式錯誤');}}; r.readAsText(f);}
 
         init();
     </script>
