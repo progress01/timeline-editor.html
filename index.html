@@ -3,13 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>報告神器：時間軸 & 重點整理</title>
+    <title>報告神器 V9：月曆選單版</title>
     <style>
         :root {
-            --primary: #4f46e5; /* 預設藍紫色 */
-            --highlight: #db2777; /* 重點強調色 (洋紅色) */
+            --primary: #4f46e5;
             --bg: #f3f4f6;
             --text: #1f2937;
+            --status-gray: #9ca3af;
+            --status-yellow: #f59e0b;
+            --status-green: #10b981;
+            --status-red: #ef4444;
         }
 
         body {
@@ -17,249 +20,374 @@
             background-color: var(--bg);
             color: var(--text);
             margin: 0;
-            padding: 40px 20px;
+            padding: 20px;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
         }
 
-        h1 { text-align: center; color: #374151; margin-bottom: 10px; }
-        .sub-text { text-align: center; color: #6b7280; font-size: 0.9rem; margin-bottom: 40px; }
-
-        .timeline {
-            position: relative;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px 0;
+        /* --- 工具列 --- */
+        .toolbar {
+            position: fixed; top: 0; left: 0; right: 0;
+            background: #1e293b; color: white; padding: 10px 20px;
+            display: flex; justify-content: space-between; align-items: center;
+            z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.2);
         }
 
-        /* 垂直連接線 */
+        .tool-title { font-weight: bold; font-size: 1.1rem; display: flex; align-items: center; gap: 10px; }
+        .save-status { font-size: 0.8rem; color: #94a3b8; margin-left: 10px; }
+        .tool-btn-group { display: flex; gap: 10px; }
+        
+        .tool-btn {
+            background: #334155; border: 1px solid #475569; color: white;
+            padding: 5px 12px; border-radius: 4px; cursor: pointer; font-size: 0.9rem;
+            display: flex; align-items: center; gap: 5px; transition: 0.2s;
+        }
+        .tool-btn:hover { background: #475569; }
+        .tool-btn.highlight { background: #7c3aed; border-color: #6d28d9; }
+        .tool-btn.highlight:hover { background: #6d28d9; }
+
+        /* --- 主區域 --- */
+        .main-area {
+            flex: 1; margin-top: 50px; margin-right: 320px;
+            overflow-y: auto; padding: 40px 20px; height: calc(100vh - 100px);
+        }
+
+        .timeline { position: relative; max-width: 800px; margin: 0 auto; padding: 20px 0; }
         .timeline::before {
-            content: '';
-            position: absolute;
-            top: 10px; bottom: 10px;
-            left: 50%; /* 改成置中線，更有重點感 */
-            width: 4px;
-            background: #e5e7eb;
-            transform: translateX(-50%);
-            border-radius: 2px;
+            content: ''; position: absolute; top: 10px; bottom: 10px; left: 50%;
+            width: 4px; background: #e5e7eb; transform: translateX(-50%);
+            border-radius: 2px; z-index: 0;
         }
 
         .timeline-item {
-            position: relative;
-            margin-bottom: 40px;
-            width: 100%;
-            display: flex;
-            justify-content: center; /* 內容置中 */
-            transition: transform 0.3s;
+            position: relative; margin-bottom: 30px; width: 100%;
+            display: flex; justify-content: center; transition: all 0.5s ease;
         }
-
-        /* 重點標記樣式 (Highlight) */
-        .timeline-item.highlight .card {
-            border: 2px solid var(--highlight);
-            box-shadow: 0 10px 15px -3px rgba(219, 39, 119, 0.2);
-            transform: scale(1.05); /* 稍微放大 */
-        }
-        .timeline-item.highlight .badge {
-            background: var(--highlight);
-            color: white;
-            border-color: white;
-        }
-
-        /* 卡片本體 */
-        .card {
-            background: white;
-            width: 45%; /* 佔一半寬度 */
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            position: relative;
-            z-index: 10;
-        }
-
-        /* 標籤 (原本是日期，現在是任意標題) */
-        .badge {
-            display: inline-block;
-            background: #e0e7ff;
-            color: var(--primary);
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-weight: bold;
-            font-size: 0.9rem;
-            margin-bottom: 10px;
-            border: 2px solid transparent;
-        }
-
-        .content {
-            line-height: 1.6;
-            color: #4b5563;
-            outline: none;
-        }
-
-        /* 左邊右邊交錯排列的邏輯 */
-        .timeline-item:nth-child(odd) .card { margin-right: 50%; border-right: 4px solid var(--primary); }
-        .timeline-item:nth-child(even) .card { margin-left: 50%; border-left: 4px solid var(--primary); }
+        .timeline-item .card { width: 45%; transition: margin 0.3s; }
+        .timeline-item:nth-child(odd) .card { margin-right: 50%; border-right: 4px solid transparent; }
+        .timeline-item:nth-child(even) .card { margin-left: 50%; border-left: 4px solid transparent; }
         
-        /* 連接點 */
-        .dot {
-            position: absolute;
-            left: 50%;
-            top: 25px;
-            width: 16px; height: 16px;
-            background: var(--primary);
-            border: 4px solid white;
-            border-radius: 50%;
-            box-shadow: 0 0 0 2px var(--primary);
-            transform: translateX(-50%);
-            z-index: 20;
+        .timeline-item.force-left .card { margin-right: 50% !important; margin-left: 0 !important; border-right: 4px solid transparent; border-left: none; }
+        .timeline-item.force-right .card { margin-left: 50% !important; margin-right: 0 !important; border-left: 4px solid transparent; border-right: none; }
+
+        .card {
+            background: white; padding: 20px; border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            position: relative; z-index: 10; border-top: 5px solid var(--primary);
+        }
+        
+        /* 顏色控制 */
+        .card[data-color="blue"] { border-top-color: #4f46e5; }
+        .card[data-color="green"] { border-top-color: #10b981; background: #f0fdf4; }
+        .card[data-color="red"] { border-top-color: #ef4444; background: #fef2f2; }
+        .card[data-color="yellow"] { border-top-color: #f59e0b; background: #fffbeb; }
+        .card[data-color="purple"] { border-top-color: #8b5cf6; background: #f5f3ff; }
+
+        .status-dot {
+            position: absolute; top: 15px; left: 15px; width: 12px; height: 12px;
+            border-radius: 50%; cursor: pointer; border: 2px solid rgba(0,0,0,0.1);
+        }
+        .status-0 { background: var(--status-gray); }
+        .status-1 { background: var(--status-yellow); }
+        .status-2 { background: var(--status-green); }
+        .status-3 { background: var(--status-red); }
+
+        .card-body { margin-top: 15px; }
+
+        /* --- 新版標頭設計 (日期選單) --- */
+        .header-row {
+            display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px;
         }
 
-        /* 操作按鈕區 */
+        /* 日期選擇器樣式 */
+        .date-input {
+            border: 1px solid #cbd5e1; background: #f8fafc;
+            padding: 4px 8px; border-radius: 6px;
+            font-family: inherit; font-size: 0.85rem; color: #334155;
+            outline: none; cursor: pointer;
+        }
+        .date-input:focus { border-color: var(--primary); background: white; }
+
+        /* 標題輸入框 */
+        .label-input {
+            border: none; border-bottom: 1px dashed #cbd5e1;
+            padding: 4px 8px; font-weight: bold; color: var(--primary);
+            font-size: 0.9rem; outline: none; flex: 1; min-width: 80px;
+        }
+        .label-input:focus { border-bottom-style: solid; }
+
+        /* 時段模式容器 */
+        .range-container { display: none; align-items: center; gap: 5px; font-size: 0.85rem; color: #555; }
+        .timeline-item.range-mode .single-date { display: none; } /* 隱藏單一日期 */
+        .timeline-item.range-mode .range-container { display: flex; } /* 顯示時段 */
+
+        .content { line-height: 1.6; color: #4b5563; outline: none; min-height: 1.5em; font-size: 0.95rem; }
+        
+        .dot {
+            position: absolute; left: 50%; top: 25px; width: 14px; height: 14px; background: white;
+            border: 4px solid #ccc; border-radius: 50%; transform: translateX(-50%); z-index: 20;
+        }
+
         .controls {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            display: flex;
-            gap: 5px;
-            opacity: 0;
-            transition: opacity 0.2s;
+            position: absolute; top: 5px; right: 5px; display: flex; gap: 3px;
+            opacity: 0; transition: opacity 0.2s; background: rgba(255,255,255,0.9); padding: 3px; border-radius: 4px;
         }
         .card:hover .controls { opacity: 1; }
-
-        button {
-            border: none;
-            cursor: pointer;
-            width: 28px; height: 28px;
-            border-radius: 4px;
-            display: flex; align-items: center; justify-content: center;
-            color: white; font-size: 14px;
+        
+        .btn-icon {
+            border: none; cursor: pointer; width: 24px; height: 24px;
+            border-radius: 4px; display: flex; align-items: center; justify-content: center;
+            color: white; font-size: 12px;
         }
-        .btn-add { background: #10b981; }
-        .btn-del { background: #94a3b8; }
-        .btn-star { background: #f59e0b; } /* 星星按鈕 */
+        .bg-gray { background: #64748b; }
+        .bg-blue { background: #3b82f6; }
+        .bg-red { background: #ef4444; }
 
-        /* 底部大按鈕 */
         .add-main {
-            display: block;
-            margin: 30px auto;
-            padding: 12px 30px;
-            background: var(--primary);
-            color: white;
-            border-radius: 30px;
-            font-size: 1rem;
-            border: none;
-            cursor: pointer;
+            display: block; margin: 30px auto; padding: 12px 30px;
+            background: var(--primary); color: white; border-radius: 30px;
+            font-size: 1rem; border: none; cursor: pointer;
             box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3);
         }
 
-        /* 列印模式 */
+        .sticky-notes {
+            position: fixed; top: 60px; right: 20px; bottom: 20px; width: 280px;
+            background: #fffbeb; border: 1px solid #fcd34d; border-radius: 8px; padding: 15px;
+            box-shadow: -5px 0 15px rgba(0,0,0,0.05); display: flex; flex-direction: column;
+        }
+        .sticky-area { flex: 1; background: transparent; border: none; resize: none; font-family: inherit; color: #78350f; outline: none; }
+
         @media print {
-            .controls, .add-main, h1, .sub-text { display: none !important; }
-            body { background: white; padding: 0; }
+            .toolbar, .controls, .add-main, .sticky-notes { display: none !important; }
+            .main-area { margin: 0; height: auto; overflow: visible; }
+            body { padding: 0; display: block; height: auto; }
             .timeline-item { break-inside: avoid; }
-            .card { box-shadow: none; border: 1px solid #ddd; }
+            /* 列印時移除 input 邊框，讓它看起來像純文字 */
+            .date-input { border: none; background: transparent; padding: 0; appearance: none; }
+            .label-input { border: none; }
+            /* 修正列印時 input 可能為空的問題，使用 placeholder */
+            ::-webkit-datetime-edit-fields-wrapper { pading: 0; }
         }
     </style>
 </head>
 <body>
 
-    <h1>📝 報告重點/流程整理器</h1>
-    <p class="sub-text">點擊文字編輯 | 使用 ⭐ 標記關鍵重點 | 自動左右排版</p>
-
-    <div class="timeline" id="container">
-        <div class="timeline-item">
-            <div class="dot"></div>
-            <div class="card">
-                <div class="controls">
-                    <button class="btn-star" title="標記為重點">⭐</button>
-                    <button class="btn-add" title="新增">+</button>
-                    <button class="btn-del" title="刪除">×</button>
-                </div>
-                <div class="badge" contenteditable="true">現況分析</div>
-                <div class="content" contenteditable="true">目前系統運作效率低落，且缺乏自動化工具，導致人力成本過高。</div>
-            </div>
+    <div class="toolbar">
+        <div class="tool-title">
+            🧠 思緒管理 V9
+            <span class="save-status" id="saveStatus"></span>
         </div>
-
-        <div class="timeline-item highlight">
-            <div class="dot"></div>
-            <div class="card">
-                <div class="controls">
-                    <button class="btn-star" title="取消重點">⭐</button>
-                    <button class="btn-add" title="新增">+</button>
-                    <button class="btn-del" title="刪除">×</button>
-                </div>
-                <div class="badge" contenteditable="true">核心目標</div>
-                <div class="content" contenteditable="true">建立一套自動化流程，預計縮短 50% 作業時間，並達成零錯誤率。</div>
-            </div>
-        </div>
-
-        <div class="timeline-item">
-            <div class="dot"></div>
-            <div class="card">
-                <div class="controls">
-                    <button class="btn-star" title="標記為重點">⭐</button>
-                    <button class="btn-add" title="新增">+</button>
-                    <button class="btn-del" title="刪除">×</button>
-                </div>
-                <div class="badge" contenteditable="true">執行策略</div>
-                <div class="content" contenteditable="true">導入 Python 腳本進行資料爬取，並整合 GitHub Pages 進行結果發布。</div>
-            </div>
+        <div class="tool-btn-group">
+            <button class="tool-btn highlight" onclick="sortByDate()">📅 按日期排序</button>
+            <button class="tool-btn" onclick="downloadJSON()">📥 備份</button>
+            <button class="tool-btn" onclick="document.getElementById('fileInput').click()">📤 讀取</button>
+            <input type="file" id="fileInput" hidden onchange="loadJSON(this)">
+            <button class="tool-btn primary" onclick="window.print()">🖨️ 列印</button>
         </div>
     </div>
 
-    <button class="add-main" id="mainAddBtn">＋ 新增一個節點</button>
+    <div class="main-area">
+        <div class="timeline" id="container"></div>
+        <button class="add-main" id="mainAddBtn">＋ 新增節點</button>
+    </div>
+
+    <div class="sticky-notes">
+        <div style="font-weight:bold; color:#b45309; margin-bottom:10px;">📝 筆記區</div>
+        <textarea class="sticky-area" id="stickyNotes" placeholder="現在你可以直接點擊日曆圖示來選擇日期，不用再手動輸入了！"></textarea>
+    </div>
 
     <script>
         const container = document.getElementById('container');
-        const mainAddBtn = document.getElementById('mainAddBtn');
+        const stickyNotes = document.getElementById('stickyNotes');
+        const saveStatus = document.getElementById('saveStatus');
 
-        function createCardHTML() {
-            return `
+        // 預設資料：使用 value 儲存標準日期 (yyyy-mm-dd)
+        const defaultData = [
+            { id: 1, pos: 'left', mode: 'normal', color: 'blue', status: 0, label: '專案啟動', date_single: '2025-01-01', date_start: '', date_end: '', content: '點擊日期框框，會直接跳出日曆讓你選。' },
+            { id: 2, pos: 'right', mode: 'range', color: 'green', status: 0, label: '執行階段', date_single: '', date_start: '2025-02-01', date_end: '2025-04-30', content: '時段模式現在有兩個日期選擇器，排序時會看「開始日期」。' }
+        ];
+
+        function init() {
+            const savedData = localStorage.getItem('timeline_v9_data');
+            const savedNotes = localStorage.getItem('timeline_v9_notes');
+            if (savedNotes) stickyNotes.value = savedNotes;
+            if (savedData) renderFromData(JSON.parse(savedData));
+            else renderFromData(defaultData);
+        }
+
+        function renderFromData(data) {
+            container.innerHTML = '';
+            data.forEach(item => container.appendChild(createNodeElement(item)));
+        }
+
+        function createNodeElement(item) {
+            const div = document.createElement('div');
+            div.className = `timeline-item ${item.pos === 'left' ? 'force-left' : item.pos === 'right' ? 'force-right' : ''} ${item.mode === 'range' ? 'range-mode' : ''}`;
+            
+            div.innerHTML = `
                 <div class="dot"></div>
-                <div class="card">
+                <div class="card" data-color="${item.color}">
+                    <div class="status-dot status-${item.status}" onclick="cycleStatus(this)" title="切換狀態"></div>
+                    
                     <div class="controls">
-                        <button class="btn-star" title="標記為重點">⭐</button>
-                        <button class="btn-add" title="新增">+</button>
-                        <button class="btn-del" title="刪除">×</button>
+                        <button class="btn-icon bg-gray" onclick="changeColor(this)">🎨</button>
+                        <button class="btn-icon bg-gray" onclick="moveNode(this, 'up')">⬆️</button>
+                        <button class="btn-icon bg-gray" onclick="moveNode(this, 'down')">⬇️</button>
+                        <button class="btn-icon bg-gray" onclick="togglePos(this, 'left')">⬅️</button>
+                        <button class="btn-icon bg-gray" onclick="togglePos(this, 'right')">➡️</button>
+                        <button class="btn-icon bg-blue" onclick="toggleRange(this)">↔️</button>
+                        <button class="btn-icon bg-red" onclick="deleteNode(this)">×</button>
                     </div>
-                    <div class="badge" contenteditable="true">新節點</div>
-                    <div class="content" contenteditable="true">請輸入內容...</div>
+
+                    <div class="card-body">
+                        <div class="header-row">
+                            <input type="date" class="date-input single-date" value="${item.date_single}" onchange="autoSave()">
+                            
+                            <div class="range-container">
+                                <input type="date" class="date-input date-start" value="${item.date_start}" onchange="autoSave()">
+                                ➜ 
+                                <input type="date" class="date-input date-end" value="${item.date_end}" onchange="autoSave()">
+                            </div>
+
+                            <input type="text" class="label-input" value="${item.label}" placeholder="標題 (例: Step 1)" oninput="autoSave()">
+                        </div>
+
+                        <div class="content" contenteditable="true" oninput="autoSave()">${item.content}</div>
+                    </div>
                 </div>
             `;
+            return div;
         }
 
-        function addItem(refNode) {
-            const newItem = document.createElement('div');
-            newItem.className = 'timeline-item';
-            newItem.innerHTML = createCardHTML();
-            if (refNode) {
-                refNode.parentNode.insertBefore(newItem, refNode.nextSibling);
-            } else {
-                container.appendChild(newItem);
-            }
-        }
-
-        container.addEventListener('click', (e) => {
-            const target = e.target;
-            const item = target.closest('.timeline-item');
+        /* --- 核心：日期排序功能 (V9 改良版) --- */
+        window.sortByDate = function() {
+            const items = Array.from(container.children);
             
-            if (!item) return;
+            items.sort((a, b) => {
+                const getDateVal = (el) => {
+                    // 直接讀取 input 的 value，絕對準確
+                    let val = '';
+                    if (el.classList.contains('range-mode')) {
+                        val = el.querySelector('.date-start').value;
+                    } else {
+                        val = el.querySelector('.single-date').value;
+                    }
+                    // 如果沒選日期，視為最大值排後面
+                    return val ? new Date(val).getTime() : 9999999999999;
+                };
+                return getDateVal(a) - getDateVal(b);
+            });
 
-            // 刪除
-            if (target.classList.contains('btn-del')) {
-                if (container.children.length > 1) item.remove();
-            }
-            // 新增
-            if (target.classList.contains('btn-add')) {
-                addItem(item);
-            }
-            // 重點標記
-            if (target.classList.contains('btn-star')) {
-                item.classList.toggle('highlight');
-            }
-        });
+            items.forEach(item => container.appendChild(item));
+            autoSave();
+            alert('已根據日期選單完成排序！');
+        }
 
-        mainAddBtn.addEventListener('click', () => {
-            addItem();
+        /* --- 通用功能 --- */
+        window.cycleStatus = function(el) {
+            const classes = ['status-0', 'status-1', 'status-2', 'status-3'];
+            let cur = classes.find(c => el.classList.contains(c)) || 'status-0';
+            el.className = `status-dot ${classes[(classes.indexOf(cur) + 1) % classes.length]}`;
+            autoSave();
+        }
+
+        window.changeColor = function(btn) {
+            const card = btn.closest('.card');
+            const colors = ['blue', 'green', 'yellow', 'red', 'purple'];
+            const cur = card.getAttribute('data-color') || 'blue';
+            card.setAttribute('data-color', colors[(colors.indexOf(cur) + 1) % colors.length]);
+            autoSave();
+        }
+
+        window.togglePos = function(btn, dir) {
+            const item = btn.closest('.timeline-item');
+            if (dir === 'left') { item.classList.add('force-left'); item.classList.remove('force-right'); }
+            else { item.classList.add('force-right'); item.classList.remove('force-left'); }
+            autoSave();
+        }
+
+        window.toggleRange = function(btn) {
+            btn.closest('.timeline-item').classList.toggle('range-mode');
+            autoSave();
+        }
+
+        window.deleteNode = function(btn) { if(confirm('刪除?')) { btn.closest('.timeline-item').remove(); autoSave(); } }
+
+        window.moveNode = function(btn, dir) {
+            const item = btn.closest('.timeline-item');
+            if (dir === 'up' && item.previousElementSibling) item.parentNode.insertBefore(item, item.previousElementSibling);
+            else if (dir === 'down' && item.nextElementSibling) item.parentNode.insertBefore(item, item.nextElementSibling.nextSibling);
+            autoSave();
+        }
+
+        document.getElementById('mainAddBtn').addEventListener('click', () => {
+            // 預設給今天的日期
+            const today = new Date().toISOString().split('T')[0];
+            const newItem = { id: Date.now(), pos: 'auto', mode: 'normal', color: 'blue', status: 0, label: '新節點', date_single: today, date_start: today, date_end: today, content: '請輸入內容...' };
+            container.appendChild(createNodeElement(newItem));
             window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+            autoSave();
         });
+
+        /* --- 存檔系統 --- */
+        function gatherData() {
+            const items = [];
+            container.querySelectorAll('.timeline-item').forEach(el => {
+                const card = el.querySelector('.card');
+                const statusEl = el.querySelector('.status-dot');
+                let status = 0;
+                ['status-1','status-2','status-3'].forEach((c,i) => { if(statusEl.classList.contains(c)) status = i+1; });
+                
+                let pos = 'auto';
+                if(el.classList.contains('force-left')) pos = 'left';
+                if(el.classList.contains('force-right')) pos = 'right';
+
+                items.push({
+                    pos: pos,
+                    mode: el.classList.contains('range-mode') ? 'range' : 'normal',
+                    color: card.getAttribute('data-color'),
+                    status: status,
+                    label: el.querySelector('.label-input').value, // 存標題
+                    date_single: el.querySelector('.single-date').value, // 存日期 value
+                    date_start: el.querySelector('.date-start').value,
+                    date_end: el.querySelector('.date-end').value,
+                    content: el.querySelector('.content').innerText
+                });
+            });
+            return items;
+        }
+
+        function autoSave() {
+            localStorage.setItem('timeline_v9_data', JSON.stringify(gatherData()));
+            localStorage.setItem('timeline_v9_notes', stickyNotes.value);
+            saveStatus.innerText = '已儲存';
+            setTimeout(() => saveStatus.innerText = '', 2000);
+        }
+
+        window.downloadJSON = function() {
+            const data = { timeline: gatherData(), notes: stickyNotes.value, version: 'v9' };
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], {type : 'application/json'}));
+            a.download = `timeline_v9_${new Date().toISOString().slice(0,10)}.json`;
+            a.click();
+        }
+
+        window.loadJSON = function(input) {
+            const file = input.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const json = JSON.parse(e.target.result);
+                    if(json.timeline) { renderFromData(json.timeline); stickyNotes.value = json.notes || ''; autoSave(); alert('讀取成功！'); }
+                } catch(err) { alert('檔案格式錯誤'); }
+            };
+            reader.readAsText(file);
+        }
+
+        stickyNotes.addEventListener('input', autoSave);
+        init();
     </script>
 </body>
 </html>
