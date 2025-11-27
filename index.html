@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>報告神器 V10：自由便利貼版</title>
+    <title>報告神器 V11：截圖與文本匯出版</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         :root {
             --primary: #4f46e5;
@@ -21,7 +22,6 @@
             color: var(--text);
             margin: 0;
             padding: 20px;
-            /* 重要：讓 body 變成絕對定位的參照點，這樣便利貼才能跟著捲動 */
             position: relative; 
             min-height: 100vh;
         }
@@ -31,8 +31,7 @@
             position: fixed; top: 0; left: 0; right: 0;
             background: #1e293b; color: white; padding: 10px 20px;
             display: flex; justify-content: space-between; align-items: center;
-            z-index: 2000; /* 最高層級 */
-            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            z-index: 2000; box-shadow: 0 2px 10px rgba(0,0,0,0.2);
         }
 
         .tool-title { font-weight: bold; font-size: 1.1rem; display: flex; align-items: center; gap: 10px; }
@@ -47,15 +46,18 @@
         .tool-btn:hover { background: #475569; }
         .tool-btn.highlight { background: #7c3aed; border-color: #6d28d9; }
         .tool-btn.highlight:hover { background: #6d28d9; }
-        /* 便利貼按鈕特別色 */
         .tool-btn.sticky-btn { background: #f59e0b; border-color: #d97706; color: white; }
         .tool-btn.sticky-btn:hover { background: #d97706; }
+        /* 截圖按鈕專用色 */
+        .tool-btn.camera-btn { background: #059669; border-color: #047857; }
+        .tool-btn.camera-btn:hover { background: #047857; }
 
         /* --- 主區域 --- */
         .main-area {
-            max-width: 900px; margin: 60px auto 0 auto; /* 置中 */
+            max-width: 900px; margin: 60px auto 0 auto;
             padding: 40px 20px;
             min-height: calc(100vh - 100px);
+            background: var(--bg); /* 截圖時需要背景色 */
         }
 
         .timeline { position: relative; padding: 20px 0; }
@@ -124,7 +126,13 @@
             position: absolute; top: 5px; right: 5px; display: flex; gap: 3px;
             opacity: 0; transition: opacity 0.2s; background: rgba(255,255,255,0.9); padding: 3px; border-radius: 4px;
         }
+        /* 截圖模式下隱藏按鈕 */
         .card:hover .controls { opacity: 1; }
+        body.screenshot-mode .controls, 
+        body.screenshot-mode .toolbar, 
+        body.screenshot-mode .add-main,
+        body.screenshot-mode .note-header { display: none !important; }
+
         .btn-icon {
             border: none; cursor: pointer; width: 24px; height: 24px;
             border-radius: 4px; display: flex; align-items: center; justify-content: center; color: white; font-size: 12px;
@@ -140,69 +148,49 @@
             box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3);
         }
 
-        /* --- 🟡 自由便利貼樣式 (Floating Notes) --- */
+        /* 便利貼 */
         .sticky-note {
-            position: absolute; /* 絕對定位：可以到處飛 */
-            width: 200px;
-            min-height: 150px;
-            padding: 0; /* padding 交給內部 */
-            border-radius: 2px 2px 10px 2px; /* 有點像紙張翹起 */
-            box-shadow: 3px 3px 10px rgba(0,0,0,0.2);
-            z-index: 100; /* 在時間軸之上 */
-            display: flex; flex-direction: column;
-            border: 1px solid rgba(0,0,0,0.1);
-            transform: rotate(-1deg); /* 稍微歪一點更像貼紙 */
-            transition: transform 0.1s, box-shadow 0.1s;
+            position: absolute; width: 200px; min-height: 150px; padding: 0;
+            border-radius: 2px 2px 10px 2px; box-shadow: 3px 3px 10px rgba(0,0,0,0.2);
+            z-index: 100; display: flex; flex-direction: column;
+            border: 1px solid rgba(0,0,0,0.1); transform: rotate(-1deg);
+            transition: transform 0.1s;
         }
-
-        .sticky-note:hover { z-index: 110; transform: scale(1.02); box-shadow: 5px 5px 15px rgba(0,0,0,0.3); }
+        .sticky-note:hover { z-index: 110; }
         .sticky-note.dragging { opacity: 0.8; cursor: grabbing; z-index: 1000; }
 
-        /* 便利貼頂部 (拖曳區) */
         .note-header {
             height: 24px; background: rgba(0,0,0,0.05); cursor: grab;
             display: flex; justify-content: flex-end; align-items: center; padding: 0 5px;
         }
-        .note-close {
-            cursor: pointer; font-size: 14px; color: #666; font-weight: bold; width: 20px; text-align: center;
-        }
-        .note-close:hover { color: red; }
-
-        /* 便利貼內容區 */
+        .note-close { cursor: pointer; font-size: 14px; color: #666; width: 20px; text-align: center; }
         .note-content {
             flex: 1; width: 100%; border: none; background: transparent; resize: none;
-            padding: 10px; font-family: 'Comic Sans MS', 'Microsoft JhengHei', cursive, sans-serif;
-            font-size: 0.95rem; color: #333; outline: none; box-sizing: border-box;
+            padding: 10px; font-family: 'Comic Sans MS', sans-serif; font-size: 0.95rem; outline: none;
         }
-
-        /* 顏色主題 */
         .note-yellow { background: #fef08a; }
         .note-pink { background: #fbcfe8; }
         .note-blue { background: #bae6fd; }
         .note-green { background: #bbf7d0; }
 
-        @media print {
-            .toolbar, .controls, .add-main, .note-header { display: none !important; }
-            .sticky-note { box-shadow: none; border: 1px solid #ccc; }
-            /* 列印時如果不想印便利貼，就把下面這行取消註解 */
-            /* .sticky-note { display: none; } */
-        }
     </style>
 </head>
 <body>
 
     <div class="toolbar">
         <div class="tool-title">
-            🧠 思緒管理 V10
+            🧠 思緒管理 V11
             <span class="save-status" id="saveStatus"></span>
         </div>
         <div class="tool-btn-group">
             <button class="tool-btn sticky-btn" onclick="addStickyNote()">📝 +便利貼</button>
-            <button class="tool-btn highlight" onclick="sortByDate()">📅 按日期排序</button>
-            <button class="tool-btn" onclick="downloadJSON()">📥 備份</button>
-            <button class="tool-btn" onclick="document.getElementById('fileInput').click()">📤 讀取</button>
+            <button class="tool-btn highlight" onclick="sortByDate()">📅 排序</button>
+            <button class="tool-btn" onclick="copyMarkdown()">📋 複製文字</button>
+            <button class="tool-btn camera-btn" onclick="takeScreenshot()">📸 截圖下載</button>
+            
+            <button class="tool-btn" onclick="downloadJSON()" style="font-size:0.8rem; opacity:0.7">📥</button>
+            <button class="tool-btn" onclick="document.getElementById('fileInput').click()" style="font-size:0.8rem; opacity:0.7">📤</button>
             <input type="file" id="fileInput" hidden onchange="loadJSON(this)">
-            <button class="tool-btn primary" onclick="window.print()">🖨️ 列印</button>
         </div>
     </div>
 
@@ -215,55 +203,85 @@
         const container = document.getElementById('container');
         const saveStatus = document.getElementById('saveStatus');
 
-        // 預設時間軸資料
+        // 預設資料
         const defaultData = [
-            { id: 1, pos: 'left', mode: 'normal', color: 'blue', status: 0, label: '專案啟動', date_single: '2025-01-01', date_start: '', date_end: '', content: '時間軸在中間...' },
-            { id: 2, pos: 'right', mode: 'range', color: 'green', status: 0, label: '參考資料', date_single: '', date_start: '2025-02-01', date_end: '2025-04-30', content: '旁邊可以貼便利貼做補充！' }
-        ];
-
-        // 預設便利貼資料
-        const defaultNotes = [
-            { id: 999, x: 50, y: 150, color: 'note-yellow', content: '我是便利貼！\n按住上面灰色條可以拖曳我到處跑~' }
+            { id: 1, pos: 'left', mode: 'normal', color: 'blue', status: 0, label: '匯出功能', date_single: '2025-01-01', date_start: '', date_end: '', content: '點擊上方的「📸 截圖下載」，會幫你把整個畫面（包含長長的時間軸和便利貼）拍成一張圖。' },
+            { id: 2, pos: 'right', mode: 'range', color: 'green', status: 0, label: '文字備份', date_single: '', date_start: '2025-02-01', date_end: '2025-04-30', content: '點擊「📋 複製文字」，可以直接把這裡的內容變成 Markdown 貼到筆記軟體。' }
         ];
 
         function init() {
-            const savedData = localStorage.getItem('timeline_v10_data');
-            const savedNotes = localStorage.getItem('timeline_v10_notes_arr');
-            
+            const savedData = localStorage.getItem('timeline_v11_data');
+            const savedNotes = localStorage.getItem('timeline_v11_notes');
             if (savedData) renderFromData(JSON.parse(savedData));
             else renderFromData(defaultData);
-
             if (savedNotes) renderNotes(JSON.parse(savedNotes));
-            else renderNotes(defaultNotes);
         }
 
-        /* ====================
-           便利貼邏輯 (Floating Notes)
-           ==================== */
-        
+        /* --- 📸 截圖功能 (使用 html2canvas) --- */
+        function takeScreenshot() {
+            // 1. 進入截圖模式 (隱藏 UI)
+            document.body.classList.add('screenshot-mode');
+            
+            // 2. 為了讓截圖包含所有捲動內容，暫時調整樣式
+            window.scrollTo(0, 0);
+
+            saveStatus.innerText = '截圖生成中...';
+
+            html2canvas(document.body, {
+                backgroundColor: '#f3f4f6', // 背景色
+                scale: 2 // 提高解析度 (2倍)
+            }).then(canvas => {
+                // 3. 下載圖片
+                const link = document.createElement('a');
+                link.download = `timeline_snap_${new Date().toISOString().slice(0,10)}.png`;
+                link.href = canvas.toDataURL();
+                link.click();
+
+                // 4. 恢復原狀
+                document.body.classList.remove('screenshot-mode');
+                saveStatus.innerText = '截圖完成';
+                setTimeout(() => saveStatus.innerText = '', 2000);
+            });
+        }
+
+        /* --- 📋 複製 Markdown 功能 --- */
+        function copyMarkdown() {
+            let md = "# 時間軸報告\n\n";
+            const items = gatherData();
+            
+            items.forEach(item => {
+                let dateStr = item.mode === 'range' ? `${item.date_start} ~ ${item.date_end}` : item.date_single;
+                let statusIcon = ['⚪', '🟡', '🟢', '🔴'][item.status];
+                
+                md += `### ${statusIcon} ${item.label || '無標題'} (${dateStr})\n`;
+                md += `- ${item.content}\n\n`;
+            });
+
+            // 加入便利貼
+            const notes = gatherNotes();
+            if(notes.length > 0) {
+                md += "---\n## 📝 隨手筆記\n";
+                notes.forEach(note => {
+                    md += `> ${note.content.replace(/\n/g, '\n> ')}\n\n`;
+                });
+            }
+
+            navigator.clipboard.writeText(md).then(() => {
+                alert('內容已複製！\n現在你可以去 Notion/Word/Line 貼上了 (Ctrl+V)');
+            });
+        }
+
+        /* --- 基本功能 (與 V10 相同) --- */
         function addStickyNote() {
-            // 隨機顏色
             const colors = ['note-yellow', 'note-pink', 'note-blue', 'note-green'];
-            const randColor = colors[Math.floor(Math.random() * colors.length)];
-            // 隨機位置 (避免重疊)
-            const randX = 20 + Math.random() * 200;
-            const randY = 100 + window.scrollY + Math.random() * 100; // 產生在目前視窗附近
-
-            const noteObj = {
+            createStickyElement({
                 id: Date.now(),
-                x: randX,
-                y: randY,
-                color: randColor,
+                x: 20 + Math.random() * 200,
+                y: 100 + window.scrollY + Math.random() * 100,
+                color: colors[Math.floor(Math.random() * colors.length)],
                 content: ''
-            };
-            createStickyElement(noteObj);
+            });
             autoSave();
-        }
-
-        function renderNotes(notes) {
-            // 清除舊的便利貼 (除了 class 不是 sticky-note 的)
-            document.querySelectorAll('.sticky-note').forEach(el => el.remove());
-            notes.forEach(note => createStickyElement(note));
         }
 
         function createStickyElement(note) {
@@ -272,82 +290,47 @@
             div.style.left = note.x + 'px';
             div.style.top = note.y + 'px';
             div.setAttribute('id', 'note-' + note.id);
-
             div.innerHTML = `
                 <div class="note-header" onmousedown="dragMouseDown(event, this.parentNode)">
                     <span class="note-close" onclick="deleteSticky(this)">×</span>
                 </div>
-                <textarea class="note-content" oninput="autoSave()" placeholder="寫點什麼...">${note.content}</textarea>
-            `;
+                <textarea class="note-content" oninput="autoSave()" placeholder="寫點什麼...">${note.content}</textarea>`;
             document.body.appendChild(div);
         }
 
-        function deleteSticky(btn) {
-            if(confirm('刪除這張便利貼？')) {
-                btn.closest('.sticky-note').remove();
-                autoSave();
-            }
-        }
+        function deleteSticky(btn) { if(confirm('刪除?')) { btn.closest('.sticky-note').remove(); autoSave(); } }
 
-        // --- 拖曳核心邏輯 ---
-        let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
-        
+        let pos1=0,pos2=0,pos3=0,pos4=0;
         window.dragMouseDown = function(e, elmnt) {
-            e = e || window.event;
-            e.preventDefault();
-            // 取得滑鼠初始位置
-            pos3 = e.clientX;
-            pos4 = e.clientY;
-            elmnt.classList.add('dragging');
-            
+            e = e || window.event; e.preventDefault();
+            pos3 = e.clientX; pos4 = e.clientY; elmnt.classList.add('dragging');
             document.onmouseup = function() { closeDragElement(elmnt); };
             document.onmousemove = function(e) { elementDrag(e, elmnt); };
         }
-
         function elementDrag(e, elmnt) {
-            e = e || window.event;
-            e.preventDefault();
-            // 計算位移
-            pos1 = pos3 - e.clientX;
-            pos2 = pos4 - e.clientY;
-            pos3 = e.clientX;
-            pos4 = e.clientY;
-            // 設定新位置
-            elmnt.style.top = (elmnt.offsetTop - pos2) + "px";
-            elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
+            e = e || window.event; e.preventDefault();
+            pos1 = pos3 - e.clientX; pos2 = pos4 - e.clientY;
+            pos3 = e.clientX; pos4 = e.clientY;
+            elmnt.style.top = (elmnt.offsetTop - pos2) + "px"; elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
         }
+        function closeDragElement(elmnt) { document.onmouseup = null; document.onmousemove = null; elmnt.classList.remove('dragging'); autoSave(); }
 
-        function closeDragElement(elmnt) {
-            document.onmouseup = null;
-            document.onmousemove = null;
-            elmnt.classList.remove('dragging');
-            autoSave(); // 拖曳完存檔位置
-        }
-
-
-        /* ====================
-           時間軸邏輯 (Timeline)
-           ==================== */
-
-        function renderFromData(data) {
-            container.innerHTML = '';
-            data.forEach(item => container.appendChild(createNodeElement(item)));
-        }
+        function renderFromData(data) { container.innerHTML = ''; data.forEach(item => container.appendChild(createNodeElement(item))); }
+        function renderNotes(notes) { document.querySelectorAll('.sticky-note').forEach(el => el.remove()); notes.forEach(note => createStickyElement(note)); }
 
         function createNodeElement(item) {
             const div = document.createElement('div');
             div.className = `timeline-item ${item.pos === 'left' ? 'force-left' : item.pos === 'right' ? 'force-right' : ''} ${item.mode === 'range' ? 'range-mode' : ''}`;
-            
             div.innerHTML = `
                 <div class="dot"></div>
                 <div class="card" data-color="${item.color}">
-                    <div class="status-dot status-${item.status}" onclick="cycleStatus(this)" title="切換狀態"></div>
+                    <div class="status-dot status-${item.status}" onclick="cycleStatus(this)"></div>
                     <div class="controls">
                         <button class="btn-icon bg-gray" onclick="changeColor(this)">🎨</button>
-                        <button class="btn-icon bg-gray" onclick="moveNode(this, 'up')">⬆️</button>
-                        <button class="btn-icon bg-gray" onclick="moveNode(this, 'down')">⬇️</button>
-                        <button class="btn-icon bg-gray" onclick="togglePos(this, 'left')">⬅️</button>
-                        <button class="btn-icon bg-gray" onclick="togglePos(this, 'right')">➡️</button>
+                        <button class="btn-icon bg-gray" onclick="moveNode(this,'up')">⬆️</button>
+                        <button class="btn-icon bg-gray" onclick="moveNode(this,'down')">⬇️</button>
+                        <button class="btn-icon bg-gray" onclick="togglePos(this,'left')">⬅️</button>
+                        <button class="btn-icon bg-gray" onclick="togglePos(this,'right')">➡️</button>
                         <button class="btn-icon bg-blue" onclick="toggleRange(this)">↔️</button>
                         <button class="btn-icon bg-red" onclick="deleteNode(this)">×</button>
                     </div>
@@ -355,16 +338,13 @@
                         <div class="header-row">
                             <input type="date" class="date-input single-date" value="${item.date_single}" onchange="autoSave()">
                             <div class="range-container">
-                                <input type="date" class="date-input date-start" value="${item.date_start}" onchange="autoSave()">
-                                ➜ 
-                                <input type="date" class="date-input date-end" value="${item.date_end}" onchange="autoSave()">
+                                <input type="date" class="date-input date-start" value="${item.date_start}" onchange="autoSave()">➜<input type="date" class="date-input date-end" value="${item.date_end}" onchange="autoSave()">
                             </div>
                             <input type="text" class="label-input" value="${item.label}" placeholder="標題" oninput="autoSave()">
                         </div>
                         <div class="content" contenteditable="true" oninput="autoSave()">${item.content}</div>
                     </div>
-                </div>
-            `;
+                </div>`;
             return div;
         }
 
@@ -382,127 +362,37 @@
             alert('已排序！');
         }
 
-        /* --- 輔助功能 --- */
         window.cycleStatus = function(el) {
             const classes = ['status-0', 'status-1', 'status-2', 'status-3'];
             let cur = classes.find(c => el.classList.contains(c)) || 'status-0';
-            el.className = `status-dot ${classes[(classes.indexOf(cur) + 1) % classes.length]}`;
-            autoSave();
+            el.className = `status-dot ${classes[(classes.indexOf(cur) + 1) % classes.length]}`; autoSave();
         }
-        window.changeColor = function(btn) {
-            const card = btn.closest('.card');
-            const colors = ['blue', 'green', 'yellow', 'red', 'purple'];
-            const cur = card.getAttribute('data-color') || 'blue';
-            card.setAttribute('data-color', colors[(colors.indexOf(cur) + 1) % colors.length]);
-            autoSave();
-        }
-        window.togglePos = function(btn, dir) {
-            const item = btn.closest('.timeline-item');
-            if (dir === 'left') { item.classList.add('force-left'); item.classList.remove('force-right'); }
-            else { item.classList.add('force-right'); item.classList.remove('force-left'); }
-            autoSave();
-        }
+        window.changeColor = function(btn) { const card = btn.closest('.card'); const colors=['blue','green','yellow','red','purple']; const cur = card.getAttribute('data-color')||'blue'; card.setAttribute('data-color', colors[(colors.indexOf(cur)+1)%colors.length]); autoSave(); }
+        window.togglePos = function(btn, dir) { const item = btn.closest('.timeline-item'); if(dir==='left'){item.classList.add('force-left');item.classList.remove('force-right');}else{item.classList.add('force-right');item.classList.remove('force-left');} autoSave(); }
         window.toggleRange = function(btn) { btn.closest('.timeline-item').classList.toggle('range-mode'); autoSave(); }
         window.deleteNode = function(btn) { if(confirm('刪除?')) { btn.closest('.timeline-item').remove(); autoSave(); } }
-        window.moveNode = function(btn, dir) {
-            const item = btn.closest('.timeline-item');
-            if (dir === 'up' && item.previousElementSibling) item.parentNode.insertBefore(item, item.previousElementSibling);
-            else if (dir === 'down' && item.nextElementSibling) item.parentNode.insertBefore(item, item.nextElementSibling.nextSibling);
-            autoSave();
-        }
+        window.moveNode = function(btn, dir) { const item = btn.closest('.timeline-item'); if(dir==='up'&&item.previousElementSibling)item.parentNode.insertBefore(item,item.previousElementSibling); else if(dir==='down'&&item.nextElementSibling)item.parentNode.insertBefore(item,item.nextElementSibling.nextSibling); autoSave(); }
+        document.getElementById('mainAddBtn').addEventListener('click', () => { const today=new Date().toISOString().split('T')[0]; container.appendChild(createNodeElement({id:Date.now(),pos:'auto',mode:'normal',color:'blue',status:0,label:'',date_single:today,date_start:today,date_end:today,content:'內容...'})); window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'}); autoSave(); });
 
-        document.getElementById('mainAddBtn').addEventListener('click', () => {
-            const today = new Date().toISOString().split('T')[0];
-            const newItem = { id: Date.now(), pos: 'auto', mode: 'normal', color: 'blue', status: 0, label: '', date_single: today, date_start: today, date_end: today, content: '請輸入內容...' };
-            container.appendChild(createNodeElement(newItem));
-            window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-            autoSave();
-        });
-
-        /* --- 存檔與讀取系統 --- */
         function gatherData() {
             const items = [];
             container.querySelectorAll('.timeline-item').forEach(el => {
                 const card = el.querySelector('.card');
                 const statusEl = el.querySelector('.status-dot');
-                let status = 0;
-                ['status-1','status-2','status-3'].forEach((c,i) => { if(statusEl.classList.contains(c)) status = i+1; });
-                let pos = 'auto';
-                if(el.classList.contains('force-left')) pos = 'left';
-                if(el.classList.contains('force-right')) pos = 'right';
-
-                items.push({
-                    pos: pos,
-                    mode: el.classList.contains('range-mode') ? 'range' : 'normal',
-                    color: card.getAttribute('data-color'),
-                    status: status,
-                    label: el.querySelector('.label-input').value,
-                    date_single: el.querySelector('.single-date').value,
-                    date_start: el.querySelector('.date-start').value,
-                    date_end: el.querySelector('.date-end').value,
-                    content: el.querySelector('.content').innerText
-                });
-            });
-            return items;
+                let status = 0; ['status-1','status-2','status-3'].forEach((c,i) => { if(statusEl.classList.contains(c)) status = i+1; });
+                let pos = 'auto'; if(el.classList.contains('force-left')) pos='left'; if(el.classList.contains('force-right')) pos='right';
+                items.push({ pos, mode: el.classList.contains('range-mode')?'range':'normal', color: card.getAttribute('data-color'), status, label: el.querySelector('.label-input').value, date_single: el.querySelector('.single-date').value, date_start: el.querySelector('.date-start').value, date_end: el.querySelector('.date-end').value, content: el.querySelector('.content').innerText });
+            }); return items;
         }
-
         function gatherNotes() {
-            const notes = [];
-            document.querySelectorAll('.sticky-note').forEach(el => {
-                const rect = el.getBoundingClientRect();
-                // 存絕對位置 (相對於文件)
-                const absTop = el.offsetTop;
-                const absLeft = el.offsetLeft;
-                
-                // 找尋 class 中的顏色
-                let color = 'note-yellow';
-                if(el.classList.contains('note-pink')) color = 'note-pink';
-                if(el.classList.contains('note-blue')) color = 'note-blue';
-                if(el.classList.contains('note-green')) color = 'note-green';
-
-                notes.push({
-                    id: el.id.replace('note-', ''),
-                    x: absLeft,
-                    y: absTop,
-                    color: color,
-                    content: el.querySelector('.note-content').value
-                });
-            });
-            return notes;
+            const notes = []; document.querySelectorAll('.sticky-note').forEach(el => {
+                let color = 'note-yellow'; if(el.classList.contains('note-pink')) color='note-pink'; if(el.classList.contains('note-blue')) color='note-blue'; if(el.classList.contains('note-green')) color='note-green';
+                notes.push({ id: el.id.replace('note-', ''), x: el.offsetLeft, y: el.offsetTop, color, content: el.querySelector('.note-content').value });
+            }); return notes;
         }
-
-        function autoSave() {
-            localStorage.setItem('timeline_v10_data', JSON.stringify(gatherData()));
-            localStorage.setItem('timeline_v10_notes_arr', JSON.stringify(gatherNotes()));
-            saveStatus.innerText = '已儲存';
-            setTimeout(() => saveStatus.innerText = '', 2000);
-        }
-
-        window.downloadJSON = function() {
-            const data = { timeline: gatherData(), notes_arr: gatherNotes(), version: 'v10' };
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], {type : 'application/json'}));
-            a.download = `timeline_v10_${new Date().toISOString().slice(0,10)}.json`;
-            a.click();
-        }
-
-        window.loadJSON = function(input) {
-            const file = input.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const json = JSON.parse(e.target.result);
-                    if(json.timeline) { 
-                        renderFromData(json.timeline); 
-                        if(json.notes_arr) renderNotes(json.notes_arr);
-                        autoSave(); 
-                        alert('讀取成功！'); 
-                    }
-                } catch(err) { alert('檔案格式錯誤'); }
-            };
-            reader.readAsText(file);
-        }
+        function autoSave() { localStorage.setItem('timeline_v11_data', JSON.stringify(gatherData())); localStorage.setItem('timeline_v11_notes', JSON.stringify(gatherNotes())); saveStatus.innerText = '已儲存'; setTimeout(() => saveStatus.innerText = '', 2000); }
+        window.downloadJSON = function() { const data = { timeline: gatherData(), notes: gatherNotes(), version: 'v11' }; const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], {type:'application/json'})); a.download = `timeline_v11_${new Date().toISOString().slice(0,10)}.json`; a.click(); }
+        window.loadJSON = function(input) { const file = input.files[0]; if(!file)return; const reader = new FileReader(); reader.onload = function(e) { try { const json = JSON.parse(e.target.result); if(json.timeline) { renderFromData(json.timeline); if(json.notes) renderNotes(json.notes); autoSave(); alert('讀取成功！'); } } catch(err){alert('格式錯');} }; reader.readAsText(file); }
 
         init();
     </script>
