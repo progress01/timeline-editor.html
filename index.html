@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>報告神器 V17：手機電腦雙棲版</title>
+    <title>報告神器 V18：雙視圖切換版</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         :root {
@@ -29,7 +29,7 @@
             background: #1e293b; color: white; padding: 10px 20px;
             display: flex; justify-content: space-between; align-items: center;
             z-index: 2000; box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-            height: 50px; /* 固定高度 */
+            height: 50px;
         }
 
         .tool-title { font-weight: bold; font-size: 1.1rem; display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
@@ -37,26 +37,25 @@
         
         .tool-btn-group { 
             display: flex; gap: 10px; 
-            overflow-x: auto; /* 允許橫向捲動 */
+            overflow-x: auto; 
             -webkit-overflow-scrolling: touch;
             margin-left: 20px; padding-right: 10px;
             align-items: center; height: 100%;
         }
         
-        /* 隱藏捲軸但保留功能 */
         .tool-btn-group::-webkit-scrollbar { display: none; }
         
         .tool-btn {
             background: #334155; border: 1px solid #475569; color: white;
             padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 0.9rem;
             display: flex; align-items: center; gap: 6px; transition: 0.2s;
-            white-space: nowrap; /* 禁止按鈕文字換行 */
-            flex-shrink: 0; /* 禁止按鈕被壓縮 */
+            white-space: nowrap; flex-shrink: 0;
         }
         .tool-btn:hover { background: #475569; }
         .tool-btn.highlight { background: #7c3aed; border-color: #6d28d9; }
         .tool-btn.camera-btn { background: #059669; border-color: #047857; }
         .tool-btn.cal-btn { background: #ea580c; border-color: #c2410c; }
+        .tool-btn.view-btn { background: #2563eb; border-color: #1d4ed8; } /* 視圖切換按鈕顏色 */
 
         /* --- 左側圖形工具箱 --- */
         .toolbox {
@@ -83,8 +82,8 @@
             background: var(--bg);
         }
 
+        /* --- 視圖 1: 垂直時間軸 (Timeline) --- */
         .timeline { position: relative; padding: 20px 0; }
-        /* 電腦版：線在中間 */
         .timeline::before {
             content: ''; position: absolute; top: 10px; bottom: 10px; left: 50%;
             width: 4px; background: #e5e7eb; transform: translateX(-50%);
@@ -97,7 +96,6 @@
         }
         .timeline-item .card { width: 45%; transition: margin 0.3s, width 0.3s; }
         
-        /* 電腦版：左右交錯 */
         .timeline-item:nth-child(odd) .card { margin-right: 50%; border-right: 4px solid transparent; }
         .timeline-item:nth-child(even) .card { margin-left: 50%; border-left: 4px solid transparent; }
         
@@ -127,7 +125,7 @@
         .date-input {
             border: 1px solid #cbd5e1; background: #f8fafc; padding: 4px 8px; border-radius: 6px;
             font-family: inherit; font-size: 0.85rem; color: #334155; outline: none; cursor: pointer;
-            width: 110px; /* 固定寬度避免手機跑版 */
+            width: 115px;
         }
         .label-input {
             border: none; border-bottom: 1px dashed #cbd5e1; padding: 4px 8px; font-weight: bold;
@@ -141,7 +139,6 @@
 
         .content { line-height: 1.6; color: #4b5563; outline: none; min-height: 1.5em; font-size: 0.95rem; }
         
-        /* 電腦版：點點在中間 */
         .dot {
             position: absolute; left: 50%; top: 25px; width: 14px; height: 14px; background: white;
             border: 4px solid #ccc; border-radius: 50%; transform: translateX(-50%); z-index: 20; transition: left 0.3s;
@@ -157,6 +154,70 @@
             border-radius: 4px; display: flex; align-items: center; justify-content: center; color: white; font-size: 13px;
         }
         .bg-gray { background: #64748b; } .bg-blue { background: #3b82f6; } .bg-red { background: #ef4444; } .bg-orange { background: #f97316; }
+
+        /* --- 視圖 2: 甘特圖 (Gantt) --- */
+        #gantt-view {
+            display: none; /* 預設隱藏 */
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            overflow-x: auto;
+            margin-bottom: 30px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .gantt-container {
+            position: relative;
+            min-width: 800px; /* 手機上可橫向捲動，確保時間軸不擠壓 */
+            padding-top: 40px; /* 留給上方刻度 */
+            padding-bottom: 20px;
+        }
+
+        .gantt-axis-labels {
+            position: absolute; top: 0; left: 160px; right: 0; height: 30px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .gantt-axis-mark {
+            position: absolute; top: 0; font-size: 0.75rem; color: #64748b; 
+            border-left: 1px dashed #e2e8f0; height: 100vh; padding-left: 4px; pointer-events: none;
+        }
+
+        .gantt-row {
+            position: relative; height: 40px; margin-bottom: 8px;
+            display: flex; align-items: center; border-bottom: 1px dashed #f1f5f9;
+        }
+        
+        .gantt-row:hover { background-color: #f8fafc; }
+
+        .gantt-label-col {
+            width: 150px; flex-shrink: 0; font-size: 0.85rem; font-weight: bold; color: #334155;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 10px; text-align: right;
+            border-right: 2px solid #e2e8f0; margin-right: 10px; line-height: 40px;
+        }
+
+        .gantt-bar-area {
+            flex-grow: 1; position: relative; height: 100%;
+        }
+
+        .gantt-bar {
+            position: absolute; top: 8px; height: 24px;
+            border-radius: 4px; font-size: 0.75rem; color: white; white-space: nowrap;
+            display: flex; align-items: center; padding: 0 8px; overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.15); cursor: help;
+            transition: all 0.2s;
+        }
+        
+        .gantt-bar:hover {
+            z-index: 100; min-width: max-content; 
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2); transform: scaleY(1.1);
+        }
+
+        /* 甘特圖顏色對應 */
+        .gantt-bar[data-color="blue"] { background: #4f46e5; }
+        .gantt-bar[data-color="green"] { background: #10b981; }
+        .gantt-bar[data-color="red"] { background: #ef4444; }
+        .gantt-bar[data-color="yellow"] { background: #f59e0b; color: #333; }
 
         .add-main {
             display: block; margin: 30px auto; padding: 12px 30px;
@@ -184,43 +245,36 @@
            📱 手機版專屬 CSS (響應式設計)
            ========================================= */
         @media screen and (max-width: 768px) {
-            /* 調整主區域 */
             body { padding: 10px; }
             .main-area { margin-top: 50px; padding: 10px 0; }
-
-            /* 隱藏不適合手機的工具 (工具箱、便利貼、貼紙) */
             .toolbox, .sticky-note, .sticker { display: none !important; }
 
-            /* 調整時間軸線條：移到最左邊 */
+            /* Timeline 模式下的手機修正 */
             .timeline::before { left: 20px; transform: none; }
             .dot { left: 20px; transform: none; margin-left: -7px; }
 
-            /* 調整卡片排版：全部靠右，垂直排列 */
             .timeline-item { flex-direction: column; align-items: flex-end; width: 100%; margin-left: 0; }
             
-            /* 強制覆蓋所有卡片樣式 */
             .timeline-item .card, 
             .timeline-item:nth-child(odd) .card, 
             .timeline-item:nth-child(even) .card,
             .timeline-item.force-left .card,
             .timeline-item.force-right .card {
-                width: calc(100% - 50px) !important; /* 扣掉左邊線條空間 */
+                width: calc(100% - 50px) !important;
                 margin: 0 0 20px 0 !important;
-                border-left: none !important;
-                border-right: none !important;
+                border-left: none !important; border-right: none !important;
             }
 
-            /* 手機上卡片控制項直接顯示 (不用hover，因為手機沒hover) */
             .controls { opacity: 1; background: rgba(243, 244, 246, 0.8); position: relative; top: 0; right: 0; justify-content: flex-end; margin-bottom: 10px; }
-            /* 隱藏手機不需要的定位按鈕 (因為手機只有一種排版) */
             .controls button[title*="靠"], .controls button[title*="移"] { display: none; }
 
-            /* 標題與日期垂直排列，避免擠壓 */
             .header-row { align-items: flex-start; }
             .label-input { width: 100%; margin-top: 5px; }
-
-            /* 調整按鈕大小，方便手指點擊 */
             .btn-icon { width: 32px; height: 32px; font-size: 16px; }
+
+            /* 甘特圖手機修正 */
+            #gantt-view { padding: 10px; }
+            .gantt-label-col { width: 100px; font-size: 0.75rem; } /* 縮小左側欄位 */
         }
 
         @media print { .toolbar, .toolbox, .controls, .add-main, .note-header, .sticker-del { display: none !important; } .sticky-note, .sticker { box-shadow: none; border: 1px solid transparent; } }
@@ -232,10 +286,11 @@
 
     <div class="toolbar">
         <div class="tool-title">
-            🧠 V17
+            🧠 V18
             <span class="save-status" id="saveStatus"></span>
         </div>
         <div class="tool-btn-group">
+            <button class="tool-btn view-btn" onclick="toggleView()" id="viewBtn">📊 切換甘特圖</button>
             <button class="tool-btn cal-btn" onclick="exportToCSV()">📅 CSV</button>
             <button class="tool-btn highlight" onclick="sortByDate()">📅 排序</button>
             <button class="tool-btn" onclick="copyText()">📋 文字</button>
@@ -260,6 +315,14 @@
 
     <div class="main-area">
         <div class="timeline" id="container"></div>
+
+        <div id="gantt-view">
+            <div style="text-align:center; color:#888; margin-bottom:10px; font-size:0.8rem;">
+                💡 左右滑動可查看完整時間軸
+            </div>
+            <div class="gantt-container" id="ganttChart"></div>
+        </div>
+
         <button class="add-main" id="mainAddBtn">＋ 新增節點</button>
     </div>
 
@@ -268,14 +331,15 @@
         const saveStatus = document.getElementById('saveStatus');
 
         const defaultData = [
-            { id: 1, pos: 'left', mode: 'normal', color: 'blue', status: 0, label: '手機版', date_single: '2025-01-01', date_start: '', date_end: '', content: '用手機打開這個網頁看看！你會發現排版變成了垂直一條線，字體也變大了。' },
-            { id: 2, pos: 'right', mode: 'range', color: 'green', status: 0, label: '功能隱藏', date_single: '', date_start: '2025-02-01', date_end: '2025-02-05', content: '在手機上，左邊的圖形工具箱會自動隱藏，讓畫面更乾淨。但按鈕列可以左右滑動喔！' }
+            { id: 1, pos: 'left', mode: 'normal', color: 'blue', status: 0, label: '手機版', date_single: '2025-01-01', date_start: '', date_end: '', content: '用手機打開這個網頁看看！' },
+            { id: 2, pos: 'right', mode: 'range', color: 'green', status: 0, label: '長時間測試', date_single: '', date_start: '2025-02-01', date_end: '2025-06-05', content: '這個事件跨越了好幾個月，切換到甘特圖看看效果！' },
+            { id: 3, pos: 'left', mode: 'range', color: 'red', status: 2, label: '重疊事件', date_single: '', date_start: '2025-03-01', date_end: '2025-04-01', content: '這段時間跟上面有重疊喔。' }
         ];
 
         function init() {
-            const savedData = localStorage.getItem('timeline_v17_data');
-            const savedNotes = localStorage.getItem('timeline_v17_notes');
-            const savedStickers = localStorage.getItem('timeline_v17_stickers');
+            const savedData = localStorage.getItem('timeline_v18_data');
+            const savedNotes = localStorage.getItem('timeline_v18_notes');
+            const savedStickers = localStorage.getItem('timeline_v18_stickers');
 
             if (savedData) renderFromData(JSON.parse(savedData));
             else renderFromData(defaultData);
@@ -284,7 +348,139 @@
             if (savedStickers) renderStickers(JSON.parse(savedStickers));
         }
 
-        // --- 核心與工具 --- 
+        // --- 視圖切換邏輯 (V18核心) ---
+        let currentView = 'timeline';
+
+        function toggleView() {
+            const tl = document.getElementById('container');
+            const gt = document.getElementById('gantt-view');
+            const btn = document.getElementById('viewBtn');
+            const addBtn = document.getElementById('mainAddBtn');
+
+            if (currentView === 'timeline') {
+                // 切換到甘特圖
+                tl.style.display = 'none';
+                gt.style.display = 'block';
+                addBtn.style.display = 'none'; // 甘特圖模式下隱藏新增按鈕 (避免邏輯混亂)
+                btn.innerHTML = '📝 切換列表';
+                btn.classList.remove('view-btn');
+                btn.classList.add('highlight');
+                renderGantt(); 
+                currentView = 'gantt';
+            } else {
+                // 切換回列表
+                tl.style.display = 'block';
+                gt.style.display = 'none';
+                addBtn.style.display = 'block';
+                btn.innerHTML = '📊 切換甘特圖';
+                btn.classList.add('view-btn');
+                btn.classList.remove('highlight');
+                currentView = 'timeline';
+            }
+        }
+
+        function renderGantt() {
+            const chart = document.getElementById('ganttChart');
+            chart.innerHTML = '';
+            
+            let data = gatherData();
+            if (data.length === 0) { chart.innerHTML = '<div style="padding:20px; text-align:center;">無資料</div>'; return; }
+
+            // 1. 處理並過濾無效日期
+            let validData = data.map(item => {
+                let start, end;
+                if (item.mode === 'range' && item.date_start) {
+                    start = new Date(item.date_start).getTime();
+                    end = item.date_end ? new Date(item.date_end).getTime() : start;
+                } else if (item.date_single) {
+                    start = new Date(item.date_single).getTime();
+                    end = start; 
+                }
+                // 確保 end >= start
+                if(end < start) end = start;
+
+                return { ...item, start, end, isValid: (start && !isNaN(start)) };
+            }).filter(item => item.isValid);
+
+            if(validData.length === 0) { chart.innerHTML = '<div style="padding:20px; text-align:center;">請先設定卡片日期</div>'; return; }
+
+            // 依開始時間排序
+            validData.sort((a,b) => a.start - b.start);
+
+            // 2. 計算時間邊界 (加入緩衝)
+            let minT = Math.min(...validData.map(d => d.start));
+            let maxT = Math.max(...validData.map(d => d.end));
+            
+            // 避免單一日造成 max=min
+            if(maxT === minT) { maxT += 86400000 * 5; minT -= 86400000 * 5; }
+            
+            const duration = maxT - minT;
+            const padding = duration * 0.05; // 5% 左右緩衝
+            const plotStart = minT - padding;
+            const plotEnd = maxT + padding;
+            const plotDur = plotEnd - plotStart;
+
+            // 3. 繪製時間軸刻度線 (背景)
+            let axisHtml = '';
+            // 簡易演算法：切成 5 等分
+            for(let i=0; i<=5; i++){
+                const percent = i * 20;
+                const timeAtLine = plotStart + (plotDur * (i/5));
+                const d = new Date(timeAtLine);
+                const dateLabel = `${d.getFullYear()}/${d.getMonth()+1}`;
+                
+                axisHtml += `<div class="gantt-axis-mark" style="left: ${150 + (percent/100 * (100-20))}% /* 修正左邊距 */;"></div>`;
+                // 上方標籤 (暫時簡化)
+            }
+            
+            // 4. 繪製每一個 Bar
+            let rowsHtml = '';
+            validData.forEach(item => {
+                const startPct = ((item.start - plotStart) / plotDur) * 100;
+                let widthPct = ((item.end - item.start) / plotDur) * 100;
+                
+                // 單日事件給予最小寬度 (例如 1%)
+                if (widthPct < 1) widthPct = 1; 
+
+                // 標題如果太長
+                const label = item.label || '無標題';
+                const dateInfo = item.mode==='range' ? `${item.date_start}~${item.date_end}` : item.date_single;
+
+                rowsHtml += `
+                <div class="gantt-row">
+                    <div class="gantt-label-col" title="${label}">${label}</div>
+                    <div class="gantt-bar-area">
+                        <div class="gantt-bar" data-color="${item.color}" 
+                             style="left: ${startPct}%; width: ${widthPct}%;"
+                             title="${label} (${dateInfo})\n${item.content.substring(0,50)}...">
+                             ${label}
+                        </div>
+                    </div>
+                </div>`;
+            });
+
+            // 組合
+            // 補上刻度標籤
+            let marksHtml = '';
+            for(let i=0; i<=5; i++) {
+                const percent = i * 20;
+                const timeAtLine = plotStart + (plotDur * (i/5));
+                const d = new Date(timeAtLine);
+                marksHtml += `<div style="position:absolute; top:5px; font-size:10px; color:#999; transform:translateX(-50%); left:${percent}%;">${d.getFullYear()}/${d.getMonth()+1}</div>`;
+            }
+
+            chart.innerHTML = `
+                <div class="gantt-axis-labels" style="padding-left:150px; position:relative; height:20px; margin-bottom:10px;">
+                    <div style="position:relative; width:100%; height:100%;">
+                        ${marksHtml}
+                    </div>
+                </div>
+                ${rowsHtml}
+            `;
+        }
+
+
+        // --- 原有功能 --- 
         function addToGoogleCal(btn) {
             const itemEl = btn.closest('.timeline-item');
             const isRange = itemEl.classList.contains('range-mode');
@@ -366,6 +562,7 @@
         }
 
         function takeScreenshot() {
+            if(currentView === 'gantt') { alert('建議切換回列表模式再截圖，效果較好！'); }
             document.body.classList.add('screenshot-mode'); window.scrollTo(0, 0); saveStatus.innerText = '處理中...';
             html2canvas(document.body, { backgroundColor: '#f3f4f6', scale: 2, useCORS: true }).then(canvas => {
                 const link = document.createElement('a'); link.download = `report_${new Date().toISOString().slice(0,10)}.png`; link.href = canvas.toDataURL(); link.click();
@@ -429,12 +626,13 @@
         function gatherNotes(){const n=[]; document.querySelectorAll('.sticky-note').forEach(el=>{n.push({id:el.id.replace('note-',''),x:el.offsetLeft,y:el.offsetTop,content:el.querySelector('.note-content').value});}); return n;}
         function gatherStickers(){const l=[]; document.querySelectorAll('.sticker').forEach(el=>{l.push({id:el.id.replace('sticker-',''),type:el.dataset.type,x:el.offsetLeft,y:el.offsetTop});}); return l;}
         function autoSave() {
-            localStorage.setItem('timeline_v17_data', JSON.stringify(gatherData()));
-            localStorage.setItem('timeline_v17_notes', JSON.stringify(gatherNotes()));
-            localStorage.setItem('timeline_v17_stickers', JSON.stringify(gatherStickers()));
+            // V18 儲存 Key
+            localStorage.setItem('timeline_v18_data', JSON.stringify(gatherData()));
+            localStorage.setItem('timeline_v18_notes', JSON.stringify(gatherNotes()));
+            localStorage.setItem('timeline_v18_stickers', JSON.stringify(gatherStickers()));
             saveStatus.innerText = '已儲存'; setTimeout(() => saveStatus.innerText = '', 2000);
         }
-        window.downloadJSON=function(){const d={timeline:gatherData(),notes:gatherNotes(),stickers:gatherStickers(),version:'v17'}; const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([JSON.stringify(d,null,2)],{type:'application/json;charset=utf-8'})); a.download=`timeline_v17_${new Date().toISOString().slice(0,10)}.json`; a.click();}
+        window.downloadJSON=function(){const d={timeline:gatherData(),notes:gatherNotes(),stickers:gatherStickers(),version:'v18'}; const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([JSON.stringify(d,null,2)],{type:'application/json;charset=utf-8'})); a.download=`timeline_v18_${new Date().toISOString().slice(0,10)}.json`; a.click();}
         window.loadJSON=function(inp){const f=inp.files[0]; if(!f)return; const r=new FileReader(); r.onload=function(e){try{const j=JSON.parse(e.target.result); if(j.timeline){renderFromData(j.timeline); if(j.notes)renderNotes(j.notes); if(j.stickers)renderStickers(j.stickers); autoSave(); alert('讀取成功');}}catch(x){alert('格式錯誤');}}; r.readAsText(f);}
 
         init();
