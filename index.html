@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>專案神器 V54 (優化版)</title>
+    <title>專案神器 V55 (多視角版)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         :root {
@@ -63,6 +63,13 @@
         .tool-btn.ai-btn { border-color: #c084fc; color: #c084fc; }
         .tool-btn.filter-btn { border-color: #d97706; color: #fbbf24; }
         
+        /* 視角切換 Select */
+        .view-select {
+            background: #334155; border: 1px solid #475569; color: white;
+            padding: 6px 10px; border-radius: 4px; font-size: 0.9rem; cursor: pointer; outline: none;
+        }
+        .view-select:hover { border-color: #3b82f6; }
+
         #ai-toolbar { display: none; }
         body.ai-selecting #normal-toolbar { display: none; }
         body.ai-selecting #ai-toolbar { display: flex; }
@@ -326,23 +333,23 @@
             border-bottom: 2px solid #e2e8f0; 
             margin-bottom: 15px; 
             align-items: flex-end;
-            position: sticky; top: 0; background: white; z-index: 40; /* 最高層級 */
+            position: sticky; top: 0; background: white; z-index: 40; 
         }
         
-        /* 左側固定欄位 (Sticky) */
+        /* 左側固定側邊欄 (Sticky Sidebar) */
         .swimlane-title-placeholder {
-            width: 200px; /* 加寬 */
+            width: 220px; 
             flex-shrink: 0; 
-            border-right: 2px solid #e2e8f0; 
+            border-right: 1px solid #cbd5e1; 
             margin-right: 0;
             font-weight: bold;
             color: #1e293b;
             padding: 0 15px 8px 0;
             text-align: right;
             font-size: 0.95rem;
-            background: white;
-            position: sticky; left: 0; z-index: 41; /* 固定在左側 */
-            box-shadow: 2px 0 5px rgba(0,0,0,0.05); /* 加點陰影區隔 */
+            background: #f1f5f9; 
+            position: sticky; left: 0; z-index: 50; 
+            box-shadow: 4px 0 8px rgba(0,0,0,0.05); 
         }
         
         .swimlane-axis-area {
@@ -371,10 +378,7 @@
             color: #1e293b; 
             font-weight: 800; 
         }
-        /* 第一天與最後一天的特殊對齊，防止凸出去 */
-        .swimlane-header-mark.first-mark span { transform: translateX(0); }
-        .swimlane-header-mark.last-mark span { transform: translateX(-100%); left: auto; right: 2px; }
-
+        
         /* 內容區的網格線 */
         .swimlane-grid-line {
             position: absolute;
@@ -394,18 +398,18 @@
         
         /* 左側固定專案名稱 (Sticky) */
         .swimlane-project-label { 
-            width: 200px; /* 加寬 */
+            width: 220px; 
             flex-shrink: 0; 
             font-size: 0.9rem; 
             font-weight: bold; 
             color: #334155; 
             padding: 15px 15px 15px 10px; 
             text-align: right; 
-            border-right: 2px solid #e2e8f0; 
-            background: #f8fafc;
+            border-right: 1px solid #cbd5e1; 
+            background: #f8fafc; 
             display: flex; align-items: center; justify-content: flex-end;
-            position: sticky; left: 0; z-index: 35; /* 固定 */
-            box-shadow: 2px 0 5px rgba(0,0,0,0.05);
+            position: sticky; left: 0; z-index: 45; 
+            box-shadow: 4px 0 8px rgba(0,0,0,0.05); 
         }
         
         .swimlane-tracks-area { 
@@ -494,7 +498,7 @@
     <div class="toolbar">
         <div class="tool-left">
             <div class="tool-title">
-                🧠 專案神器 V54
+                🧠 專案神器 V55
                 <span class="save-status" id="saveStatus"></span>
             </div>
             <div class="search-box">
@@ -504,6 +508,11 @@
         </div>
         
         <div class="tool-btn-group" id="normal-toolbar">
+            <select class="view-select" id="scaleSelect" onchange="changeScale(this.value)">
+                <option value="day">📅 刻度: 日</option>
+                <option value="week">🗓️ 刻度: 週</option>
+                <option value="month">🈷️ 刻度: 月</option>
+            </select>
             <button class="tool-btn filter-btn" onclick="toggleProjectBar()" title="過濾">📁 專案</button>
             <button class="tool-btn view-btn" onclick="toggleView()" id="viewBtn">🗺️ 專案圖</button>
             <button class="tool-btn pres-btn" onclick="togglePresentation()">📽️ 簡報</button>
@@ -561,6 +570,7 @@
         const tooltip = document.getElementById('custom-tooltip');
         let activeProjectFilters = new Set();
         let currentView = 'timeline';
+        let currentScale = 'day'; // 'day', 'week', 'month'
 
         function getTodayString() {
             const d = new Date();
@@ -591,7 +601,7 @@
                 const defaultItem = {
                     id: Date.now(), pos: 'left', mode: 'normal', color: 'blue', status: 0, isMemo: false,
                     project: '專案神器', label: '系統初始化', date_single: getTodayString(), date_start: '', date_end: '', 
-                    content: '歡迎使用專案神器 V54。'
+                    content: '歡迎使用專案神器 V55。'
                 };
                 container.appendChild(createNodeElement(defaultItem));
             }
@@ -800,7 +810,6 @@
             let left = e.clientX + offset;
             let top = e.clientY + offset;
             
-            // 邊界檢查
             if (left + tooltip.offsetWidth > window.innerWidth) left = e.clientX - tooltip.offsetWidth - offset;
             if (top + tooltip.offsetHeight > window.innerHeight) top = e.clientY - tooltip.offsetHeight - offset;
             
@@ -808,7 +817,7 @@
             tooltip.style.top = top + 'px';
         }
 
-        // --- Swimlane Logic (動態寬度版) ---
+        // --- Swimlane Logic (Multi-Scale) ---
         function getMidnightTime(dateStr) {
             if(!dateStr) return null;
             const parts = dateStr.split('-');
@@ -830,6 +839,11 @@
             }
         }
 
+        function changeScale(val) {
+            currentScale = val;
+            if (currentView === 'swimlane') renderSwimlane();
+        }
+
         function togglePresentation() {
             if (currentView === 'swimlane') toggleView();
             const body = document.body;
@@ -847,7 +861,6 @@
             const chart = document.getElementById('swimlaneChart'); 
             chart.innerHTML='';
             
-            // 1. 準備資料
             let data = gatherData().filter(i => !i.isMemo && (i.date_single || i.date_start));
             if (activeProjectFilters.size > 0) data = data.filter(i => activeProjectFilters.has(i.project));
             
@@ -856,7 +869,6 @@
                 return; 
             }
 
-            // 2. 解析日期範圍
             const parsed = data.map(d => {
                 let s = getMidnightTime(d.mode==='range' ? d.date_start : d.date_single);
                 let e = getMidnightTime(d.mode==='range' ? d.date_end : d.date_single);
@@ -869,22 +881,37 @@
             if (parsed.length === 0) return;
 
             const dayMs = 86400000;
-            // 緩衝一天即可
             let minT = Math.min(...parsed.map(p=>p.start)) - dayMs;
             let maxT = Math.max(...parsed.map(p=>p.end)) + dayMs;
-            
-            // 計算總天數與動態寬度
             const plotDur = maxT - minT;
-            const totalDays = Math.ceil(plotDur / dayMs) + 1;
             
-            // *** 關鍵修改：強制每一天至少 50px ***
-            const minPxPerDay = 50;
+            // --- 刻度設定 ---
+            let minPxPerDay = 50; // default day
+            let stepDays = 1;
+            
+            if (currentScale === 'week') {
+                minPxPerDay = 15; // 壓縮
+                stepDays = 7;
+                // 校正起始時間到週一
+                const d = new Date(minT);
+                const day = d.getDay();
+                const diff = d.getDate() - day + (day == 0 ? -6:1); 
+                d.setDate(diff);
+                minT = d.getTime();
+            } else if (currentScale === 'month') {
+                minPxPerDay = 5; // 極度壓縮
+                stepDays = 30; // 僅供參考，實際用月邏輯
+                // 校正起始時間到1號
+                const d = new Date(minT);
+                d.setDate(1);
+                minT = d.getTime();
+            }
+
+            const totalDays = Math.ceil(plotDur / dayMs) + 10; // 多加一點buffer
             const totalWidth = Math.max(800, totalDays * minPxPerDay); 
             
-            // 設定容器寬度
-            const axisAreaStyle = `width: ${totalWidth}px; min-width: 100%;`;
+            const axisAreaStyle = `width: ${totalWidth}px; min-width: 100%; padding-right: 100px; box-sizing: content-box;`;
             
-            // 3. 依專案分組
             const grouped = {};
             parsed.forEach(item => {
                 const pName = item.project || '未分類';
@@ -892,29 +919,34 @@
                 grouped[pName].push(item);
             });
 
-            // 4.1 繪製時間軸 (Header) - 強制每一天都畫
+            // 4. 繪製刻度
             let headerAxisHtml = '';
             let gridHtml = '';
             
-            // 使用 stepDays = 1 強制每天顯示
-            let stepDays = 1; 
-
-            for (let t = minT; t <= maxT; t += (dayMs * stepDays)) {
-                const d = new Date(t);
-                d.setHours(0,0,0,0);
-                const correctedT = d.getTime();
-                
-                const pct = ((correctedT - minT) / plotDur) * 100;
-                
-                if(pct >= 0 && pct <= 100) {
-                    const dateStr = `${d.getMonth()+1}/${d.getDate()}`;
-                    // 判斷是否為第一個或最後一個刻度，加上特殊 class
-                    let extraClass = '';
-                    if (Math.abs(pct - 0) < 0.1) extraClass = 'first-mark';
-                    if (Math.abs(pct - 100) < 0.1) extraClass = 'last-mark';
-                    
-                    headerAxisHtml += `<div class="swimlane-header-mark ${extraClass}" style="left:${pct}%;"><span>${dateStr}</span></div>`;
-                    gridHtml += `<div class="swimlane-grid-line" style="left:${pct}%;"></div>`;
+            if (currentScale === 'month') {
+                // 月刻度邏輯
+                let t = new Date(minT);
+                while(t.getTime() <= maxT) {
+                    const pct = ((t.getTime() - minT) / plotDur) * 100;
+                    if(pct >= 0 && pct <= 100) {
+                        const label = `${t.getMonth()+1}月`;
+                        headerAxisHtml += `<div class="swimlane-header-mark" style="left:${pct}%;"><span>${label}</span></div>`;
+                        gridHtml += `<div class="swimlane-grid-line" style="left:${pct}%;"></div>`;
+                    }
+                    t.setMonth(t.getMonth() + 1);
+                }
+            } else {
+                // 日與週刻度邏輯
+                for (let t = minT; t <= maxT; t += (dayMs * stepDays)) {
+                    const d = new Date(t);
+                    d.setHours(0,0,0,0);
+                    const pct = ((d.getTime() - minT) / plotDur) * 100;
+                    if(pct >= 0 && pct <= 100) {
+                        let label = `${d.getMonth()+1}/${d.getDate()}`;
+                        if(currentScale === 'week') label += ' (週)';
+                        headerAxisHtml += `<div class="swimlane-header-mark" style="left:${pct}%;"><span>${label}</span></div>`;
+                        gridHtml += `<div class="swimlane-grid-line" style="left:${pct}%;"></div>`;
+                    }
                 }
             }
 
@@ -924,7 +956,6 @@
                     <div class="swimlane-axis-area" style="${axisAreaStyle}">${headerAxisHtml}</div>
                 </div>`;
 
-            // 5. 繪製專案泳道 (Rows)
             let rowsHtml = '';
             
             Object.keys(grouped).sort().forEach(pName => {
@@ -954,10 +985,9 @@
                     let sPct = ((item.start - minT) / plotDur) * 100;
                     let ePct = ((item.end + dayMs - minT) / plotDur) * 100;
                     let widthPct = ePct - sPct;
-                    if(widthPct < 0.2) widthPct = 0.2; // 最小寬度
+                    if(widthPct < 0.2) widthPct = 0.2; 
 
                     const topPos = item.trackIndex * 36 + 10;
-                    // 加入 Tooltip 事件
                     barsHtml += `<div class="swimlane-bar" data-color="${item.color}" 
                         onmouseenter="showTooltip(event, '${item.label} (${item.date_single || (item.date_start + ' ~ ' + item.date_end)})')" 
                         onmousemove="updateTooltipPos(event)"
@@ -975,7 +1005,6 @@
                     </div>`;
             });
 
-            // 注意：外層需要 fit-content 讓 sticky 效果在滾動時正常運作
             chart.innerHTML = `<div style="display:inline-block; min-width:100%;">${headerHtml}${rowsHtml}</div>`;
         }
 
