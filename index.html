@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>報告神器 V48：樣式與功能全修復版</title>
+    <title>報告神器 V51：全螢幕截圖修復版</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         :root {
@@ -20,10 +20,9 @@
             background-color: var(--bg);
             color: var(--text);
             margin: 0;
-            padding: 0; /* V48: 改為 0 以避免截圖邊緣問題 */
+            padding: 0;
             position: relative; 
             min-height: 100vh;
-            -webkit-font-smoothing: antialiased;
         }
 
         /* --- 頂部工具列 --- */
@@ -32,7 +31,7 @@
             background: #1e293b; color: white; padding: 10px 20px;
             display: flex; justify-content: space-between; align-items: center;
             z-index: 2000; box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-            height: 60px; /* V48: 固定高度 */
+            height: 60px;
         }
 
         .tool-left { display: flex; align-items: center; gap: 15px; flex-shrink: 0; }
@@ -52,9 +51,7 @@
         .tool-btn-group::-webkit-scrollbar { display: none; }
         
         .tool-btn {
-            background: transparent; 
-            border: 1px solid #475569; 
-            color: #e2e8f0; 
+            background: transparent; border: 1px solid #475569; color: #e2e8f0; 
             padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.9rem;
             display: flex; align-items: center; gap: 6px; transition: 0.2s; white-space: nowrap; flex-shrink: 0;
         }
@@ -87,7 +84,6 @@
         }
         .proj-badge:hover { background: #f1f5f9; border-color: #94a3b8; }
         .proj-badge.active { background: #dbeafe; border-color: #3b82f6; color: #2563eb; font-weight: bold; }
-        .rename-btn { font-size: 0.75rem; padding: 2px 8px; background: #8b5cf6; color: white; border-radius: 4px; cursor: pointer; border: none; }
 
         /* 左側圖形工具箱 */
         .toolbox-container {
@@ -121,7 +117,7 @@
         .tool-icon { font-size: 1.2rem; line-height: 1; margin-bottom: 2px; }
         .tool-text { font-size: 0.7rem; color: #475569; }
 
-        /* V48 修復: 便利貼與貼紙樣式 (補回遺失的CSS) */
+        /* 便利貼與貼紙 */
         .sticky-note {
             position: absolute; width: 160px; height: 160px;
             background: #fef3c7; border: 1px solid #d97706;
@@ -159,7 +155,7 @@
         }
         body.has-proj-bar .main-area { margin-top: 140px; }
 
-        /* Timeline & Card */
+        /* Timeline 核心佈局 */
         .timeline { position: relative; padding: 20px 0; }
         .timeline::before {
             content: ''; position: absolute; top: 0; bottom: 0; left: 50%;
@@ -169,20 +165,19 @@
 
         .timeline-item {
             position: relative; margin-bottom: 40px; 
-            width: 100%;
-            display: flex; justify-content: center; 
+            width: 100%; display: flex;
         }
         .timeline-item.hidden-by-filter { display: none !important; } 
 
-        /* V48 修復: 卡片寬度與邊距計算 */
-        .timeline-item .card { width: 45%; }
-        .timeline-item:nth-child(odd) .card { margin-right: 50%; margin-left: auto; border-right: 4px solid transparent; }
-        .timeline-item:nth-child(even) .card { margin-left: 50%; margin-right: auto; border-left: 4px solid transparent; }
+        .timeline-item:nth-child(odd) { justify-content: flex-start; padding-right: 50%; }
+        .timeline-item:nth-child(even) { justify-content: flex-end; padding-left: 50%; }
         
-        .timeline-item.force-left .card { margin-right: 50% !important; margin-left: auto !important; border-right: 4px solid transparent; border-left: none; }
-        .timeline-item.force-right .card { margin-left: 50% !important; margin-right: auto !important; border-left: 4px solid transparent; border-right: none; }
+        .timeline-item.force-left { justify-content: flex-start !important; padding-right: 50% !important; padding-left: 0 !important; }
+        .timeline-item.force-right { justify-content: flex-end !important; padding-left: 50% !important; padding-right: 0 !important; }
 
-        /* V48 修復: 卡片內部 Flex 結構，確保 Footer 永遠在底部 */
+        .timeline-item .card { width: 90%; margin: 0 auto; }
+
+        /* Card 內部佈局 */
         .card {
             display: flex; flex-direction: column; 
             background: white; border-radius: 12px;
@@ -190,8 +185,7 @@
             position: relative; z-index: 10; 
             overflow: hidden;
             border-top: 5px solid var(--primary);
-            min-height: 220px; /* 增加最小高度 */
-            height: 100%; /* 撐滿容器 */
+            min-height: 200px;
         }
         
         .card.memo-mode { border-top-style: dashed; background-color: #fcfcfc; }
@@ -204,32 +198,24 @@
         .card.memo-mode[data-color="red"] { background: #fff1f2; }
         .card.memo-mode[data-color="yellow"] { background: #fffbeb; }
 
-        /* 頂部區域 */
         .card-top-area {
             display: flex; justify-content: space-between; align-items: center;
-            padding: 12px 15px 8px 15px; 
-            border-bottom: 1px dashed #e2e8f0;
-            flex-shrink: 0; 
+            padding: 12px 15px 8px 15px; border-bottom: 1px dashed #e2e8f0; flex-shrink: 0; 
         }
         .card-top-left { display: flex; align-items: center; gap: 8px; flex: 1; }
         .card-top-right { display: flex; gap: 4px; flex-shrink: 0; }
 
-        /* 內容區域 */
         .card-body {
-            padding: 15px 40px 15px 20px; /* 右側留空間給側邊欄 */
-            flex-grow: 1; /* 關鍵: 佔據剩餘空間 */
+            padding: 15px 40px 15px 20px; 
+            flex: 1; 
             display: flex; flex-direction: column;
         }
 
-        /* 底部標籤 - V48 強制固定樣式 */
         .project-footer {
-            width: 100%;
-            height: 36px; 
+            width: 100%; height: 36px; 
             display: flex; align-items: center; justify-content: flex-end;
-            padding: 0 15px;
-            background: #cbd5e1;
-            margin-top: auto; /* 關鍵: 推到底部 */
-            flex-shrink: 0;
+            padding: 0 15px; background: #cbd5e1;
+            margin-top: auto; flex-shrink: 0;
         }
         .card[data-color="blue"] .project-footer { background: #4f46e5; }
         .card[data-color="green"] .project-footer { background: #10b981; }
@@ -237,21 +223,15 @@
         .card[data-color="yellow"] .project-footer { background: #f59e0b; }
 
         .footer-project-input {
-            background: transparent; border: none; 
-            color: white; font-weight: bold; font-size: 0.95rem;
-            text-align: right; width: 100%; outline: none;
-            text-shadow: 0 1px 1px rgba(0,0,0,0.1);
+            background: transparent; border: none; color: white; font-weight: bold; font-size: 0.95rem;
+            text-align: right; width: 100%; outline: none; text-shadow: 0 1px 1px rgba(0,0,0,0.1);
         }
         .footer-project-input::placeholder { color: rgba(255,255,255,0.7); }
 
-        /* 側邊垂直工具列 */
         .card-side-tools {
             position: absolute; right: 6px; top: 55px; bottom: 40px; 
-            display: flex; flex-direction: column; gap: 6px;
-            align-items: center;
-            width: 32px; 
-            border-left: 1px dashed #e2e8f0;
-            z-index: 20; padding-top: 5px;
+            display: flex; flex-direction: column; gap: 6px; align-items: center;
+            width: 32px; border-left: 1px dashed #e2e8f0; z-index: 20; padding-top: 5px;
         }
 
         .status-dot { width: 14px; height: 14px; border-radius: 50%; cursor: pointer; border: 2px solid rgba(0,0,0,0.1); }
@@ -260,8 +240,7 @@
         .btn-icon { 
             border: 1px solid #cbd5e1; background: white; color: #64748b; 
             cursor: pointer; width: 26px; height: 26px; border-radius: 4px; 
-            display: flex; align-items: center; justify-content: center; font-size: 14px;
-            transition: 0.2s;
+            display: flex; align-items: center; justify-content: center; font-size: 14px; transition: 0.2s;
         }
         .btn-icon:hover { background: #f1f5f9; color: #1e293b; border-color: #94a3b8; }
         .side-btn { width: 24px; height: 24px; font-size: 12px; background: #f8fafc; }
@@ -316,7 +295,6 @@
         #gantt-view { display: none; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); overflow-x: auto; margin-bottom: 30px; border: 1px solid #e2e8f0; }
         .gantt-container { position: relative; min-width: 800px; padding-top: 40px; padding-bottom: 20px; }
         .gantt-axis-labels { position: absolute; top: 0; left: 160px; right: 0; height: 30px; border-bottom: 1px solid #e2e8f0; }
-        /* V48: 甘特圖格線 */
         .gantt-axis-mark { position: absolute; top: 0; font-size: 0.75rem; color: #94a3b8; border-left: 1px dashed #e2e8f0; height: 100vh; padding-left: 4px; pointer-events: none; }
         .gantt-row { position: relative; height: 40px; margin-bottom: 8px; display: flex; align-items: center; border-bottom: 1px dashed #f1f5f9; }
         .gantt-label-col { width: 150px; flex-shrink: 0; font-size: 0.85rem; font-weight: bold; color: #334155; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 15px; text-align: right; border-right: 2px solid #e2e8f0; margin-right: 0; line-height: 40px; background: white; z-index: 5; }
@@ -345,10 +323,8 @@
             .main-area { margin-top: 60px; padding: 10px; }
             body.has-proj-bar .main-area { margin-top: 150px; }
             .toolbox-container { display: none !important; }
-            .timeline-item { flex-direction: column; width: 100%; margin-left: 0; }
-            .timeline-item .card, .timeline-item:nth-child(odd) .card, .timeline-item:nth-child(even) .card {
-                width: 100% !important; margin: 0 0 20px 0 !important; border: none !important; border-top: 5px solid var(--primary) !important;
-            }
+            .timeline-item { flex-direction: column; width: 100%; padding: 0 !important; }
+            .timeline-item .card { width: 100% !important; margin: 0 0 20px 0 !important; }
             .timeline::before { left: 10px; }
             .dot { left: 10px; }
             .mobile-hidden { display: none !important; }
@@ -365,7 +341,7 @@
     <div class="toolbar">
         <div class="tool-left">
             <div class="tool-title">
-                🧠 V48
+                🧠 V51
                 <span class="save-status" id="saveStatus"></span>
             </div>
             <div class="search-box">
@@ -442,11 +418,10 @@
 
             if (savedData) renderFromData(JSON.parse(savedData));
             else {
-                // 預設範例
                 const defaultItem = {
                     id: Date.now(), pos: 'left', mode: 'normal', color: 'blue', status: 0, isMemo: false,
-                    project: 'V48更新', label: '樣式功能全修復', date_single: getTodayString(), date_start: '', date_end: '', 
-                    content: '1. 卡片高度與專案標籤已修正。\n2. 便利貼與貼紙功能已恢復。\n3. 甘特圖時間軸校準。\n4. 截圖功能修復。'
+                    project: 'V51更新', label: '全螢幕截圖修復', date_single: getTodayString(), date_start: '', date_end: '', 
+                    content: '1. 截圖範圍改為全網頁 (解決便利貼遺失問題)。\n2. 圖片貼上功能正常。\n3. 保留完美佈局。'
                 };
                 container.appendChild(createNodeElement(defaultItem));
             }
@@ -574,7 +549,10 @@
                         <input type="text" class="footer-project-input" autocomplete="off" value="${item.project || ''}" placeholder="🏷️ 專案名稱..." oninput="autoSave(); refreshProjectBar();">
                     </div>
                 </div>`;
-            div.querySelector('.content').addEventListener('paste', handlePaste);
+            
+            const contentDiv = div.querySelector('.content');
+            contentDiv.addEventListener('paste', handlePaste);
+            
             return div;
         }
 
@@ -598,16 +576,33 @@
         }
         window.toggleTodo = function(span) { span.innerText = span.innerText==='☐'?'☑':'☐'; autoSave(); event.stopPropagation(); }
         function handleInput(e) { autoSave(); }
+
+        // V50: 現代化圖片貼上處理
         function handlePaste(e) {
-            const items = (e.clipboardData||e.originalEvent.clipboardData).items;
-            for(let i=0;i<items.length;i++){
-                if(items[i].type.indexOf("image")===0){
-                    e.preventDefault(); const reader=new FileReader();
-                    reader.onload=ev=>{ document.execCommand('insertImage',false,ev.target.result); autoSave(); };
-                    reader.readAsDataURL(items[i].getAsFile()); break;
+            const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+            let hasImage = false;
+            for (let i = 0; i < items.length; i++) {
+                if (items[i].type.indexOf("image") === 0) {
+                    hasImage = true;
+                    e.preventDefault();
+                    const file = items[i].getAsFile();
+                    const reader = new FileReader();
+                    reader.onload = function(event) {
+                        const img = document.createElement("img");
+                        img.src = event.target.result;
+                        const selection = window.getSelection();
+                        if (!selection.rangeCount) return;
+                        selection.deleteFromDocument();
+                        selection.getRangeAt(0).insertNode(img);
+                        selection.collapseToEnd();
+                        autoSave();
+                    };
+                    reader.readAsDataURL(file);
+                    break;
                 }
             }
         }
+
         function clearAllImages() {
             if(!confirm('清除圖片？')) return;
             const data = gatherData();
@@ -615,7 +610,7 @@
             renderFromData(newData); autoSave();
         }
 
-        // --- 甘特圖 (V48 修復時間軸) ---
+        // --- 甘特圖 ---
         function toggleView() {
             const tl = document.getElementById('container'); const gt = document.getElementById('gantt-view');
             const btn = document.getElementById('viewBtn'); const add = document.getElementById('mainAddBtn');
@@ -631,7 +626,6 @@
         function getMidnightTime(dateStr) {
             if(!dateStr) return null;
             const parts = dateStr.split('-');
-            // V48: 強制設為午夜，避免時區偏差
             return new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]), 0, 0, 0).getTime();
         }
 
@@ -648,7 +642,6 @@
                 return { ...d, start: s, end: e };
             }).sort((a,b)=>a.start-b.start);
 
-            // V48: 計算時間軸範圍 (前後各多 2 天)
             const dayMs = 86400000;
             const minT = Math.min(...parsed.map(p=>p.start));
             const maxT = Math.max(...parsed.map(p=>p.end));
@@ -656,7 +649,6 @@
             const plotEnd = maxT + (dayMs * 2);
             const plotDur = plotEnd - plotStart;
 
-            // 繪製座標軸 (7條線)
             let axisHtml = '';
             for(let i=0; i<=6; i++){
                 const pct = i * (100/6);
@@ -668,9 +660,8 @@
 
             let rowsHtml = '';
             parsed.forEach(item => {
-                // V48: 修正 Bar 長度計算，結束時間需 +1 天的毫秒數才會有長度
                 const sPct = ((item.start - plotStart) / plotDur) * 100;
-                const ePct = ((item.end + dayMs - plotStart) / plotDur) * 100; // 視覺上加一天
+                const ePct = ((item.end + dayMs - plotStart) / plotDur) * 100;
                 const wPct = Math.max(ePct - sPct, 0.5);
                 
                 rowsHtml += `
@@ -685,23 +676,23 @@
             chart.innerHTML = `<div class="gantt-axis-labels" style="padding-left:150px; position:relative; height:20px;">${axisHtml}</div>${rowsHtml}`;
         }
 
-        // --- 截圖 (V48 修復) ---
+        // --- 截圖 V51 (修正目標為 Body) ---
         function takeScreenshot() {
             if(window.currentView === 'gantt') { alert('請切換回列表模式再截圖'); return; }
             document.body.classList.add('screenshot-mode');
             saveStatus.innerText = '截圖中...';
-            // V48: 強制滾動到頂部並針對 main-area 截圖，設定白色背景
             window.scrollTo(0,0);
             
             setTimeout(() => {
-                html2canvas(document.querySelector(".main-area"), {
+                // V51: 改為捕捉 document.body 以抓取全畫面 (含便利貼)
+                html2canvas(document.body, {
                     backgroundColor: "#ffffff",
                     scale: 2,
                     useCORS: true,
-                    scrollY: -window.scrollY // 修正捲動偏移
+                    scrollY: -window.scrollY
                 }).then(canvas => {
                     const link = document.createElement('a');
-                    link.download = `report_v48_${getTodayString()}.png`;
+                    link.download = `report_v51_${getTodayString()}.png`;
                     link.href = canvas.toDataURL();
                     link.click();
                     document.body.classList.remove('screenshot-mode');
@@ -720,7 +711,6 @@
             box.querySelector('.toolbox-toggle-btn').innerText = box.classList.contains('closed') ? '▶' : '◀';
         }
         
-        // V48: 實作便利貼拖拉邏輯
         const stickerSVGs = {
             'arrow-right': '<svg viewBox="0 0 100 100" fill="none" stroke="#334155" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 50h80m-30-30l30 30-30 30"/></svg>',
             'arrow-down': '<svg viewBox="0 0 100 100" fill="none" stroke="#334155" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"><path d="M50 10v80m-30-30l30 30 30-30"/></svg>',
@@ -798,7 +788,7 @@
 
         function downloadJSON() { 
             const blob = new Blob([JSON.stringify({timeline:gatherData(), notes:gatherNotes(), stickers:gatherStickers()},null,2)], {type:'application/json'});
-            const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `backup_v48_${getTodayString()}.json`; a.click();
+            const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `backup_v51_${getTodayString()}.json`; a.click();
         }
         function loadJSON(inp) {
             const f = inp.files[0]; if(!f) return;
