@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>報告神器 V38：格式清除版</title>
+    <title>報告神器 V41：卡片變形版</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         :root {
@@ -50,19 +50,21 @@
         .tool-btn-group::-webkit-scrollbar { display: none; }
         
         .tool-btn {
-            background: #334155; border: 1px solid #475569; color: white;
+            background: transparent; 
+            border: 1px solid #475569; 
+            color: #e2e8f0; 
             padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 0.9rem;
             display: flex; align-items: center; gap: 6px; transition: 0.2s; white-space: nowrap; flex-shrink: 0;
         }
-        .tool-btn:hover { background: #475569; }
-        .tool-btn.highlight { background: #7c3aed; border-color: #6d28d9; }
-        .tool-btn.camera-btn { background: #059669; border-color: #047857; }
-        .tool-btn.cal-btn { background: #ea580c; border-color: #c2410c; }
-        .tool-btn.view-btn { background: #2563eb; border-color: #1d4ed8; }
-        .tool-btn.ai-btn { background: #8b5cf6; border-color: #7c3aed; }
-        .tool-btn.pres-btn { background: #db2777; border-color: #be185d; }
-        .tool-btn.danger-btn { background: #b91c1c; border-color: #991b1b; }
-        .tool-btn.filter-btn { background: #d97706; border-color: #b45309; }
+        .tool-btn:hover { background: rgba(255,255,255,0.1); border-color: white; color: white; }
+        
+        .tool-btn.highlight { border-color: #a78bfa; color: #a78bfa; }
+        .tool-btn.camera-btn { border-color: #34d399; color: #34d399; }
+        .tool-btn.danger-btn { border-color: #f87171; color: #f87171; }
+        .tool-btn.ai-btn { border-color: #c084fc; color: #c084fc; }
+        .tool-btn.filter-btn { border-color: #d97706; color: #fbbf24; }
+        .tool-btn.google-btn { border-color: #60a5fa; color: #60a5fa; } 
+        .tool-btn.keep-btn { border-color: #facc15; color: #facc15; } 
 
         #ai-toolbar { display: none; }
         body.ai-selecting #normal-toolbar { display: none; }
@@ -160,7 +162,24 @@
             position: relative; z-index: 10; 
             padding: 15px 50px 40px 20px; 
             overflow: hidden;
+            border-top: 5px solid var(--primary); /* 預設實線 */
         }
+        
+        /* V41: 備忘模式 (Memo Mode) 樣式 */
+        .card.memo-mode {
+            border-top-style: dashed; /* 虛線邊框 */
+            background-color: #fcfcfc; /* 稍微淡一點的背景 */
+        }
+        
+        .card[data-color="blue"] { border-top-color: #4f46e5; }
+        .card[data-color="green"] { border-top-color: #10b981; background: #f0fdf4; }
+        .card[data-color="red"] { border-top-color: #ef4444; background: #fef2f2; }
+        .card[data-color="yellow"] { border-top-color: #f59e0b; background: #fffbeb; }
+        
+        /* 備忘模式下的背景色微調 */
+        .card.memo-mode[data-color="green"] { background: #f7fee7; }
+        .card.memo-mode[data-color="red"] { background: #fff1f2; }
+        .card.memo-mode[data-color="yellow"] { background: #fffbeb; }
 
         /* 底部專案標籤 */
         .project-footer {
@@ -174,6 +193,8 @@
         .card[data-color="green"] .project-footer { background: #10b981; }
         .card[data-color="red"] .project-footer { background: #ef4444; }
         .card[data-color="yellow"] .project-footer { background: #f59e0b; }
+        /* 備忘模式下 footer 變淡 */
+        .card.memo-mode .project-footer { opacity: 0.7; }
 
         .footer-project-input {
             background: transparent; border: none; 
@@ -183,27 +204,20 @@
         }
         .footer-project-input::placeholder { color: rgba(255,255,255,0.7); }
 
-        /* 側邊垂直工具列 - 常駐 */
         .card-side-tools {
             position: absolute; right: 8px; top: 50px; bottom: 40px; 
             display: flex; flex-direction: column; gap: 6px;
             align-items: center; justify-content: flex-start;
-            width: 30px; 
-            padding-left: 5px; 
-            border-left: 1px dashed #f1f5f9;
-            opacity: 1; /* V38: 強制顯示 */
+            width: 30px; padding-left: 5px; border-left: 1px dashed #f1f5f9;
+            opacity: 1; 
         }
 
-        /* 頂部工具列 - 常駐 */
         .card-top-area {
             display: flex; justify-content: space-between; align-items: center;
             margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px dashed #e2e8f0;
         }
         .card-top-left { display: flex; align-items: center; gap: 8px; flex: 1; flex-wrap: wrap; }
-        .card-top-right { 
-            display: flex; gap: 3px; margin-left: 10px; flex-shrink: 0; flex-wrap: nowrap;
-            opacity: 1; /* V38: 強制顯示 */
-        }
+        .card-top-right { display: flex; gap: 3px; margin-left: 10px; flex-shrink: 0; flex-wrap: nowrap; opacity: 1; }
 
         .status-dot {
             width: 14px; height: 14px; border-radius: 50%; cursor: pointer; border: 2px solid rgba(0,0,0,0.1); flex-shrink: 0;
@@ -211,20 +225,20 @@
         .status-0 { background: #9ca3af; } .status-1 { background: #f59e0b; } .status-2 { background: #10b981; } .status-3 { background: #ef4444; }
 
         .btn-icon { 
-            border: none; cursor: pointer; width: 28px; height: 28px; border-radius: 4px; 
-            display: flex; align-items: center; justify-content: center; color: white; font-size: 14px;
-            flex-shrink: 0;
+            border: 1px solid #334155; background: transparent; color: #334155; 
+            cursor: pointer; width: 28px; height: 28px; border-radius: 4px; 
+            display: flex; align-items: center; justify-content: center; font-size: 14px;
+            flex-shrink: 0; transition: 0.2s;
         }
+        .btn-icon:hover { background: #f1f5f9; border-color: #1e293b; color: #1e293b; }
         .side-btn { width: 26px; height: 26px; font-size: 12px; }
 
-        .bg-gray { background: #475569; } .bg-gray:hover { background: #334155; }
-        .bg-blue { background: #2563eb; } .bg-blue:hover { background: #1d4ed8; }
-        .bg-red { background: #dc2626; } .bg-red:hover { background: #b91c1c; }
-        .bg-orange { background: #ea580c; } .bg-orange:hover { background: #c2410c; }
-        .bg-purple { background: #7c3aed; } .bg-purple:hover { background: #6d28d9; }
-        .bg-teal { background: #0f766e; } .bg-teal:hover { background: #0d9488; }
-        .bg-tasks { background: #1e40af; } .bg-tasks:hover { background: #1e3a8a; }
-        .bg-rose { background: #be123c; } .bg-rose:hover { background: #9f1239; } /* 橡皮擦顏色 */
+        /* V41: 模式切換按鈕樣式 */
+        .mode-toggle-btn {
+            font-size: 12px; border: 1px solid #94a3b8; border-radius: 4px; 
+            padding: 2px 6px; cursor: pointer; background: #f1f5f9; color: #64748b;
+        }
+        .mode-toggle-btn:hover { background: #e2e8f0; }
 
         .select-chk { width: 20px; height: 20px; margin-right: 8px; cursor: pointer; accent-color: #8b5cf6; transform: scale(1.2); display: none; }
         body.ai-selecting .select-chk { display: inline-block; }
@@ -233,6 +247,11 @@
             border: 1px solid #cbd5e1; background: #f8fafc; padding: 4px 8px; border-radius: 6px;
             font-family: inherit; font-size: 0.85rem; color: #334155; outline: none; cursor: pointer; width: 115px;
         }
+        /* V41: 備忘模式隱藏日期相關 */
+        .card.memo-mode .date-input, 
+        .card.memo-mode .today-btn,
+        .card.memo-mode .range-container { display: none !important; }
+
         .today-btn {
             background: #e0e7ff; color: #4338ca; border: none; border-radius: 4px;
             padding: 4px 8px; font-size: 0.75rem; cursor: pointer; font-weight: bold;
@@ -251,7 +270,8 @@
         }
         .content img { max-width: 100%; height: auto; border-radius: 4px; margin: 5px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: block; }
         .todo-box { display: inline-block; width: 1.2em; text-align: center; cursor: pointer; color: #4f46e5; }
-        
+        .highlight-text { background-color: #fef08a; padding: 0 2px; border-radius: 2px; }
+
         .dot {
             position: absolute; left: 50%; top: 25px; width: 14px; height: 14px; background: white;
             border: 4px solid #ccc; border-radius: 50%; transform: translateX(-50%); z-index: 20; transition: left 0.3s;
@@ -278,14 +298,16 @@
         body.presentation-mode { background-color: #ffffff; padding: 0; }
         body.presentation-mode #exit-pres-btn { display: block; }
         body.presentation-mode .toolbar, body.presentation-mode .toolbox-container, body.presentation-mode .add-main, body.presentation-mode .sticker-del, body.presentation-mode .today-btn, body.presentation-mode .note-header, body.presentation-mode .select-chk, body.presentation-mode .project-input::placeholder, body.presentation-mode #project-bar,
-        body.presentation-mode .card-top-right, body.presentation-mode .card-side-tools 
+        body.presentation-mode .card-top-right, body.presentation-mode .card-side-tools,
+        body.presentation-mode .mode-toggle-btn /* 簡報模式隱藏切換按鈕 */
         { display: none !important; }
 
         body.presentation-mode .project-footer { height: 20px; padding: 0 10px; }
         body.presentation-mode .footer-project-input { pointer-events: none; font-size: 0.8rem; }
-        
         body.presentation-mode .main-area { margin-top: 0 !important; padding-top: 20px; max-width: 1200px; }
         body.presentation-mode .card { box-shadow: none; border: 1px solid #e5e7eb; border-top: none; padding-bottom: 30px; padding-right: 20px; } 
+        /* 簡報模式下，備忘卡也要顯示虛線框區隔 */
+        body.presentation-mode .card.memo-mode { border-top: 1px dashed #cbd5e1; }
         body.presentation-mode .date-input, body.presentation-mode .label-input { background: transparent; border: none; font-size: 1.1rem; }
         body.presentation-mode .content { font-size: 1.1rem; }
         body.presentation-mode .sticky-note { box-shadow: 2px 2px 5px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; }
@@ -314,10 +336,10 @@
         }
 
         @media print { 
-            .toolbar, .toolbox-container, .card-top-right, .card-side-tools, .add-main, .note-header, .sticker-del, .today-btn, #exit-pres-btn, .select-chk, #project-bar { display: none !important; } 
+            .toolbar, .toolbox-container, .card-top-right, .card-side-tools, .add-main, .note-header, .sticker-del, .today-btn, #exit-pres-btn, .select-chk, #project-bar, .mode-toggle-btn { display: none !important; } 
             .sticky-note, .sticker { box-shadow: none; border: 1px solid transparent; } 
         }
-        body.screenshot-mode .toolbar, body.screenshot-mode .toolbox-container, body.screenshot-mode .card-top-right, body.screenshot-mode .card-side-tools, body.screenshot-mode .note-header, body.screenshot-mode .sticker-del, body.screenshot-mode .add-main, body.screenshot-mode .today-btn, body.screenshot-mode #exit-pres-btn, body.screenshot-mode .select-chk, body.screenshot-mode #project-bar { display: none !important; }
+        body.screenshot-mode .toolbar, body.screenshot-mode .toolbox-container, body.screenshot-mode .card-top-right, body.screenshot-mode .card-side-tools, body.screenshot-mode .note-header, body.screenshot-mode .sticker-del, body.screenshot-mode .add-main, body.screenshot-mode .today-btn, body.screenshot-mode #exit-pres-btn, body.screenshot-mode .select-chk, body.screenshot-mode #project-bar, body.screenshot-mode .mode-toggle-btn { display: none !important; }
 
     </style>
 </head>
@@ -326,7 +348,7 @@
     <div class="toolbar">
         <div class="tool-left">
             <div class="tool-title">
-                🧠 V38
+                🧠 V41
                 <span class="save-status" id="saveStatus"></span>
             </div>
             <div class="search-box">
@@ -343,6 +365,9 @@
             <button class="tool-btn cal-btn" onclick="exportToCSV()">📅 CSV</button>
             <button class="tool-btn highlight" onclick="sortByDate()">📅 排序</button>
             <button class="tool-btn danger-btn" onclick="clearAllImages()" title="刪除圖片">🧹 清圖</button>
+            <button class="tool-btn google-btn" onclick="openTasksWeb()" title="開啟 Google Tasks">☑ Tasks</button>
+            <button class="tool-btn keep-btn" onclick="openKeepWeb()" title="開啟 Google Keep">💡 Keep</button>
+            
             <button class="tool-btn camera-btn" onclick="takeScreenshot()">📸 截圖</button>
             <button class="tool-btn" onclick="downloadJSON()">📥 備份</button>
             <button class="tool-btn" onclick="document.getElementById('fileInput').click()">📤 讀取</button>
@@ -399,13 +424,14 @@
         }
 
         const defaultData = [
-            { id: 1, pos: 'left', mode: 'normal', color: 'blue', status: 0, project: '專案A', label: 'V38新功能', date_single: getTodayString(), date_start: '', date_end: '', content: '1. 工具按鈕全部常駐，不用滑鼠移過去也能看見。\n2. 新增「🧹 橡皮擦」按鈕 (紅色那顆)，選取文字後按它，可以清除螢光筆和粗體格式。' }
+            { id: 1, pos: 'left', mode: 'normal', color: 'blue', status: 0, isMemo: false, project: '專案A', label: 'V41變形', date_single: getTodayString(), date_start: '', date_end: '', content: '這是一張「📅 時間卡」，有實線邊框和日期。\n點擊上方的切換按鈕，可以把它變成備忘卡！' },
+            { id: 2, pos: 'right', mode: 'normal', color: 'green', status: 0, isMemo: true, project: '專案A', label: '待辦想法', date_single: '', date_start: '', date_end: '', content: '這是一張「♾️ 備忘卡」，沒有日期，虛線邊框。\n排序時它會自動沉到底部，當作待辦事項。' }
         ];
 
         function init() {
-            const savedData = localStorage.getItem('timeline_v38_data'); 
-            const savedNotes = localStorage.getItem('timeline_v38_notes');
-            const savedStickers = localStorage.getItem('timeline_v38_stickers');
+            const savedData = localStorage.getItem('timeline_v41_data'); 
+            const savedNotes = localStorage.getItem('timeline_v41_notes');
+            const savedStickers = localStorage.getItem('timeline_v41_stickers');
 
             if (savedData) renderFromData(JSON.parse(savedData));
             else renderFromData(defaultData);
@@ -427,21 +453,14 @@
 
         function addHighlight(btn) {
             document.execCommand('styleWithCSS', false, true);
-            // V38: 強制使用背景色，配合橡皮擦
             document.execCommand('hiliteColor', false, '#fef08a');
             autoSave();
         }
 
-        // V38: 橡皮擦 (清除格式)
         function clearFormatting(btn) {
-            // 讓焦點回到內容區，避免 execCommand 失效
-            const item = btn.closest('.timeline-item');
-            const content = item.querySelector('.content');
-            // content.focus(); // 有時候會導致選取區跑掉，視瀏覽器而定
-            
             document.execCommand('styleWithCSS', false, true);
-            document.execCommand('removeFormat', false, null); // 清除粗體斜體等
-            document.execCommand('hiliteColor', false, 'transparent'); // 清除背景色
+            document.execCommand('removeFormat', false, null); 
+            document.execCommand('hiliteColor', false, 'transparent'); 
             autoSave();
         }
 
@@ -457,7 +476,11 @@
             
             let text = ``;
             if(project) text += `【${project}】`;
-            text += `${title}\n📅 ${date}\n----------------\n${content}`;
+            text += `${title}\n`;
+            if(!item.querySelector('.card').classList.contains('memo-mode')) { // V41: 只有時間卡才複製日期
+                text += `📅 ${date}\n`;
+            }
+            text += `----------------\n${content}`;
             
             navigator.clipboard.writeText(text).then(() => { 
                 const originalText = btn.innerHTML;
@@ -468,6 +491,9 @@
 
         function openTasksWeb() {
             window.open('https://tasks.google.com/embed/list/~default', '_blank', 'width=400,height=600');
+        }
+        function openKeepWeb() {
+            window.open('https://keep.google.com/', '_blank', 'width=600,height=800');
         }
 
         function enterAIMode() {
@@ -507,11 +533,11 @@
 
             let prompt = `請分析以下專案資料：\n${promptIntro}\n日期：${getTodayString()}\n\n`;
             targetData.forEach((item, index) => {
-                const date = item.mode === 'range' ? `${item.date_start}~${item.date_end}` : item.date_single;
+                const dateStr = item.isMemo ? "(備忘/無日期)" : (item.mode === 'range' ? `${item.date_start}~${item.date_end}` : item.date_single);
                 const status = ['未開始', '進行中', '已完成', '延遲'][item.status] || '未知';
                 const project = item.project ? `[${item.project}] ` : ''; 
                 const cleanContent = item.content.replace(/<[^>]+>/g, '').replace(/\n+/g, ' ');
-                prompt += `${index+1}. ${project}[${status}] ${date} - ${item.label}: ${cleanContent}\n`;
+                prompt += `${index+1}. ${project}[${status}] ${dateStr} - ${item.label}: ${cleanContent}\n`;
             });
             prompt += `\n請針對以上內容進行專案進度摘要、風險評估或下一步建議。`;
 
@@ -616,12 +642,31 @@
 
         function filterNodes(val) { applyFilters(); }
 
+        // V41: 卡片型態切換邏輯
+        function toggleCardMode(btn) {
+            const item = btn.closest('.timeline-item');
+            const card = item.querySelector('.card');
+            const isMemo = card.classList.toggle('memo-mode');
+            
+            if(isMemo) {
+                btn.innerText = '♾️'; // 顯示為備忘模式
+            } else {
+                btn.innerText = '📅'; // 顯示為時間模式
+            }
+            autoSave();
+        }
+
         function createNodeElement(item) {
             const div = document.createElement('div');
             div.className = `timeline-item ${item.pos==='left'?'force-left':item.pos==='right'?'force-right':''} ${item.mode==='range'?'range-mode':''}`;
+            
+            // V41: 初始化 memo 狀態
+            const isMemoClass = item.isMemo ? 'memo-mode' : '';
+            const modeBtnText = item.isMemo ? '♾️' : '📅';
+
             div.innerHTML = `
                 <div class="dot"></div>
-                <div class="card" data-color="${item.color}">
+                <div class="card ${isMemoClass}" data-color="${item.color}">
                     
                     <div class="card-side-tools">
                         <button class="btn-icon side-btn bg-gray" onclick="changeColor(this)" title="換色">🎨</button>
@@ -643,7 +688,6 @@
                             <button class="btn-icon bg-teal" onclick="addHighlight(this)" title="文字高亮">🖍️</button>
                             <button class="btn-icon bg-rose" onclick="clearFormatting(this)" title="清除格式 (橡皮擦)">🧹</button>
                             <button class="btn-icon bg-orange" onclick="copyForTasks(this)" title="複製到Tasks">📋</button>
-                            <button class="btn-icon bg-tasks" onclick="openTasksWeb()" title="↗️ 打開 Google Tasks">↗️</button>
                             <button class="btn-icon bg-orange" onclick="addToGoogleCal(this)" title="加到日曆">📅</button>
                             <button class="btn-icon bg-red" onclick="deleteNode(this)" title="刪除">×</button>
                         </div>
@@ -651,6 +695,8 @@
 
                     <div class="card-body">
                         <div class="header-row">
+                            <button class="mode-toggle-btn" onclick="toggleCardMode(this)" title="切換 時間/備忘 模式">${modeBtnText}</button>
+
                             <input type="date" class="date-input single-date" value="${item.date_single}" onchange="autoSave()" title="日期">
                             <button class="today-btn single-date" onclick="setToday(this)" title="設定為今天">今</button>
                             <div class="range-container">
@@ -800,7 +846,10 @@
                 data = data.filter(item => activeProjectFilters.has(item.project));
             }
 
-            if (data.length === 0) { chart.innerHTML = '<div style="padding:20px; text-align:center;">無資料 (或已被過濾)</div>'; return; }
+            // V41: 甘特圖自動過濾掉 Memo 卡片
+            data = data.filter(item => !item.isMemo);
+
+            if (data.length === 0) { chart.innerHTML = '<div style="padding:20px; text-align:center;">無資料 (備忘錄不顯示於此)</div>'; return; }
             let validData = data.map(item => {
                 let start, end;
                 if (item.mode === 'range' && item.date_start) {
@@ -858,6 +907,23 @@
             chart.innerHTML = `<div class="gantt-axis-labels" style="padding-left:150px; position:relative; height:20px; margin-bottom:10px;"><div style="position:relative; width:100%; height:100%;">${marksHtml}</div></div>${rowsHtml}`;
         }
 
+        function handleProjectClick(e) {
+            const input = e.target;
+            if (input.value.trim() !== '' && document.activeElement !== input) {
+                filterByProject(input.value);
+            }
+        }
+
+        function filterByProject(projectName) {
+            if (activeProjectFilters.has(projectName)) {
+                activeProjectFilters.delete(projectName);
+            } else {
+                activeProjectFilters.add(projectName);
+            }
+            refreshProjectBar();
+            applyFilters();
+        }
+
         function handlePaste(e) {
             const items = (e.clipboardData || e.originalEvent.clipboardData).items;
             let blob = null;
@@ -896,14 +962,14 @@
                 }
             });
             const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([csvContent], { type: 'text/csv;charset=utf-8;' }));
-            link.download = `timeline_v38_${getTodayString()}.csv`; link.click();
+            link.download = `timeline_v41_${getTodayString()}.csv`; link.click();
         }
 
         function takeScreenshot() {
             if(currentView === 'gantt') { alert('建議切換回列表模式再截圖！'); }
             document.body.classList.add('screenshot-mode'); window.scrollTo(0, 0); saveStatus.innerText = '處理中...';
             html2canvas(document.body, { backgroundColor: '#f3f4f6', scale: 2, useCORS: true }).then(canvas => {
-                const link = document.createElement('a'); link.download = `report_v38_${getTodayString()}.png`; link.href = canvas.toDataURL(); link.click();
+                const link = document.createElement('a'); link.download = `report_v41_${getTodayString()}.png`; link.href = canvas.toDataURL(); link.click();
                 document.body.classList.remove('screenshot-mode'); saveStatus.innerText = '';
             }).catch(err => { document.body.classList.remove('screenshot-mode'); alert('截圖錯誤'); });
         }
@@ -940,11 +1006,25 @@
         function renderNotes(n){document.querySelectorAll('.sticky-note').forEach(e=>e.remove());n.forEach(x=>createStickyElement(x));}
         function renderStickers(s){document.querySelectorAll('.sticker').forEach(e=>e.remove());s.forEach(x=>createStickerElement(x));}
         
+        // V41: 排序邏輯優化 (備忘卡排在最後)
         window.sortByDate = function() {
             const items = Array.from(container.children);
-            items.sort((a,b)=>{ const gd=(el)=>new Date(el.classList.contains('range-mode')?el.querySelector('.date-start').value:el.querySelector('.single-date').value).getTime()||9e13; return gd(a)-gd(b); });
-            items.forEach(i=>container.appendChild(i)); autoSave(); alert('已按日期順序排列！');
+            items.sort((a,b)=>{ 
+                const cardA = a.querySelector('.card');
+                const cardB = b.querySelector('.card');
+                const isMemoA = cardA.classList.contains('memo-mode');
+                const isMemoB = cardB.classList.contains('memo-mode');
+
+                // 備忘卡沉底
+                if (isMemoA && !isMemoB) return 1;
+                if (!isMemoA && isMemoB) return -1;
+
+                const gd=(el)=>new Date(el.classList.contains('range-mode')?el.querySelector('.date-start').value:el.querySelector('.single-date').value).getTime()||9e13; 
+                return gd(a)-gd(b); 
+            });
+            items.forEach(i=>container.appendChild(i)); autoSave(); alert('已按日期順序排列 (備忘卡在底部)！');
         }
+
         window.cycleStatus=function(el){const c=['status-0','status-1','status-2','status-3']; let cur=c.find(x=>el.classList.contains(x))||'status-0'; el.className=`status-dot ${c[(c.indexOf(cur)+1)%4]}`; autoSave();}
         window.changeColor=function(btn){const card=btn.closest('.card'); const c=['blue','green','yellow','red']; card.setAttribute('data-color', c[(c.indexOf(card.getAttribute('data-color'))+1)%4]); autoSave();}
         window.togglePos=function(btn,dir){const i=btn.closest('.timeline-item'); if(dir==='left'){i.classList.add('force-left');i.classList.remove('force-right');}else{i.classList.add('force-right');i.classList.remove('force-left');} autoSave();}
@@ -971,22 +1051,32 @@
                 const card=el.querySelector('.card'); const statusEl=el.querySelector('.status-dot');
                 let status=0; ['status-1','status-2','status-3'].forEach((c,i)=>{if(statusEl.classList.contains(c))status=i+1;});
                 let pos='auto'; if(el.classList.contains('force-left'))pos='left'; if(el.classList.contains('force-right'))pos='right';
-                // V36: 使用 footer-project-input
-                items.push({pos, mode:el.classList.contains('range-mode')?'range':'normal', color:card.getAttribute('data-color'), status, 
+                
+                items.push({
+                    pos, 
+                    mode:el.classList.contains('range-mode')?'range':'normal', 
+                    isMemo: card.classList.contains('memo-mode'), // V41
+                    color:card.getAttribute('data-color'), 
+                    status, 
                     project: el.querySelector('.footer-project-input').value,
-                    label:el.querySelector('.label-input').value, date_single:el.querySelector('.single-date').value, date_start:el.querySelector('.date-start').value, date_end:el.querySelector('.date-end').value, content:el.querySelector('.content').innerHTML});
+                    label:el.querySelector('.label-input').value, 
+                    date_single:el.querySelector('.single-date').value, 
+                    date_start:el.querySelector('.date-start').value, 
+                    date_end:el.querySelector('.date-end').value, 
+                    content:el.querySelector('.content').innerHTML
+                });
             }); return items;
         }
         function gatherNotes(){const n=[]; document.querySelectorAll('.sticky-note').forEach(el=>{n.push({id:el.id.replace('note-',''),x:el.offsetLeft,y:el.offsetTop,content:el.querySelector('.note-content').value});}); return n;}
         function gatherStickers(){const l=[]; document.querySelectorAll('.sticker').forEach(el=>{l.push({id:el.id.replace('sticker-',''),type:el.dataset.type,x:el.offsetLeft,y:el.offsetTop});}); return l;}
         
         function autoSave() {
-            localStorage.setItem('timeline_v38_data', JSON.stringify(gatherData()));
-            localStorage.setItem('timeline_v38_notes', JSON.stringify(gatherNotes()));
-            localStorage.setItem('timeline_v38_stickers', JSON.stringify(gatherStickers()));
+            localStorage.setItem('timeline_v41_data', JSON.stringify(gatherData()));
+            localStorage.setItem('timeline_v41_notes', JSON.stringify(gatherNotes()));
+            localStorage.setItem('timeline_v41_stickers', JSON.stringify(gatherStickers()));
             saveStatus.innerText = '已儲存'; setTimeout(() => saveStatus.innerText = '', 2000);
         }
-        window.downloadJSON=function(){const d={timeline:gatherData(),notes:gatherNotes(),stickers:gatherStickers(),version:'v38'}; const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([JSON.stringify(d,null,2)],{type:'application/json;charset=utf-8'})); a.download=`timeline_v38_${getTodayString()}.json`; a.click();}
+        window.downloadJSON=function(){const d={timeline:gatherData(),notes:gatherNotes(),stickers:gatherStickers(),version:'v41'}; const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([JSON.stringify(d,null,2)],{type:'application/json;charset=utf-8'})); a.download=`timeline_v41_${getTodayString()}.json`; a.click();}
         window.loadJSON=function(inp){const f=inp.files[0]; if(!f)return; const r=new FileReader(); r.onload=function(e){try{const j=JSON.parse(e.target.result); if(j.timeline){renderFromData(j.timeline); if(j.notes)renderNotes(j.notes); if(j.stickers)renderStickers(j.stickers); autoSave(); alert('讀取成功');}}catch(x){alert('格式錯誤');}}; r.readAsText(f);}
 
         init();
