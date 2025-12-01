@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>報告神器 V41：卡片變形版</title>
+    <title>報告神器 V42：完美堆疊版</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         :root {
@@ -156,19 +156,20 @@
         .timeline-item.force-left .card { margin-right: 50% !important; margin-left: 0 !important; border-right: 4px solid transparent; border-left: none; }
         .timeline-item.force-right .card { margin-left: 50% !important; margin-right: 0 !important; border-left: 4px solid transparent; border-right: none; }
 
+        /* V42: 卡片改用 Flex 佈局，徹底解決重疊問題 */
         .card {
+            display: flex; flex-direction: column; /* 垂直堆疊 */
             background: white; border-radius: 12px;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
             position: relative; z-index: 10; 
-            padding: 15px 50px 40px 20px; 
+            padding: 0; /* 移除整體 padding，改由內部元素控制 */
             overflow: hidden;
-            border-top: 5px solid var(--primary); /* 預設實線 */
+            border-top: 5px solid var(--primary);
         }
         
-        /* V41: 備忘模式 (Memo Mode) 樣式 */
         .card.memo-mode {
-            border-top-style: dashed; /* 虛線邊框 */
-            background-color: #fcfcfc; /* 稍微淡一點的背景 */
+            border-top-style: dashed; 
+            background-color: #fcfcfc;
         }
         
         .card[data-color="blue"] { border-top-color: #4f46e5; }
@@ -176,24 +177,42 @@
         .card[data-color="red"] { border-top-color: #ef4444; background: #fef2f2; }
         .card[data-color="yellow"] { border-top-color: #f59e0b; background: #fffbeb; }
         
-        /* 備忘模式下的背景色微調 */
         .card.memo-mode[data-color="green"] { background: #f7fee7; }
         .card.memo-mode[data-color="red"] { background: #fff1f2; }
         .card.memo-mode[data-color="yellow"] { background: #fffbeb; }
 
-        /* 底部專案標籤 */
+        /* V42: 頂部區域 Padding */
+        .card-top-area {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 15px 50px 5px 20px; /* 上, 右(留給側邊欄), 下, 左 */
+            border-bottom: 1px dashed #e2e8f0;
+            flex-shrink: 0; /* 防止被壓縮 */
+        }
+        .card-top-left { display: flex; align-items: center; gap: 8px; flex: 1; flex-wrap: wrap; }
+        .card-top-right { display: flex; gap: 3px; margin-left: 10px; flex-shrink: 0; flex-wrap: nowrap; opacity: 1; }
+
+        /* V42: 內容區域 Padding */
+        .card-body {
+            padding: 0 50px 15px 20px; /* 內容區也有右側留白 */
+            flex-grow: 1; /* 自動撐開高度 */
+        }
+
+        /* V42: 底部專案標籤 - 不再使用 absolute，改為 flex item */
         .project-footer {
-            position: absolute; bottom: 0; left: 0; right: 0;
-            height: 32px; display: flex; align-items: center; justify-content: flex-end;
+            position: static; /* 取消絕對定位 */
+            width: 100%;
+            height: 32px; 
+            display: flex; align-items: center; justify-content: flex-end;
             padding: 0 15px;
             background: #cbd5e1;
             transition: background-color 0.3s;
+            margin-top: auto; /* 確保推到最底部 */
+            box-sizing: border-box; /* 確保 padding 不撐大寬度 */
         }
         .card[data-color="blue"] .project-footer { background: #4f46e5; }
         .card[data-color="green"] .project-footer { background: #10b981; }
         .card[data-color="red"] .project-footer { background: #ef4444; }
         .card[data-color="yellow"] .project-footer { background: #f59e0b; }
-        /* 備忘模式下 footer 變淡 */
         .card.memo-mode .project-footer { opacity: 0.7; }
 
         .footer-project-input {
@@ -204,20 +223,17 @@
         }
         .footer-project-input::placeholder { color: rgba(255,255,255,0.7); }
 
+        /* 側邊垂直工具列 - 保持 absolute，但參考點是 card */
         .card-side-tools {
             position: absolute; right: 8px; top: 50px; bottom: 40px; 
             display: flex; flex-direction: column; gap: 6px;
             align-items: center; justify-content: flex-start;
-            width: 30px; padding-left: 5px; border-left: 1px dashed #f1f5f9;
+            width: 30px; 
+            padding-left: 5px; 
+            border-left: 1px dashed #f1f5f9;
             opacity: 1; 
+            z-index: 20; /* 確保在上層 */
         }
-
-        .card-top-area {
-            display: flex; justify-content: space-between; align-items: center;
-            margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px dashed #e2e8f0;
-        }
-        .card-top-left { display: flex; align-items: center; gap: 8px; flex: 1; flex-wrap: wrap; }
-        .card-top-right { display: flex; gap: 3px; margin-left: 10px; flex-shrink: 0; flex-wrap: nowrap; opacity: 1; }
 
         .status-dot {
             width: 14px; height: 14px; border-radius: 50%; cursor: pointer; border: 2px solid rgba(0,0,0,0.1); flex-shrink: 0;
@@ -233,7 +249,6 @@
         .btn-icon:hover { background: #f1f5f9; border-color: #1e293b; color: #1e293b; }
         .side-btn { width: 26px; height: 26px; font-size: 12px; }
 
-        /* V41: 模式切換按鈕樣式 */
         .mode-toggle-btn {
             font-size: 12px; border: 1px solid #94a3b8; border-radius: 4px; 
             padding: 2px 6px; cursor: pointer; background: #f1f5f9; color: #64748b;
@@ -247,10 +262,7 @@
             border: 1px solid #cbd5e1; background: #f8fafc; padding: 4px 8px; border-radius: 6px;
             font-family: inherit; font-size: 0.85rem; color: #334155; outline: none; cursor: pointer; width: 115px;
         }
-        /* V41: 備忘模式隱藏日期相關 */
-        .card.memo-mode .date-input, 
-        .card.memo-mode .today-btn,
-        .card.memo-mode .range-container { display: none !important; }
+        .card.memo-mode .date-input, .card.memo-mode .today-btn, .card.memo-mode .range-container { display: none !important; }
 
         .today-btn {
             background: #e0e7ff; color: #4338ca; border: none; border-radius: 4px;
@@ -305,7 +317,7 @@
         body.presentation-mode .project-footer { height: 20px; padding: 0 10px; }
         body.presentation-mode .footer-project-input { pointer-events: none; font-size: 0.8rem; }
         body.presentation-mode .main-area { margin-top: 0 !important; padding-top: 20px; max-width: 1200px; }
-        body.presentation-mode .card { box-shadow: none; border: 1px solid #e5e7eb; border-top: none; padding-bottom: 30px; padding-right: 20px; } 
+        body.presentation-mode .card { box-shadow: none; border: 1px solid #e5e7eb; border-top: none; padding-bottom: 0; padding-right: 20px; } 
         /* 簡報模式下，備忘卡也要顯示虛線框區隔 */
         body.presentation-mode .card.memo-mode { border-top: 1px dashed #cbd5e1; }
         body.presentation-mode .date-input, body.presentation-mode .label-input { background: transparent; border: none; font-size: 1.1rem; }
@@ -348,7 +360,7 @@
     <div class="toolbar">
         <div class="tool-left">
             <div class="tool-title">
-                🧠 V41
+                🧠 V42
                 <span class="save-status" id="saveStatus"></span>
             </div>
             <div class="search-box">
@@ -424,14 +436,13 @@
         }
 
         const defaultData = [
-            { id: 1, pos: 'left', mode: 'normal', color: 'blue', status: 0, isMemo: false, project: '專案A', label: 'V41變形', date_single: getTodayString(), date_start: '', date_end: '', content: '這是一張「📅 時間卡」，有實線邊框和日期。\n點擊上方的切換按鈕，可以把它變成備忘卡！' },
-            { id: 2, pos: 'right', mode: 'normal', color: 'green', status: 0, isMemo: true, project: '專案A', label: '待辦想法', date_single: '', date_start: '', date_end: '', content: '這是一張「♾️ 備忘卡」，沒有日期，虛線邊框。\n排序時它會自動沉到底部，當作待辦事項。' }
+            { id: 1, pos: 'left', mode: 'normal', color: 'blue', status: 0, isMemo: false, project: '專案A', label: 'V42完美堆疊', date_single: getTodayString(), date_start: '', date_end: '', content: '1. 卡片內部改用 Flexbox 佈局，專案標籤現在是穩穩地「接」在內容下方，絕對不會重疊！\n2. 即使內容再長，標籤也會自動被推到最底端。' }
         ];
 
         function init() {
-            const savedData = localStorage.getItem('timeline_v41_data'); 
-            const savedNotes = localStorage.getItem('timeline_v41_notes');
-            const savedStickers = localStorage.getItem('timeline_v41_stickers');
+            const savedData = localStorage.getItem('timeline_v42_data'); 
+            const savedNotes = localStorage.getItem('timeline_v42_notes');
+            const savedStickers = localStorage.getItem('timeline_v42_stickers');
 
             if (savedData) renderFromData(JSON.parse(savedData));
             else renderFromData(defaultData);
@@ -477,7 +488,7 @@
             let text = ``;
             if(project) text += `【${project}】`;
             text += `${title}\n`;
-            if(!item.querySelector('.card').classList.contains('memo-mode')) { // V41: 只有時間卡才複製日期
+            if(!item.querySelector('.card').classList.contains('memo-mode')) { 
                 text += `📅 ${date}\n`;
             }
             text += `----------------\n${content}`;
@@ -649,9 +660,9 @@
             const isMemo = card.classList.toggle('memo-mode');
             
             if(isMemo) {
-                btn.innerText = '♾️'; // 顯示為備忘模式
+                btn.innerText = '♾️'; 
             } else {
-                btn.innerText = '📅'; // 顯示為時間模式
+                btn.innerText = '📅'; 
             }
             autoSave();
         }
@@ -907,23 +918,6 @@
             chart.innerHTML = `<div class="gantt-axis-labels" style="padding-left:150px; position:relative; height:20px; margin-bottom:10px;"><div style="position:relative; width:100%; height:100%;">${marksHtml}</div></div>${rowsHtml}`;
         }
 
-        function handleProjectClick(e) {
-            const input = e.target;
-            if (input.value.trim() !== '' && document.activeElement !== input) {
-                filterByProject(input.value);
-            }
-        }
-
-        function filterByProject(projectName) {
-            if (activeProjectFilters.has(projectName)) {
-                activeProjectFilters.delete(projectName);
-            } else {
-                activeProjectFilters.add(projectName);
-            }
-            refreshProjectBar();
-            applyFilters();
-        }
-
         function handlePaste(e) {
             const items = (e.clipboardData || e.originalEvent.clipboardData).items;
             let blob = null;
@@ -962,14 +956,14 @@
                 }
             });
             const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([csvContent], { type: 'text/csv;charset=utf-8;' }));
-            link.download = `timeline_v41_${getTodayString()}.csv`; link.click();
+            link.download = `timeline_v42_${getTodayString()}.csv`; link.click();
         }
 
         function takeScreenshot() {
             if(currentView === 'gantt') { alert('建議切換回列表模式再截圖！'); }
             document.body.classList.add('screenshot-mode'); window.scrollTo(0, 0); saveStatus.innerText = '處理中...';
             html2canvas(document.body, { backgroundColor: '#f3f4f6', scale: 2, useCORS: true }).then(canvas => {
-                const link = document.createElement('a'); link.download = `report_v41_${getTodayString()}.png`; link.href = canvas.toDataURL(); link.click();
+                const link = document.createElement('a'); link.download = `report_v42_${getTodayString()}.png`; link.href = canvas.toDataURL(); link.click();
                 document.body.classList.remove('screenshot-mode'); saveStatus.innerText = '';
             }).catch(err => { document.body.classList.remove('screenshot-mode'); alert('截圖錯誤'); });
         }
@@ -1006,7 +1000,6 @@
         function renderNotes(n){document.querySelectorAll('.sticky-note').forEach(e=>e.remove());n.forEach(x=>createStickyElement(x));}
         function renderStickers(s){document.querySelectorAll('.sticker').forEach(e=>e.remove());s.forEach(x=>createStickerElement(x));}
         
-        // V41: 排序邏輯優化 (備忘卡排在最後)
         window.sortByDate = function() {
             const items = Array.from(container.children);
             items.sort((a,b)=>{ 
@@ -1015,7 +1008,6 @@
                 const isMemoA = cardA.classList.contains('memo-mode');
                 const isMemoB = cardB.classList.contains('memo-mode');
 
-                // 備忘卡沉底
                 if (isMemoA && !isMemoB) return 1;
                 if (!isMemoA && isMemoB) return -1;
 
@@ -1055,7 +1047,7 @@
                 items.push({
                     pos, 
                     mode:el.classList.contains('range-mode')?'range':'normal', 
-                    isMemo: card.classList.contains('memo-mode'), // V41
+                    isMemo: card.classList.contains('memo-mode'), 
                     color:card.getAttribute('data-color'), 
                     status, 
                     project: el.querySelector('.footer-project-input').value,
@@ -1071,12 +1063,12 @@
         function gatherStickers(){const l=[]; document.querySelectorAll('.sticker').forEach(el=>{l.push({id:el.id.replace('sticker-',''),type:el.dataset.type,x:el.offsetLeft,y:el.offsetTop});}); return l;}
         
         function autoSave() {
-            localStorage.setItem('timeline_v41_data', JSON.stringify(gatherData()));
-            localStorage.setItem('timeline_v41_notes', JSON.stringify(gatherNotes()));
-            localStorage.setItem('timeline_v41_stickers', JSON.stringify(gatherStickers()));
+            localStorage.setItem('timeline_v42_data', JSON.stringify(gatherData()));
+            localStorage.setItem('timeline_v42_notes', JSON.stringify(gatherNotes()));
+            localStorage.setItem('timeline_v42_stickers', JSON.stringify(gatherStickers()));
             saveStatus.innerText = '已儲存'; setTimeout(() => saveStatus.innerText = '', 2000);
         }
-        window.downloadJSON=function(){const d={timeline:gatherData(),notes:gatherNotes(),stickers:gatherStickers(),version:'v41'}; const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([JSON.stringify(d,null,2)],{type:'application/json;charset=utf-8'})); a.download=`timeline_v41_${getTodayString()}.json`; a.click();}
+        window.downloadJSON=function(){const d={timeline:gatherData(),notes:gatherNotes(),stickers:gatherStickers(),version:'v42'}; const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([JSON.stringify(d,null,2)],{type:'application/json;charset=utf-8'})); a.download=`timeline_v42_${getTodayString()}.json`; a.click();}
         window.loadJSON=function(inp){const f=inp.files[0]; if(!f)return; const r=new FileReader(); r.onload=function(e){try{const j=JSON.parse(e.target.result); if(j.timeline){renderFromData(j.timeline); if(j.notes)renderNotes(j.notes); if(j.stickers)renderStickers(j.stickers); autoSave(); alert('讀取成功');}}catch(x){alert('格式錯誤');}}; r.readAsText(f);}
 
         init();
