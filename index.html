@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>報告神器 V30：AI模式優化版</title>
+    <title>報告神器 V32：佈局修復與複製增強</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         :root {
@@ -46,26 +46,13 @@
         .search-input:focus { width: 180px; border-color: #3b82f6; }
         .search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); opacity: 0.6; font-size: 12px; }
         
-        .filter-badge {
-            display: none; background: #fbbf24; color: #78350f; padding: 4px 10px; border-radius: 20px; 
-            font-size: 0.8rem; font-weight: bold; cursor: pointer; animation: fadeIn 0.3s;
-        }
-        @keyframes fadeIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
-
-        .tool-btn-group { 
-            display: flex; gap: 10px; 
-            overflow-x: auto; 
-            -webkit-overflow-scrolling: touch;
-            padding-right: 10px;
-            align-items: center; height: 100%;
-        }
+        .tool-btn-group { display: flex; gap: 10px; overflow-x: auto; padding-right: 10px; align-items: center; height: 100%; }
         .tool-btn-group::-webkit-scrollbar { display: none; }
         
         .tool-btn {
             background: #334155; border: 1px solid #475569; color: white;
             padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 0.9rem;
-            display: flex; align-items: center; gap: 6px; transition: 0.2s;
-            white-space: nowrap; flex-shrink: 0;
+            display: flex; align-items: center; gap: 6px; transition: 0.2s; white-space: nowrap; flex-shrink: 0;
         }
         .tool-btn:hover { background: #475569; }
         .tool-btn.highlight { background: #7c3aed; border-color: #6d28d9; }
@@ -77,7 +64,7 @@
         .tool-btn.danger-btn { background: #b91c1c; border-color: #991b1b; }
         .tool-btn.filter-btn { background: #d97706; border-color: #b45309; }
 
-        /* V30: AI 模式工具列 (預設隱藏) */
+        /* AI 模式工具列 */
         #ai-toolbar { display: none; }
         body.ai-selecting #normal-toolbar { display: none; }
         body.ai-selecting #ai-toolbar { display: flex; }
@@ -87,8 +74,9 @@
             position: fixed; top: 70px; left: 0; right: 0;
             background: #f8fafc; border-bottom: 1px solid #e2e8f0;
             padding: 10px 20px; z-index: 1950;
-            display: none; flex-wrap: wrap; gap: 10px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-            align-items: center;
+            display: none; flex-wrap: wrap; gap: 10px; 
+            max-height: 120px; overflow-y: auto;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); align-items: center;
         }
         #project-bar.show { display: flex; }
         
@@ -100,11 +88,15 @@
         .proj-badge:hover { background: #f1f5f9; border-color: #94a3b8; }
         .proj-badge.active { background: #dbeafe; border-color: #3b82f6; color: #2563eb; font-weight: bold; box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2); }
         .proj-hint { font-size: 0.8rem; color: #94a3b8; margin-right: 10px; }
+        
+        .rename-btn {
+            font-size: 0.8rem; padding: 4px 10px; background: #8b5cf6; color: white;
+            border-radius: 4px; cursor: pointer; border: none; display: flex; align-items: center; gap: 4px;
+        }
 
-        /* --- 左側圖形工具箱 (V30: 位置修正) --- */
+        /* --- 左側圖形工具箱 --- */
         .toolbox-container {
-            position: fixed; top: 160px; /* 從 130 改為 160，避開專案列 */
-            left: 20px; z-index: 1800; /* 降低 z-index 避免蓋過上方 */
+            position: fixed; top: 220px; left: 20px; z-index: 1800;
             transition: transform 0.3s ease;
         }
         .toolbox-container.closed { transform: translateX(-130%); }
@@ -141,7 +133,7 @@
             min-height: calc(100vh - 100px); background: var(--bg);
             transition: margin-top 0.3s;
         }
-        body.has-proj-bar .main-area { margin-top: 140px; } /* 配合專案列展開 */
+        body.has-proj-bar .main-area { margin-top: 180px; }
 
         /* --- Timeline --- */
         .timeline { position: relative; padding: 20px 0; }
@@ -164,7 +156,7 @@
         .timeline-item.force-right .card { margin-left: 50% !important; margin-right: 0 !important; border-left: 4px solid transparent; border-right: none; }
 
         .card {
-            background: white; padding: 20px; border-radius: 12px;
+            background: white; padding: 15px 20px; border-radius: 12px;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
             position: relative; z-index: 10; border-top: 5px solid var(--primary);
         }
@@ -173,34 +165,53 @@
         .card[data-color="red"] { border-top-color: #ef4444; background: #fef2f2; }
         .card[data-color="yellow"] { border-top-color: #f59e0b; background: #fffbeb; }
 
+        /* V32: 卡片頂部佈局重構 - 解決重疊問題 */
+        .card-top-area {
+            display: flex; justify-content: space-between; align-items: flex-start;
+            margin-bottom: 10px;
+            padding-bottom: 5px;
+            border-bottom: 1px dashed #e2e8f0;
+        }
+        
+        .card-top-left {
+            display: flex; align-items: center; gap: 8px; flex: 1; flex-wrap: wrap;
+        }
+        
+        .card-top-right {
+            display: flex; gap: 3px; margin-left: 10px; flex-shrink: 0;
+            flex-wrap: wrap; justify-content: flex-end; width: auto; max-width: 180px;
+        }
+
         .status-dot {
-            position: absolute; top: 15px; left: 15px; width: 14px; height: 14px;
-            border-radius: 50%; cursor: pointer; border: 2px solid rgba(0,0,0,0.1);
+            width: 14px; height: 14px; border-radius: 50%; cursor: pointer; border: 2px solid rgba(0,0,0,0.1);
+            flex-shrink: 0;
         }
         .status-0 { background: #9ca3af; } .status-1 { background: #f59e0b; } .status-2 { background: #10b981; } .status-3 { background: #ef4444; }
 
-        .card-body { margin-top: 5px; }
-        
-        .project-row { display: flex; justify-content: flex-end; margin-bottom: 5px; }
-        
-        /* V30: 專案輸入框樣式優化，看起來更像可以編輯 */
         .project-input {
             border: 1px solid #cbd5e1; background: #fff; color: #475569;
-            padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; 
-            width: 100px; text-align: right; outline: none; transition: width 0.3s;
-            box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
+            padding: 3px 8px; border-radius: 6px; font-size: 0.8rem; 
+            width: 100px; outline: none; transition: width 0.3s;
         }
-        .project-input:focus { width: 150px; border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1); }
+        .project-input:focus { width: 140px; border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1); }
         .project-input::placeholder { color: #94a3b8; }
-        
+
+        .btn-icon { 
+            border: none; cursor: pointer; width: 24px; height: 24px; border-radius: 4px; 
+            display: flex; align-items: center; justify-content: center; color: white; font-size: 12px;
+            margin-bottom: 2px;
+        }
+        .bg-gray { background: #64748b; } .bg-blue { background: #3b82f6; } .bg-red { background: #ef4444; } .bg-orange { background: #f97316; }
+        .bg-purple { background: #8b5cf6; } 
+        .bg-teal { background: #0d9488; } 
+
+        .card-body { margin-top: 5px; }
         .header-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
 
-        /* V30: AI 選取框，預設隱藏 */
         .select-chk {
             width: 20px; height: 20px; margin-right: 8px; cursor: pointer; accent-color: #8b5cf6;
-            transform: scale(1.2); display: none; /* 預設不顯示 */
+            transform: scale(1.2); display: none; 
         }
-        /* AI 模式下顯示勾選框 */
         body.ai-selecting .select-chk { display: inline-block; }
 
         .date-input {
@@ -224,21 +235,14 @@
             white-space: pre-wrap; 
         }
         .content img { max-width: 100%; height: auto; border-radius: 4px; margin: 5px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: block; }
+        
         .todo-box { display: inline-block; width: 1.2em; text-align: center; cursor: pointer; color: #4f46e5; }
+        .highlight-text { background-color: #fef08a; padding: 0 2px; border-radius: 2px; }
 
         .dot {
             position: absolute; left: 50%; top: 25px; width: 14px; height: 14px; background: white;
             border: 4px solid #ccc; border-radius: 50%; transform: translateX(-50%); z-index: 20; transition: left 0.3s;
         }
-
-        .controls {
-            position: absolute; top: 5px; right: 5px; display: flex; gap: 3px;
-            opacity: 0; transition: opacity 0.2s; background: rgba(255,255,255,0.95); padding: 3px; border-radius: 4px;
-        }
-        .card:hover .controls { opacity: 1; }
-        .btn-icon { border: none; cursor: pointer; width: 26px; height: 26px; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: white; font-size: 13px; }
-        .bg-gray { background: #64748b; } .bg-blue { background: #3b82f6; } .bg-red { background: #ef4444; } .bg-orange { background: #f97316; }
-        .bg-purple { background: #8b5cf6; }
 
         /* --- Gantt View --- */
         #gantt-view { display: none; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); overflow-x: auto; margin-bottom: 30px; border: 1px solid #e2e8f0; }
@@ -271,24 +275,15 @@
 
         body.presentation-mode { background-color: #ffffff; padding: 0; }
         body.presentation-mode #exit-pres-btn { display: block; }
-        body.presentation-mode .toolbar,
-        body.presentation-mode .toolbox-container,
-        body.presentation-mode .controls,
-        body.presentation-mode .add-main,
-        body.presentation-mode .sticker-del,
-        body.presentation-mode .today-btn,
-        body.presentation-mode .note-header,
-        body.presentation-mode .select-chk,
-        body.presentation-mode .project-input::placeholder,
-        body.presentation-mode #project-bar
+        body.presentation-mode .toolbar, body.presentation-mode .toolbox-container, body.presentation-mode .add-main, body.presentation-mode .sticker-del, body.presentation-mode .today-btn, body.presentation-mode .note-header, body.presentation-mode .select-chk, body.presentation-mode .project-input::placeholder, body.presentation-mode #project-bar,
+        body.presentation-mode .card-top-right /* 簡報模式隱藏工具列 */
         { display: none !important; }
 
-        body.presentation-mode .project-input { border: none; background: transparent; color: #4f46e5; font-weight: bold; font-size: 0.9rem; text-align: right; pointer-events: none; }
-        
+        body.presentation-mode .project-input { border: none; background: transparent; color: #4f46e5; font-weight: bold; font-size: 0.9rem; text-align: left; pointer-events: none; padding: 0; }
+        body.presentation-mode .card-top-area { border-bottom: none; margin-bottom: 0; }
         body.presentation-mode .main-area { margin-top: 0 !important; padding-top: 20px; max-width: 1200px; }
         body.presentation-mode .card { box-shadow: none; border: 1px solid #e5e7eb; border-top-width: 5px; }
-        body.presentation-mode .date-input, 
-        body.presentation-mode .label-input { background: transparent; border: none; font-size: 1.1rem; }
+        body.presentation-mode .date-input, body.presentation-mode .label-input { background: transparent; border: none; font-size: 1.1rem; }
         body.presentation-mode .content { font-size: 1.1rem; }
         body.presentation-mode .sticky-note { box-shadow: 2px 2px 5px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; }
 
@@ -309,20 +304,17 @@
             .timeline-item .card, .timeline-item:nth-child(odd) .card, .timeline-item:nth-child(even) .card, .timeline-item.force-left .card, .timeline-item.force-right .card {
                 width: calc(100% - 50px) !important; margin: 0 0 20px 0 !important; border-left: none !important; border-right: none !important;
             }
-            .controls { opacity: 1; background: rgba(243, 244, 246, 0.8); position: relative; top: 0; right: 0; justify-content: flex-end; margin-bottom: 10px; }
-            .controls button[title*="靠"], .controls button[title*="移"] { display: none; }
             .header-row { align-items: flex-start; }
             .label-input { width: 100%; margin-top: 5px; }
-            .btn-icon { width: 32px; height: 32px; font-size: 16px; }
             #gantt-view { padding: 10px; }
             .gantt-label-col { width: 100px; font-size: 0.75rem; }
         }
 
         @media print { 
-            .toolbar, .toolbox-container, .controls, .add-main, .note-header, .sticker-del, .today-btn, #exit-pres-btn, .select-chk, #project-bar { display: none !important; } 
+            .toolbar, .toolbox-container, .card-top-right, .add-main, .note-header, .sticker-del, .today-btn, #exit-pres-btn, .select-chk, #project-bar { display: none !important; } 
             .sticky-note, .sticker { box-shadow: none; border: 1px solid transparent; } 
         }
-        body.screenshot-mode .toolbar, body.screenshot-mode .toolbox-container, body.screenshot-mode .controls, body.screenshot-mode .note-header, body.screenshot-mode .sticker-del, body.screenshot-mode .add-main, body.screenshot-mode .today-btn, body.screenshot-mode #exit-pres-btn, body.screenshot-mode .select-chk, body.screenshot-mode #project-bar { display: none !important; }
+        body.screenshot-mode .toolbar, body.screenshot-mode .toolbox-container, body.screenshot-mode .card-top-right, body.screenshot-mode .note-header, body.screenshot-mode .sticker-del, body.screenshot-mode .add-main, body.screenshot-mode .today-btn, body.screenshot-mode #exit-pres-btn, body.screenshot-mode .select-chk, body.screenshot-mode #project-bar { display: none !important; }
 
     </style>
 </head>
@@ -331,7 +323,7 @@
     <div class="toolbar">
         <div class="tool-left">
             <div class="tool-title">
-                🧠 V30
+                🧠 V32
                 <span class="save-status" id="saveStatus"></span>
             </div>
             <div class="search-box">
@@ -404,13 +396,13 @@
         }
 
         const defaultData = [
-            { id: 1, pos: 'left', mode: 'normal', color: 'blue', status: 0, project: '專案A', label: '介面優化', date_single: getTodayString(), date_start: '', date_end: '', content: '1. 左側工具箱下移，不再擋住專案列。\n2. AI 選取功能改為模式切換，平常不會看到勾選框。' }
+            { id: 1, pos: 'left', mode: 'normal', color: 'blue', status: 0, project: '專案A', label: '佈局重構', date_single: getTodayString(), date_start: '', date_end: '', content: '1. 專案標籤已移至左上角，工具列移至右上角，兩者不再重疊。\n2. 新增「🖍️高亮」與「🔹項目」功能。\n3. 右上角「📋」可複製內容到 Google Tasks。' }
         ];
 
         function init() {
-            const savedData = localStorage.getItem('timeline_v30_data'); 
-            const savedNotes = localStorage.getItem('timeline_v30_notes');
-            const savedStickers = localStorage.getItem('timeline_v30_stickers');
+            const savedData = localStorage.getItem('timeline_v32_data'); 
+            const savedNotes = localStorage.getItem('timeline_v32_notes');
+            const savedStickers = localStorage.getItem('timeline_v32_stickers');
 
             if (savedData) renderFromData(JSON.parse(savedData));
             else renderFromData(defaultData);
@@ -421,7 +413,37 @@
             refreshProjectBar();
         }
 
-        // --- V30: AI 選取模式邏輯 ---
+        function insertBullet(btn) {
+            const item = btn.closest('.timeline-item');
+            const contentDiv = item.querySelector('.content');
+            const newDiv = document.createElement('div');
+            newDiv.innerHTML = '&nbsp;•&nbsp;項目內容';
+            contentDiv.appendChild(newDiv);
+            autoSave();
+        }
+
+        function addHighlight(btn) {
+            document.execCommand('styleWithCSS', false, true);
+            const sel = window.getSelection();
+            if(!sel.rangeCount) return;
+            const range = sel.getRangeAt(0);
+            const span = document.createElement('span');
+            span.className = 'highlight-text';
+            span.textContent = sel.toString();
+            range.deleteContents();
+            range.insertNode(span);
+            autoSave();
+        }
+
+        function copyForTasks(btn) {
+            const item = btn.closest('.timeline-item');
+            const title = item.querySelector('.label-input').value;
+            const date = item.querySelector('.single-date').value;
+            const content = item.querySelector('.content').innerText;
+            const text = `${title}\n${date}\n${content}`;
+            navigator.clipboard.writeText(text).then(() => { alert('已複製！可直接貼上至 Google Tasks 或 Email'); });
+        }
+
         function enterAIMode() {
             document.body.classList.add('ai-selecting');
             alert('進入 AI 選取模式：\n請勾選您想要分析的卡片，然後點擊上方「✅ 確認生成」。');
@@ -429,7 +451,6 @@
 
         function exitAIMode() {
             document.body.classList.remove('ai-selecting');
-            // 清除所有勾選
             document.querySelectorAll('.select-chk').forEach(chk => chk.checked = false);
         }
 
@@ -470,11 +491,10 @@
 
             navigator.clipboard.writeText(prompt).then(() => { 
                 alert('✅ AI Prompt 已複製成功！');
-                exitAIMode(); // 生成後自動退出
+                exitAIMode(); 
             });
         }
 
-        // --- 其他既有功能 ---
         function toggleProjectBar() {
             projectBar.classList.toggle('show');
             document.body.classList.toggle('has-proj-bar');
@@ -500,6 +520,10 @@
                 });
                 if(activeProjectFilters.size > 0) {
                     html += `<div class="proj-badge" style="color:#ef4444; border-color:#ef4444;" onclick="clearProjectFilters()">✕ 清除</div>`;
+                    if(activeProjectFilters.size === 1) {
+                        const currentProj = activeProjectFilters.values().next().value;
+                        html += `<button class="rename-btn" onclick="renameProject('${currentProj}')">✏️ 改名</button>`;
+                    }
                 }
             }
             projectBar.innerHTML = html;
@@ -519,6 +543,27 @@
             activeProjectFilters.clear();
             refreshProjectBar();
             applyFilters();
+        }
+
+        function renameProject(oldName) {
+            const newName = prompt(`請輸入「${oldName}」的新名稱：`, oldName);
+            if(newName && newName !== oldName) {
+                const items = document.querySelectorAll('.timeline-item');
+                let count = 0;
+                items.forEach(item => {
+                    const input = item.querySelector('.project-input');
+                    if(input && input.value === oldName) {
+                        input.value = newName;
+                        count++;
+                    }
+                });
+                autoSave();
+                activeProjectFilters.delete(oldName);
+                activeProjectFilters.add(newName);
+                refreshProjectBar();
+                applyFilters();
+                alert(`已更新 ${count} 個項目的專案名稱！`);
+            }
         }
 
         function applyFilters() {
@@ -551,24 +596,30 @@
             div.innerHTML = `
                 <div class="dot"></div>
                 <div class="card" data-color="${item.color}">
-                    <div class="status-dot status-${item.status}" onclick="cycleStatus(this)" title="切換狀態"></div>
-                    <div class="controls">
-                        <button class="btn-icon bg-gray" onclick="changeColor(this)" title="換色">🎨</button>
-                        <button class="btn-icon bg-gray" onclick="moveNode(this,'up')" title="上移">⬆️</button>
-                        <button class="btn-icon bg-gray" onclick="moveNode(this,'down')" title="下移">⬇️</button>
-                        <button class="btn-icon bg-gray" onclick="togglePos(this,'left')" title="靠左">⬅️</button>
-                        <button class="btn-icon bg-gray" onclick="togglePos(this,'right')" title="靠右">➡️</button>
-                        <button class="btn-icon bg-blue" onclick="toggleRange(this)" title="切換時段">↔️</button>
-                        <button class="btn-icon bg-purple" onclick="insertTodoLine(this)" title="新增待辦">☑</button>
-                        <button class="btn-icon bg-orange" onclick="addToGoogleCal(this)" title="加到日曆">📅</button>
-                        <button class="btn-icon bg-red" onclick="deleteNode(this)" title="刪除">×</button>
-                    </div>
-                    <div class="card-body">
-                        <div class="project-row">
-                            <input type="text" class="project-input" autocomplete="off" value="${item.project || ''}" placeholder="🏷️ 專案..." oninput="autoSave(); refreshProjectBar();" onclick="handleProjectClick(event)">
-                        </div>
-                        <div class="header-row">
+                    
+                    <div class="card-top-area">
+                        <div class="card-top-left">
                             <input type="checkbox" class="select-chk">
+                            <div class="status-dot status-${item.status}" onclick="cycleStatus(this)" title="切換狀態"></div>
+                            <input type="text" class="project-input" autocomplete="off" value="${item.project || ''}" placeholder="🏷️ 專案..." oninput="autoSave(); refreshProjectBar();">
+                        </div>
+                        <div class="card-top-right controls">
+                            <button class="btn-icon bg-gray" onclick="changeColor(this)" title="換色">🎨</button>
+                            <button class="btn-icon bg-gray" onclick="moveNode(this,'up')" title="上移">⬆️</button>
+                            <button class="btn-icon bg-gray" onclick="moveNode(this,'down')" title="下移">⬇️</button>
+                            <button class="btn-icon bg-gray" onclick="togglePos(this,'left')" title="靠左">⬅️</button>
+                            <button class="btn-icon bg-gray" onclick="togglePos(this,'right')" title="靠右">➡️</button>
+                            <button class="btn-icon bg-blue" onclick="toggleRange(this)" title="切換時段">↔️</button>
+                            <button class="btn-icon bg-purple" onclick="insertTodoLine(this)" title="新增待辦">☑</button>
+                            <button class="btn-icon bg-teal" onclick="insertBullet(this)" title="項目符號">🔹</button>
+                            <button class="btn-icon bg-teal" onclick="addHighlight(this)" title="文字高亮">🖍️</button>
+                            <button class="btn-icon bg-orange" onclick="copyForTasks(this)" title="複製到Tasks">📋</button>
+                            <button class="btn-icon bg-red" onclick="deleteNode(this)" title="刪除">×</button>
+                        </div>
+                    </div>
+
+                    <div class="card-body">
+                        <div class="header-row">
                             <input type="date" class="date-input single-date" value="${item.date_single}" onchange="autoSave()" title="日期">
                             <button class="today-btn single-date" onclick="setToday(this)" title="設定為今天">今</button>
                             <div class="range-container">
@@ -594,10 +645,6 @@
             newDiv.innerHTML = '<span class="todo-box" onclick="toggleTodo(this)" style="cursor:pointer; font-size:1.2em;">☐</span>&nbsp;新項目';
             contentDiv.appendChild(newDiv);
             autoSave();
-            try {
-                const range = document.createRange(); const sel = window.getSelection();
-                range.selectNodeContents(newDiv); sel.removeAllRanges(); sel.addRange(range);
-            } catch(e) {}
         }
 
         function togglePresentation() {
@@ -752,7 +799,6 @@
                 
                 const projectPrefix = item.project ? `[${item.project}] ` : '';
                 const displayLabel = projectPrefix + (item.label || '無標題');
-                
                 const cleanContent = item.content.replace(/<[^>]+>/g, '').substring(0,50);
                 
                 rowsHtml += `
@@ -832,14 +878,14 @@
                 }
             });
             const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([csvContent], { type: 'text/csv;charset=utf-8;' }));
-            link.download = `timeline_v30_${getTodayString()}.csv`; link.click();
+            link.download = `timeline_v32_${getTodayString()}.csv`; link.click();
         }
 
         function takeScreenshot() {
             if(currentView === 'gantt') { alert('建議切換回列表模式再截圖！'); }
             document.body.classList.add('screenshot-mode'); window.scrollTo(0, 0); saveStatus.innerText = '處理中...';
             html2canvas(document.body, { backgroundColor: '#f3f4f6', scale: 2, useCORS: true }).then(canvas => {
-                const link = document.createElement('a'); link.download = `report_v30_${getTodayString()}.png`; link.href = canvas.toDataURL(); link.click();
+                const link = document.createElement('a'); link.download = `report_v32_${getTodayString()}.png`; link.href = canvas.toDataURL(); link.click();
                 document.body.classList.remove('screenshot-mode'); saveStatus.innerText = '';
             }).catch(err => { document.body.classList.remove('screenshot-mode'); alert('截圖錯誤'); });
         }
@@ -888,7 +934,6 @@
         window.deleteNode=function(btn){if(confirm('刪除?')){btn.closest('.timeline-item').remove(); autoSave();}}
         window.moveNode=function(btn,dir){const i=btn.closest('.timeline-item'); if(dir==='up'&&i.previousElementSibling)i.parentNode.insertBefore(i,i.previousElementSibling);else if(dir==='down'&&i.nextElementSibling)i.parentNode.insertBefore(i,i.nextElementSibling.nextSibling); autoSave();}
         
-        // V30: 智慧繼承邏輯
         document.getElementById('mainAddBtn').addEventListener('click',()=>{
             const t = getTodayString();
             let defaultProj = '';
@@ -896,17 +941,8 @@
                 defaultProj = activeProjectFilters.values().next().value;
             }
             container.appendChild(createNodeElement({
-                id:Date.now(),
-                pos:'auto',
-                mode:'normal',
-                color:'blue',
-                status:0,
-                project: defaultProj,
-                label:'',
-                date_single:t,
-                date_start:t,
-                date_end:t,
-                content:'內容...'
+                id:Date.now(), pos:'auto', mode:'normal', color:'blue', status:0, project: defaultProj,
+                label:'', date_single:t, date_start:t, date_end:t, content:'內容...'
             })); 
             window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'}); 
             autoSave();
@@ -926,12 +962,12 @@
         function gatherStickers(){const l=[]; document.querySelectorAll('.sticker').forEach(el=>{l.push({id:el.id.replace('sticker-',''),type:el.dataset.type,x:el.offsetLeft,y:el.offsetTop});}); return l;}
         
         function autoSave() {
-            localStorage.setItem('timeline_v30_data', JSON.stringify(gatherData()));
-            localStorage.setItem('timeline_v30_notes', JSON.stringify(gatherNotes()));
-            localStorage.setItem('timeline_v30_stickers', JSON.stringify(gatherStickers()));
+            localStorage.setItem('timeline_v32_data', JSON.stringify(gatherData()));
+            localStorage.setItem('timeline_v32_notes', JSON.stringify(gatherNotes()));
+            localStorage.setItem('timeline_v32_stickers', JSON.stringify(gatherStickers()));
             saveStatus.innerText = '已儲存'; setTimeout(() => saveStatus.innerText = '', 2000);
         }
-        window.downloadJSON=function(){const d={timeline:gatherData(),notes:gatherNotes(),stickers:gatherStickers(),version:'v30'}; const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([JSON.stringify(d,null,2)],{type:'application/json;charset=utf-8'})); a.download=`timeline_v30_${getTodayString()}.json`; a.click();}
+        window.downloadJSON=function(){const d={timeline:gatherData(),notes:gatherNotes(),stickers:gatherStickers(),version:'v32'}; const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([JSON.stringify(d,null,2)],{type:'application/json;charset=utf-8'})); a.download=`timeline_v32_${getTodayString()}.json`; a.click();}
         window.loadJSON=function(inp){const f=inp.files[0]; if(!f)return; const r=new FileReader(); r.onload=function(e){try{const j=JSON.parse(e.target.result); if(j.timeline){renderFromData(j.timeline); if(j.notes)renderNotes(j.notes); if(j.stickers)renderStickers(j.stickers); autoSave(); alert('讀取成功');}}catch(x){alert('格式錯誤');}}; r.readAsText(f);}
 
         init();
