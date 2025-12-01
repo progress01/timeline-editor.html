@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>報告神器 V51：全螢幕截圖修復版</title>
+    <title>報告神器 V52：全局貼圖與排版修復版</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         :root {
@@ -23,6 +23,7 @@
             padding: 0;
             position: relative; 
             min-height: 100vh;
+            overflow-x: hidden; /* 防止貼圖超出時出現橫軸 */
         }
 
         /* --- 頂部工具列 --- */
@@ -134,17 +135,33 @@
             flex: 1; background: transparent; border: none; resize: none;
             padding: 10px; font-family: inherit; outline: none; font-size: 1rem; color: #451a03;
         }
+        
+        /* V52: 貼紙與圖片樣式 */
         .sticker {
-            position: absolute; width: 80px; height: 80px; z-index: 1500; cursor: move;
+            position: absolute; z-index: 1500; cursor: move;
+            display: inline-block;
+        }
+        /* SVG 貼紙尺寸 */
+        .sticker[data-type^="arrow"], .sticker[data-type^="circle"], .sticker[data-type^="rect"] {
+            width: 80px; height: 80px;
+        }
+        /* 圖片貼紙尺寸 */
+        .sticker[data-type="image"] {
+            width: auto; height: auto; max-width: 400px;
+        }
+        .sticker img { 
+            max-width: 100%; height: auto; border-radius: 4px; box-shadow: 0 4px 8px rgba(0,0,0,0.3); 
+            pointer-events: none; /* 關鍵: 讓滑鼠事件穿透到 div 以便拖曳 */
         }
         .sticker svg { width: 100%; height: 100%; drop-shadow: 2px 2px 2px rgba(0,0,0,0.2); }
         .sticker-del {
-            position: absolute; top: -8px; right: -8px; width: 20px; height: 20px;
-            background: #ef4444; color: white; font-size: 12px; border-radius: 50%;
+            position: absolute; top: -10px; right: -10px; width: 24px; height: 24px;
+            background: #ef4444; color: white; font-size: 14px; border-radius: 50%;
             display: flex; align-items: center; justify-content: center; cursor: pointer;
-            display: none; box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            display: none; box-shadow: 0 2px 4px rgba(0,0,0,0.2); z-index: 1501;
+            border: 2px solid white;
         }
-        .sticker:hover { border: 1px dashed #cbd5e1; }
+        .sticker:hover { outline: 2px dashed #3b82f6; }
         .sticker:hover .sticker-del { display: flex; }
 
         /* 主區域 */
@@ -163,18 +180,13 @@
             border-radius: 2px; z-index: 0;
         }
 
-        .timeline-item {
-            position: relative; margin-bottom: 40px; 
-            width: 100%; display: flex;
-        }
+        .timeline-item { position: relative; margin-bottom: 40px; width: 100%; display: flex; }
         .timeline-item.hidden-by-filter { display: none !important; } 
 
         .timeline-item:nth-child(odd) { justify-content: flex-start; padding-right: 50%; }
         .timeline-item:nth-child(even) { justify-content: flex-end; padding-left: 50%; }
-        
         .timeline-item.force-left { justify-content: flex-start !important; padding-right: 50% !important; padding-left: 0 !important; }
         .timeline-item.force-right { justify-content: flex-end !important; padding-left: 50% !important; padding-right: 0 !important; }
-
         .timeline-item .card { width: 90%; margin: 0 auto; }
 
         /* Card 內部佈局 */
@@ -183,7 +195,7 @@
             background: white; border-radius: 12px;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
             position: relative; z-index: 10; 
-            overflow: hidden;
+            overflow: visible; /* 允許某些下拉選單超出，但 V52 改用雙層Header */
             border-top: 5px solid var(--primary);
             min-height: 200px;
         }
@@ -200,15 +212,25 @@
 
         .card-top-area {
             display: flex; justify-content: space-between; align-items: center;
-            padding: 12px 15px 8px 15px; border-bottom: 1px dashed #e2e8f0; flex-shrink: 0; 
+            padding: 10px 15px; border-bottom: 1px dashed #e2e8f0; flex-shrink: 0; 
+            background: rgba(255,255,255,0.5);
         }
         .card-top-left { display: flex; align-items: center; gap: 8px; flex: 1; }
         .card-top-right { display: flex; gap: 4px; flex-shrink: 0; }
 
+        /* V52: 卡片 Header 重構 (解決跑版) */
         .card-body {
-            padding: 15px 40px 15px 20px; 
-            flex: 1; 
-            display: flex; flex-direction: column;
+            padding: 10px 40px 15px 20px; 
+            flex: 1; display: flex; flex-direction: column;
+        }
+        
+        .header-row {
+            display: flex; flex-direction: column; /* 上下排列 */
+            gap: 5px; margin-bottom: 10px;
+        }
+        
+        .header-meta {
+            display: flex; align-items: center; gap: 5px; flex-wrap: wrap;
         }
 
         .project-footer {
@@ -229,7 +251,7 @@
         .footer-project-input::placeholder { color: rgba(255,255,255,0.7); }
 
         .card-side-tools {
-            position: absolute; right: 6px; top: 55px; bottom: 40px; 
+            position: absolute; right: 6px; top: 60px; bottom: 40px; 
             display: flex; flex-direction: column; gap: 6px; align-items: center;
             width: 32px; border-left: 1px dashed #e2e8f0; z-index: 20; padding-top: 5px;
         }
@@ -250,29 +272,35 @@
 
         .mode-toggle-btn {
             font-size: 12px; border: 1px solid #94a3b8; border-radius: 4px; 
-            padding: 2px 6px; cursor: pointer; background: #f1f5f9; color: #64748b; margin-right: 5px;
+            padding: 4px 8px; cursor: pointer; background: #f1f5f9; color: #64748b; margin-right: 5px;
+            height: 28px; white-space: nowrap;
         }
 
         .date-input {
             border: 1px solid #cbd5e1; background: #f8fafc; padding: 4px 6px; border-radius: 4px;
-            font-family: inherit; font-size: 0.85rem; color: #334155; outline: none; cursor: pointer; width: 110px;
+            font-family: inherit; font-size: 0.9rem; color: #334155; outline: none; cursor: pointer; 
+            width: 120px; height: 28px;
         }
         .card.memo-mode .date-input, .card.memo-mode .today-btn, .card.memo-mode .range-container { display: none !important; }
 
         .today-btn {
             background: #e0e7ff; color: #4338ca; border: none; border-radius: 4px;
-            padding: 4px 6px; font-size: 0.75rem; cursor: pointer; font-weight: bold; margin-left: 3px;
+            padding: 0 8px; font-size: 0.8rem; cursor: pointer; font-weight: bold; margin-left: 3px; height: 28px;
         }
+        /* V52: 標題欄獨立一行 */
         .label-input {
             border: none; border-bottom: 1px dashed #cbd5e1; padding: 5px 0; font-weight: bold;
-            color: var(--primary); font-size: 1.1rem; outline: none; width: 100%; margin-top: 5px; display: block;
+            color: var(--primary); font-size: 1.2rem; outline: none; width: 100%; display: block;
+            margin-top: 2px;
         }
+        .label-input:focus { border-bottom-color: var(--primary); }
+
         .range-container { display: none; align-items: center; gap: 3px; font-size: 0.8rem; color: #555; flex-wrap: wrap;}
         .timeline-item.range-mode .single-date { display: none; }
         .timeline-item.range-mode .range-container { display: flex; }
 
         .content { 
-            line-height: 1.6; color: #4b5563; outline: none; min-height: 60px; font-size: 0.95rem; 
+            line-height: 1.6; color: #4b5563; outline: none; min-height: 60px; font-size: 1rem; 
             white-space: pre-wrap; margin-top: 10px;
         }
         .content img { max-width: 100%; height: auto; border-radius: 4px; margin: 5px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: block; }
@@ -341,7 +369,7 @@
     <div class="toolbar">
         <div class="tool-left">
             <div class="tool-title">
-                🧠 V51
+                🧠 V52
                 <span class="save-status" id="saveStatus"></span>
             </div>
             <div class="search-box">
@@ -416,14 +444,24 @@
             const savedNotes = localStorage.getItem('timeline_v47_notes');
             const savedStickers = localStorage.getItem('timeline_v47_stickers');
 
-            if (savedData) renderFromData(JSON.parse(savedData));
-            else {
+            let hasData = false;
+            if (savedData) {
+                const parsed = JSON.parse(savedData);
+                if (parsed.length > 0) {
+                    renderFromData(parsed);
+                    hasData = true;
+                }
+            }
+            
+            // V52: 無資料時的防呆預設值
+            if (!hasData) {
                 const defaultItem = {
                     id: Date.now(), pos: 'left', mode: 'normal', color: 'blue', status: 0, isMemo: false,
-                    project: 'V51更新', label: '全螢幕截圖修復', date_single: getTodayString(), date_start: '', date_end: '', 
-                    content: '1. 截圖範圍改為全網頁 (解決便利貼遺失問題)。\n2. 圖片貼上功能正常。\n3. 保留完美佈局。'
+                    project: 'V52更新', label: '全局貼圖與排版修復', date_single: getTodayString(), date_start: '', date_end: '', 
+                    content: '1. 全局貼圖：在網頁空白處按 Ctrl+V，圖片會變貼紙！\n2. 排版修復：日期與標題分兩行，不會擠在一起。\n3. 甘特圖時間校準完畢。'
                 };
                 container.appendChild(createNodeElement(defaultItem));
+                autoSave(); // 確保下次開啟有資料
             }
 
             if (savedNotes) renderNotes(JSON.parse(savedNotes));
@@ -439,6 +477,9 @@
                 container.appendChild(createNodeElement(newItem));
                 autoSave();
             };
+
+            // V52: 註冊全域貼上事件
+            window.addEventListener('paste', handleGlobalPaste);
         }
 
         // --- 核心操作 ---
@@ -496,7 +537,17 @@
             });
         }
         function gatherNotes() { return Array.from(document.querySelectorAll('.sticky-note')).map(n => ({ id: n.id, x: parseInt(n.style.left), y: parseInt(n.style.top), content: n.querySelector('textarea').value })); }
-        function gatherStickers() { return Array.from(document.querySelectorAll('.sticker')).map(s => ({ id: s.id, type: s.dataset.type, x: parseInt(s.style.left), y: parseInt(s.style.top) })); }
+        
+        // V52: 儲存時包含 image 類型的貼紙內容 (src)
+        function gatherStickers() { 
+            return Array.from(document.querySelectorAll('.sticker')).map(s => ({ 
+                id: s.id, 
+                type: s.dataset.type, 
+                x: parseInt(s.style.left), 
+                y: parseInt(s.style.top),
+                content: s.dataset.type === 'image' ? s.querySelector('img').src : null
+            })); 
+        }
 
         // --- 元素創建 ---
         function createNodeElement(item) {
@@ -530,7 +581,7 @@
                     </div>
                     <div class="card-body">
                         <div class="header-row">
-                            <div style="display:flex; align-items:center;">
+                            <div class="header-meta">
                                 <button class="mode-toggle-btn" onclick="toggleCardMode(this)">${item.isMemo?'♾️':'📅'}</button>
                                 <input type="date" class="date-input single-date" value="${item.date_single}" onchange="autoSave()">
                                 <button class="today-btn single-date" onclick="setToday(this)">今</button>
@@ -543,15 +594,19 @@
                             </div>
                             <input type="text" class="label-input" value="${item.label}" placeholder="標題" oninput="autoSave()">
                         </div>
-                        <div class="content" contenteditable="true" oninput="handleInput(event)">${item.content}</div>
+                        <div class="content" contenteditable="true" oninput="handleCardInput(event)">${item.content}</div>
                     </div>
                     <div class="project-footer">
                         <input type="text" class="footer-project-input" autocomplete="off" value="${item.project || ''}" placeholder="🏷️ 專案名稱..." oninput="autoSave(); refreshProjectBar();">
                     </div>
                 </div>`;
             
+            // 綁定卡片內貼上事件 (阻止冒泡，避免觸發全域貼上)
             const contentDiv = div.querySelector('.content');
-            contentDiv.addEventListener('paste', handlePaste);
+            contentDiv.addEventListener('paste', function(e) {
+                e.stopPropagation(); // 阻止冒泡到 window
+                handleCardPaste(e);
+            });
             
             return div;
         }
@@ -575,15 +630,13 @@
             btn.closest('.timeline-item').querySelector('.content').innerHTML += '<div><span class="todo-box" onclick="toggleTodo(this)">☐</span>&nbsp;新項目</div>'; autoSave();
         }
         window.toggleTodo = function(span) { span.innerText = span.innerText==='☐'?'☑':'☐'; autoSave(); event.stopPropagation(); }
-        function handleInput(e) { autoSave(); }
+        function handleCardInput(e) { autoSave(); }
 
-        // V50: 現代化圖片貼上處理
-        function handlePaste(e) {
+        // V52: 卡片內貼上 (保留原本邏輯)
+        function handleCardPaste(e) {
             const items = (e.clipboardData || e.originalEvent.clipboardData).items;
-            let hasImage = false;
             for (let i = 0; i < items.length; i++) {
                 if (items[i].type.indexOf("image") === 0) {
-                    hasImage = true;
                     e.preventDefault();
                     const file = items[i].getAsFile();
                     const reader = new FileReader();
@@ -595,6 +648,36 @@
                         selection.deleteFromDocument();
                         selection.getRangeAt(0).insertNode(img);
                         selection.collapseToEnd();
+                        autoSave();
+                    };
+                    reader.readAsDataURL(file);
+                    break;
+                }
+            }
+        }
+
+        // V52: 全局貼上處理 (產生漂浮圖片)
+        function handleGlobalPaste(e) {
+            // 如果焦點在輸入框或卡片內容中，不執行全局貼上
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) {
+                return;
+            }
+
+            const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+            for (let i = 0; i < items.length; i++) {
+                if (items[i].type.indexOf("image") === 0) {
+                    e.preventDefault();
+                    const file = items[i].getAsFile();
+                    const reader = new FileReader();
+                    reader.onload = function(event) {
+                        // 在視窗中央或稍微偏移處建立圖片貼紙
+                        createStickerElement({
+                            id: 'sticker-' + Date.now(),
+                            type: 'image',
+                            x: window.scrollX + window.innerWidth / 2 - 100,
+                            y: window.scrollY + window.innerHeight / 2 - 100,
+                            content: event.target.result
+                        });
                         autoSave();
                     };
                     reader.readAsDataURL(file);
@@ -676,7 +759,7 @@
             chart.innerHTML = `<div class="gantt-axis-labels" style="padding-left:150px; position:relative; height:20px;">${axisHtml}</div>${rowsHtml}`;
         }
 
-        // --- 截圖 V51 (修正目標為 Body) ---
+        // --- 截圖 ---
         function takeScreenshot() {
             if(window.currentView === 'gantt') { alert('請切換回列表模式再截圖'); return; }
             document.body.classList.add('screenshot-mode');
@@ -684,7 +767,6 @@
             window.scrollTo(0,0);
             
             setTimeout(() => {
-                // V51: 改為捕捉 document.body 以抓取全畫面 (含便利貼)
                 html2canvas(document.body, {
                     backgroundColor: "#ffffff",
                     scale: 2,
@@ -692,7 +774,7 @@
                     scrollY: -window.scrollY
                 }).then(canvas => {
                     const link = document.createElement('a');
-                    link.download = `report_v51_${getTodayString()}.png`;
+                    link.download = `report_v52_${getTodayString()}.png`;
                     link.href = canvas.toDataURL();
                     link.click();
                     document.body.classList.remove('screenshot-mode');
@@ -727,10 +809,21 @@
             el.innerHTML=`<div class="note-header" onmousedown="dragStart(event, this.parentNode)"><span class="note-close" onclick="this.parentNode.parentNode.remove();autoSave()">×</span></div><textarea class="note-content" oninput="autoSave()">${n.content}</textarea>`;
             document.body.appendChild(el);
         }
+        
+        // V52: 支援圖片型貼紙創建
         function createStickerElement(s) {
             const el = document.createElement('div'); el.className='sticker'; el.id=s.id; el.style.left=s.x+'px'; el.style.top=s.y+'px'; el.dataset.type=s.type;
-            el.innerHTML=`${stickerSVGs[s.type]}<div class="sticker-del" onclick="this.parentNode.remove();autoSave()">✕</div>`;
-            el.onmousedown=function(e){dragStart(e, el)}; document.body.appendChild(el);
+            
+            let inner = '';
+            if (s.type === 'image') {
+                inner = `<img src="${s.content}">`;
+            } else {
+                inner = stickerSVGs[s.type];
+            }
+            
+            el.innerHTML=`${inner}<div class="sticker-del" onclick="this.parentNode.remove();autoSave()">✕</div>`;
+            el.onmousedown=function(e){dragStart(e, el)}; 
+            document.body.appendChild(el);
         }
 
         let dragEl=null, diffX=0, diffY=0;
@@ -788,7 +881,7 @@
 
         function downloadJSON() { 
             const blob = new Blob([JSON.stringify({timeline:gatherData(), notes:gatherNotes(), stickers:gatherStickers()},null,2)], {type:'application/json'});
-            const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `backup_v51_${getTodayString()}.json`; a.click();
+            const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `backup_v52_${getTodayString()}.json`; a.click();
         }
         function loadJSON(inp) {
             const f = inp.files[0]; if(!f) return;
