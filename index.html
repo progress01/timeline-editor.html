@@ -458,11 +458,10 @@
         }
 
         const defaultData = [
-            { id: 1, pos: 'left', mode: 'normal', color: 'blue', status: 0, isMemo: false, project: '專案A', label: 'V47穩定版', date_single: getTodayString(), date_start: '', date_end: '', content: '1. 程式碼全面簡化，解決按鈕失效問題。\n2. 卡片內的「開啟Tasks」已移除，統一使用上方工具列。\n3. 手機版只會顯示「換色、時段、待辦、複製、日曆、橡皮擦、刪除」等核心功能。' }
+            { id: 1, pos: 'left', mode: 'normal', color: 'blue', status: 0, isMemo: false, project: '專案A', label: 'V47修復版', date_single: getTodayString(), date_start: '', date_end: '', content: '1. 已修復所有按鈕功能。\n2. 核心邏輯（刪除、移動、換色）已補回。\n3. 資料存取功能已恢復正常。' }
         ];
 
         function init() {
-            // V47: 移除自動恢復邏輯，直接讀取
             const savedData = localStorage.getItem('timeline_v47_data'); 
             const savedNotes = localStorage.getItem('timeline_v47_notes');
             const savedStickers = localStorage.getItem('timeline_v47_stickers');
@@ -474,7 +473,135 @@
             if (savedStickers) renderStickers(JSON.parse(savedStickers));
             
             refreshProjectBar();
+
+            // V47 修復: 綁定新增按鈕事件
+            document.getElementById('mainAddBtn').onclick = function() {
+                const newItem = {
+                    id: Date.now(), pos: 'right', mode: 'normal', color: 'blue', status: 0, isMemo: false,
+                    project: '', label: '', date_single: getTodayString(), date_start: '', date_end: '', content: ''
+                };
+                container.appendChild(createNodeElement(newItem));
+                autoSave();
+            };
         }
+
+        // --- 核心操作功能 (原本遺失的部分) ---
+        
+        function deleteNode(btn) {
+            if(confirm('確定要刪除此節點嗎？')) {
+                btn.closest('.timeline-item').remove();
+                autoSave();
+                refreshProjectBar();
+            }
+        }
+
+        function changeColor(btn) {
+            const card = btn.closest('.card');
+            const colors = ['blue', 'green', 'red', 'yellow'];
+            let current = card.dataset.color || 'blue';
+            let nextIndex = (colors.indexOf(current) + 1) % colors.length;
+            card.dataset.color = colors[nextIndex];
+            autoSave();
+        }
+
+        function moveNode(btn, dir) {
+            const item = btn.closest('.timeline-item');
+            if (dir === 'up') {
+                const prev = item.previousElementSibling;
+                if (prev) { item.parentNode.insertBefore(item, prev); autoSave(); }
+            } else if (dir === 'down') {
+                const next = item.nextElementSibling;
+                if (next) { item.parentNode.insertBefore(next, item); autoSave(); }
+            }
+        }
+
+        function togglePos(btn, pos) {
+            const item = btn.closest('.timeline-item');
+            item.classList.remove('force-left', 'force-right');
+            if(pos === 'left') item.classList.add('force-left');
+            if(pos === 'right') item.classList.add('force-right');
+            autoSave();
+        }
+
+        function toggleRange(btn) {
+            const item = btn.closest('.timeline-item');
+            const isRange = item.classList.toggle('range-mode');
+            if(isRange) {
+                // 如果切換成區間，將單日日期填入起始日
+                const singleDate = item.querySelector('.single-date').value;
+                if(!item.querySelector('.date-start').value) item.querySelector('.date-start').value = singleDate;
+            }
+            autoSave();
+        }
+
+        function cycleStatus(dot) {
+            const classes = ['status-0', 'status-1', 'status-2', 'status-3'];
+            let currentClass = classes.find(c => dot.classList.contains(c));
+            let idx = classes.indexOf(currentClass);
+            dot.classList.remove(currentClass);
+            let nextIdx = (idx + 1) % classes.length;
+            dot.classList.add(classes[nextIdx]);
+            autoSave();
+        }
+
+        function sortByDate() {
+            if(!confirm('確定要依日期重新排序嗎？')) return;
+            const items = Array.from(document.querySelectorAll('.timeline-item'));
+            items.sort((a, b) => {
+                const dateA = a.querySelector('.single-date').value || '9999-99-99';
+                const dateB = b.querySelector('.single-date').value || '9999-99-99';
+                return dateA.localeCompare(dateB);
+            });
+            items.forEach(item => container.appendChild(item));
+            autoSave();
+        }
+
+        // --- 資料蒐集與存檔 (原本遺失的部分) ---
+
+        function gatherData() {
+            return Array.from(document.querySelectorAll('.timeline-item')).map(item => {
+                const card = item.querySelector('.card');
+                const dot = item.querySelector('.status-dot');
+                let status = 0;
+                if(dot.classList.contains('status-1')) status = 1;
+                else if(dot.classList.contains('status-2')) status = 2;
+                else if(dot.classList.contains('status-3')) status = 3;
+
+                return {
+                    pos: item.classList.contains('force-left') ? 'left' : (item.classList.contains('force-right') ? 'right' : 'auto'),
+                    mode: item.classList.contains('range-mode') ? 'range' : 'normal',
+                    color: card.dataset.color || 'blue',
+                    status: status,
+                    isMemo: card.classList.contains('memo-mode'),
+                    project: item.querySelector('.footer-project-input').value,
+                    label: item.querySelector('.label-input').value,
+                    date_single: item.querySelector('.single-date').value,
+                    date_start: item.querySelector('.date-start').value,
+                    date_end: item.querySelector('.date-end').value,
+                    content: item.querySelector('.content').innerHTML
+                };
+            });
+        }
+
+        function gatherNotes() {
+            return Array.from(document.querySelectorAll('.sticky-note')).map(note => ({
+                id: note.id.replace('note-', ''),
+                x: parseInt(note.style.left),
+                y: parseInt(note.style.top),
+                content: note.querySelector('textarea').value
+            }));
+        }
+
+        function gatherStickers() {
+            return Array.from(document.querySelectorAll('.sticker')).map(s => ({
+                id: s.id.replace('sticker-', ''),
+                type: s.dataset.type,
+                x: parseInt(s.style.left),
+                y: parseInt(s.style.top)
+            }));
+        }
+
+        // --- 現有功能 ---
 
         function insertBullet(btn) {
             const item = btn.closest('.timeline-item');
@@ -491,9 +618,7 @@
             autoSave();
         }
 
-        // V47: 橡皮擦修復 (強制取得焦點)
         function clearFormatting(btn) {
-            // onmousedown="event.preventDefault()" 已在 HTML 加入
             document.execCommand('styleWithCSS', false, true);
             document.execCommand('removeFormat', false, null); 
             document.execCommand('hiliteColor', false, 'transparent'); 
