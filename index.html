@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>報告神器 V52：全局貼圖與排版修復版</title>
+    <title>報告神器 V53：甘特圖與功能全修復版</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         :root {
@@ -23,7 +23,7 @@
             padding: 0;
             position: relative; 
             min-height: 100vh;
-            overflow-x: hidden; /* 防止貼圖超出時出現橫軸 */
+            overflow-x: hidden;
         }
 
         /* --- 頂部工具列 --- */
@@ -136,22 +136,19 @@
             padding: 10px; font-family: inherit; outline: none; font-size: 1rem; color: #451a03;
         }
         
-        /* V52: 貼紙與圖片樣式 */
         .sticker {
             position: absolute; z-index: 1500; cursor: move;
             display: inline-block;
         }
-        /* SVG 貼紙尺寸 */
         .sticker[data-type^="arrow"], .sticker[data-type^="circle"], .sticker[data-type^="rect"] {
             width: 80px; height: 80px;
         }
-        /* 圖片貼紙尺寸 */
         .sticker[data-type="image"] {
             width: auto; height: auto; max-width: 400px;
         }
         .sticker img { 
             max-width: 100%; height: auto; border-radius: 4px; box-shadow: 0 4px 8px rgba(0,0,0,0.3); 
-            pointer-events: none; /* 關鍵: 讓滑鼠事件穿透到 div 以便拖曳 */
+            pointer-events: none; 
         }
         .sticker svg { width: 100%; height: 100%; drop-shadow: 2px 2px 2px rgba(0,0,0,0.2); }
         .sticker-del {
@@ -195,7 +192,7 @@
             background: white; border-radius: 12px;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
             position: relative; z-index: 10; 
-            overflow: visible; /* 允許某些下拉選單超出，但 V52 改用雙層Header */
+            overflow: visible; 
             border-top: 5px solid var(--primary);
             min-height: 200px;
         }
@@ -218,14 +215,13 @@
         .card-top-left { display: flex; align-items: center; gap: 8px; flex: 1; }
         .card-top-right { display: flex; gap: 4px; flex-shrink: 0; }
 
-        /* V52: 卡片 Header 重構 (解決跑版) */
         .card-body {
             padding: 10px 40px 15px 20px; 
             flex: 1; display: flex; flex-direction: column;
         }
         
         .header-row {
-            display: flex; flex-direction: column; /* 上下排列 */
+            display: flex; flex-direction: column;
             gap: 5px; margin-bottom: 10px;
         }
         
@@ -287,7 +283,6 @@
             background: #e0e7ff; color: #4338ca; border: none; border-radius: 4px;
             padding: 0 8px; font-size: 0.8rem; cursor: pointer; font-weight: bold; margin-left: 3px; height: 28px;
         }
-        /* V52: 標題欄獨立一行 */
         .label-input {
             border: none; border-bottom: 1px dashed #cbd5e1; padding: 5px 0; font-weight: bold;
             color: var(--primary); font-size: 1.2rem; outline: none; width: 100%; display: block;
@@ -369,7 +364,7 @@
     <div class="toolbar">
         <div class="tool-left">
             <div class="tool-title">
-                🧠 V52
+                🧠 V53
                 <span class="save-status" id="saveStatus"></span>
             </div>
             <div class="search-box">
@@ -431,7 +426,10 @@
         const container = document.getElementById('container');
         const saveStatus = document.getElementById('saveStatus');
         const projectBar = document.getElementById('project-bar');
-        let activeProjectFilters = new Set(); 
+        let activeProjectFilters = new Set();
+        
+        // V53 修正：明確初始化全域變數
+        let currentView = 'timeline';
 
         function getTodayString() {
             const d = new Date();
@@ -453,15 +451,14 @@
                 }
             }
             
-            // V52: 無資料時的防呆預設值
             if (!hasData) {
                 const defaultItem = {
                     id: Date.now(), pos: 'left', mode: 'normal', color: 'blue', status: 0, isMemo: false,
-                    project: 'V52更新', label: '全局貼圖與排版修復', date_single: getTodayString(), date_start: '', date_end: '', 
-                    content: '1. 全局貼圖：在網頁空白處按 Ctrl+V，圖片會變貼紙！\n2. 排版修復：日期與標題分兩行，不會擠在一起。\n3. 甘特圖時間校準完畢。'
+                    project: 'V53更新', label: '修復完成', date_single: getTodayString(), date_start: '', date_end: '', 
+                    content: '1. 修復甘特圖按鈕與簡報模式失效問題。\n2. 甘特圖時間軸邏輯重寫，修正日期誤差與顯示錯誤。\n3. 全局圖片貼上功能保持正常。'
                 };
                 container.appendChild(createNodeElement(defaultItem));
-                autoSave(); // 確保下次開啟有資料
+                autoSave();
             }
 
             if (savedNotes) renderNotes(JSON.parse(savedNotes));
@@ -478,7 +475,6 @@
                 autoSave();
             };
 
-            // V52: 註冊全域貼上事件
             window.addEventListener('paste', handleGlobalPaste);
         }
 
@@ -537,14 +533,9 @@
             });
         }
         function gatherNotes() { return Array.from(document.querySelectorAll('.sticky-note')).map(n => ({ id: n.id, x: parseInt(n.style.left), y: parseInt(n.style.top), content: n.querySelector('textarea').value })); }
-        
-        // V52: 儲存時包含 image 類型的貼紙內容 (src)
         function gatherStickers() { 
             return Array.from(document.querySelectorAll('.sticker')).map(s => ({ 
-                id: s.id, 
-                type: s.dataset.type, 
-                x: parseInt(s.style.left), 
-                y: parseInt(s.style.top),
+                id: s.id, type: s.dataset.type, x: parseInt(s.style.left), y: parseInt(s.style.top),
                 content: s.dataset.type === 'image' ? s.querySelector('img').src : null
             })); 
         }
@@ -600,14 +591,7 @@
                         <input type="text" class="footer-project-input" autocomplete="off" value="${item.project || ''}" placeholder="🏷️ 專案名稱..." oninput="autoSave(); refreshProjectBar();">
                     </div>
                 </div>`;
-            
-            // 綁定卡片內貼上事件 (阻止冒泡，避免觸發全域貼上)
-            const contentDiv = div.querySelector('.content');
-            contentDiv.addEventListener('paste', function(e) {
-                e.stopPropagation(); // 阻止冒泡到 window
-                handleCardPaste(e);
-            });
-            
+            div.querySelector('.content').addEventListener('paste', function(e) { e.stopPropagation(); handleCardPaste(e); });
             return div;
         }
 
@@ -632,56 +616,30 @@
         window.toggleTodo = function(span) { span.innerText = span.innerText==='☐'?'☑':'☐'; autoSave(); event.stopPropagation(); }
         function handleCardInput(e) { autoSave(); }
 
-        // V52: 卡片內貼上 (保留原本邏輯)
         function handleCardPaste(e) {
             const items = (e.clipboardData || e.originalEvent.clipboardData).items;
             for (let i = 0; i < items.length; i++) {
                 if (items[i].type.indexOf("image") === 0) {
-                    e.preventDefault();
-                    const file = items[i].getAsFile();
-                    const reader = new FileReader();
+                    e.preventDefault(); const file = items[i].getAsFile(); const reader = new FileReader();
                     reader.onload = function(event) {
-                        const img = document.createElement("img");
-                        img.src = event.target.result;
-                        const selection = window.getSelection();
-                        if (!selection.rangeCount) return;
-                        selection.deleteFromDocument();
-                        selection.getRangeAt(0).insertNode(img);
-                        selection.collapseToEnd();
-                        autoSave();
-                    };
-                    reader.readAsDataURL(file);
-                    break;
+                        const img = document.createElement("img"); img.src = event.target.result;
+                        const selection = window.getSelection(); if (!selection.rangeCount) return;
+                        selection.deleteFromDocument(); selection.getRangeAt(0).insertNode(img); selection.collapseToEnd(); autoSave();
+                    }; reader.readAsDataURL(file); break;
                 }
             }
         }
 
-        // V52: 全局貼上處理 (產生漂浮圖片)
         function handleGlobalPaste(e) {
-            // 如果焦點在輸入框或卡片內容中，不執行全局貼上
-            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) {
-                return;
-            }
-
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
             const items = (e.clipboardData || e.originalEvent.clipboardData).items;
             for (let i = 0; i < items.length; i++) {
                 if (items[i].type.indexOf("image") === 0) {
-                    e.preventDefault();
-                    const file = items[i].getAsFile();
-                    const reader = new FileReader();
+                    e.preventDefault(); const file = items[i].getAsFile(); const reader = new FileReader();
                     reader.onload = function(event) {
-                        // 在視窗中央或稍微偏移處建立圖片貼紙
-                        createStickerElement({
-                            id: 'sticker-' + Date.now(),
-                            type: 'image',
-                            x: window.scrollX + window.innerWidth / 2 - 100,
-                            y: window.scrollY + window.innerHeight / 2 - 100,
-                            content: event.target.result
-                        });
+                        createStickerElement({ id: 'sticker-' + Date.now(), type: 'image', x: window.scrollX + window.innerWidth / 2 - 100, y: window.scrollY + window.innerHeight / 2 - 100, content: event.target.result });
                         autoSave();
-                    };
-                    reader.readAsDataURL(file);
-                    break;
+                    }; reader.readAsDataURL(file); break;
                 }
             }
         }
@@ -693,30 +651,47 @@
             renderFromData(newData); autoSave();
         }
 
-        // --- 甘特圖 ---
-        function toggleView() {
-            const tl = document.getElementById('container'); const gt = document.getElementById('gantt-view');
-            const btn = document.getElementById('viewBtn'); const add = document.getElementById('mainAddBtn');
-            if(tl.style.display !== 'none') {
-                tl.style.display='none'; gt.style.display='block'; add.style.display='none';
-                btn.innerText='📝 列表'; renderGantt(); window.currentView='gantt';
-            } else {
-                tl.style.display='block'; gt.style.display='none'; add.style.display='block';
-                btn.innerText='📊 甘特圖'; window.currentView='timeline';
-            }
-        }
-        
+        // --- Gantt Logic Fix (V53 重寫) ---
         function getMidnightTime(dateStr) {
             if(!dateStr) return null;
             const parts = dateStr.split('-');
+            // V53: 強制解析為本地午夜，避免時區誤差
             return new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]), 0, 0, 0).getTime();
         }
+
+        function toggleView() {
+            const tl = document.getElementById('container'); const gt = document.getElementById('gantt-view');
+            const btn = document.getElementById('viewBtn'); const add = document.getElementById('mainAddBtn');
+            if (currentView === 'timeline') {
+                tl.style.display = 'none'; gt.style.display = 'block'; add.style.display = 'none';
+                btn.innerText = '📝 列表'; btn.classList.remove('view-btn'); btn.classList.add('highlight');
+                renderGantt(); currentView = 'gantt';
+            } else {
+                tl.style.display = 'block'; gt.style.display = 'none'; add.style.display = 'block';
+                btn.innerText = '📊 甘特圖'; btn.classList.add('view-btn'); btn.classList.remove('highlight');
+                currentView = 'timeline';
+            }
+        }
+
+        function togglePresentation() {
+            // V53: 如果在甘特圖模式，先切回來
+            if (currentView === 'gantt') toggleView();
+            const body = document.body;
+            body.classList.toggle('presentation-mode');
+            if(body.classList.contains('presentation-mode')) {
+                alert('進入簡報模式 (ESC 退出)');
+            }
+        }
+        
+        document.addEventListener('keydown', function(event) {
+            if (event.key === "Escape" && document.body.classList.contains('presentation-mode')) togglePresentation();
+        });
 
         function renderGantt() {
             const chart = document.getElementById('ganttChart'); chart.innerHTML='';
             let data = gatherData().filter(i => !i.isMemo && i.date_single);
             if (activeProjectFilters.size > 0) data = data.filter(i => activeProjectFilters.has(i.project));
-            if(data.length===0) { chart.innerHTML='<div style="text-align:center;padding:20px">無資料</div>'; return; }
+            if(data.length===0) { chart.innerHTML='<div style="text-align:center;padding:20px;color:#999">無有效日期資料</div>'; return; }
 
             const parsed = data.map(d => {
                 let s = getMidnightTime(d.mode==='range'?d.date_start:d.date_single);
@@ -726,16 +701,27 @@
             }).sort((a,b)=>a.start-b.start);
 
             const dayMs = 86400000;
-            const minT = Math.min(...parsed.map(p=>p.start));
-            const maxT = Math.max(...parsed.map(p=>p.end));
-            const plotStart = minT - (dayMs * 2);
-            const plotEnd = maxT + (dayMs * 2);
-            const plotDur = plotEnd - plotStart;
+            let minT = Math.min(...parsed.map(p=>p.start));
+            let maxT = Math.max(...parsed.map(p=>p.end));
+            
+            // V53: 防呆 - 若只有一筆資料或時間極短，前後擴充緩衝區
+            if (maxT - minT < dayMs * 3) {
+                minT -= dayMs * 3;
+                maxT += dayMs * 3;
+            } else {
+                minT -= dayMs; // 前後各留一天
+                maxT += dayMs;
+            }
+
+            const plotDur = maxT - minT;
+            // 避免除以零
+            if (plotDur <= 0) { chart.innerHTML='<div style="text-align:center;">時間區間計算錯誤</div>'; return; }
 
             let axisHtml = '';
+            // V53: 改用 7 個刻度
             for(let i=0; i<=6; i++){
                 const pct = i * (100/6);
-                const t = plotStart + (plotDur * (i/6));
+                const t = minT + (plotDur * (i/6));
                 const d = new Date(t);
                 axisHtml += `<div class="gantt-axis-mark" style="left:${150 + (pct/100 * (100-20))}%; border-color:${i===0||i===6?'transparent':'#e2e8f0'}"></div>
                              <div style="position:absolute; top:0; left:${150 + (pct/100 * (100-20))}%; font-size:10px; color:#999; transform:translateX(-50%)">${d.getMonth()+1}/${d.getDate()}</div>`;
@@ -743,15 +729,17 @@
 
             let rowsHtml = '';
             parsed.forEach(item => {
-                const sPct = ((item.start - plotStart) / plotDur) * 100;
-                const ePct = ((item.end + dayMs - plotStart) / plotDur) * 100;
-                const wPct = Math.max(ePct - sPct, 0.5);
+                const sPct = ((item.start - minT) / plotDur) * 100;
+                // V53: 修正結束點，讓單日行程也有寬度
+                const ePct = ((item.end + dayMs - minT) / plotDur) * 100; 
+                let widthPct = ePct - sPct;
+                if(widthPct < 0.5) widthPct = 0.5;
                 
                 rowsHtml += `
                     <div class="gantt-row">
                         <div class="gantt-label-col" title="${item.label}">${item.project?`[${item.project}]`:''} ${item.label}</div>
                         <div class="gantt-bar-area">
-                            <div class="gantt-bar" data-color="${item.color}" style="left:${sPct}%; width:${wPct}%;"></div>
+                            <div class="gantt-bar" data-color="${item.color}" style="left:${sPct}%; width:${widthPct}%;"></div>
                         </div>
                     </div>`;
             });
@@ -761,7 +749,7 @@
 
         // --- 截圖 ---
         function takeScreenshot() {
-            if(window.currentView === 'gantt') { alert('請切換回列表模式再截圖'); return; }
+            if(currentView === 'gantt') { alert('請切換回列表模式再截圖'); return; }
             document.body.classList.add('screenshot-mode');
             saveStatus.innerText = '截圖中...';
             window.scrollTo(0,0);
@@ -774,7 +762,7 @@
                     scrollY: -window.scrollY
                 }).then(canvas => {
                     const link = document.createElement('a');
-                    link.download = `report_v52_${getTodayString()}.png`;
+                    link.download = `report_v53_${getTodayString()}.png`;
                     link.href = canvas.toDataURL();
                     link.click();
                     document.body.classList.remove('screenshot-mode');
@@ -810,17 +798,9 @@
             document.body.appendChild(el);
         }
         
-        // V52: 支援圖片型貼紙創建
         function createStickerElement(s) {
             const el = document.createElement('div'); el.className='sticker'; el.id=s.id; el.style.left=s.x+'px'; el.style.top=s.y+'px'; el.dataset.type=s.type;
-            
-            let inner = '';
-            if (s.type === 'image') {
-                inner = `<img src="${s.content}">`;
-            } else {
-                inner = stickerSVGs[s.type];
-            }
-            
+            let inner = (s.type === 'image') ? `<img src="${s.content}">` : stickerSVGs[s.type];
             el.innerHTML=`${inner}<div class="sticker-del" onclick="this.parentNode.remove();autoSave()">✕</div>`;
             el.onmousedown=function(e){dragStart(e, el)}; 
             document.body.appendChild(el);
@@ -881,7 +861,7 @@
 
         function downloadJSON() { 
             const blob = new Blob([JSON.stringify({timeline:gatherData(), notes:gatherNotes(), stickers:gatherStickers()},null,2)], {type:'application/json'});
-            const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `backup_v52_${getTodayString()}.json`; a.click();
+            const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `backup_v53_${getTodayString()}.json`; a.click();
         }
         function loadJSON(inp) {
             const f = inp.files[0]; if(!f) return;
