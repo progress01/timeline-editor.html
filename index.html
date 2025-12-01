@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>報告神器 V22：行動版待辦優化</title>
+    <title>報告神器 V23：簡報修正版</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         :root {
@@ -187,7 +187,7 @@
         .card:hover .controls { opacity: 1; }
         .btn-icon { border: none; cursor: pointer; width: 26px; height: 26px; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: white; font-size: 13px; }
         .bg-gray { background: #64748b; } .bg-blue { background: #3b82f6; } .bg-red { background: #ef4444; } .bg-orange { background: #f97316; }
-        .bg-purple { background: #8b5cf6; } /* V22: 待辦按鈕顏色 */
+        .bg-purple { background: #8b5cf6; }
 
         /* --- Gantt View --- */
         #gantt-view { display: none; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); overflow-x: auto; margin-bottom: 30px; border: 1px solid #e2e8f0; }
@@ -211,8 +211,20 @@
         .sticker-del { position: absolute; top: -10px; right: -10px; width: 20px; height: 20px; background: red; color: white; border-radius: 50%; display: none; align-items: center; justify-content: center; cursor: pointer; font-size: 12px; }
         .sticker:hover .sticker-del { display: flex; }
 
-        /* --- 簡報模式 --- */
+        /* --- V23: 簡報模式修正 (新增獨立退出按鈕) --- */
+        #exit-pres-btn {
+            display: none; /* 預設隱藏 */
+            position: fixed; top: 20px; right: 20px; z-index: 3000;
+            padding: 10px 20px; background: #ef4444; color: white;
+            border: none; border-radius: 30px; cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3); font-weight: bold; font-size: 1rem;
+        }
+
         body.presentation-mode { background-color: #ffffff; padding: 0; }
+        
+        /* 簡報模式下顯示退出按鈕 */
+        body.presentation-mode #exit-pres-btn { display: block; }
+
         body.presentation-mode .toolbar,
         body.presentation-mode .toolbox-container,
         body.presentation-mode .controls,
@@ -251,7 +263,6 @@
                 width: calc(100% - 50px) !important; margin: 0 0 20px 0 !important; border-left: none !important; border-right: none !important;
             }
 
-            /* 手機版讓工具列顯示出來，方便操作 */
             .controls { opacity: 1; background: rgba(243, 244, 246, 0.8); position: relative; top: 0; right: 0; justify-content: flex-end; margin-bottom: 10px; }
             .controls button[title*="靠"], .controls button[title*="移"] { display: none; }
             .header-row { align-items: flex-start; }
@@ -262,10 +273,10 @@
         }
 
         @media print { 
-            .toolbar, .toolbox-container, .controls, .add-main, .note-header, .sticker-del, .today-btn { display: none !important; } 
+            .toolbar, .toolbox-container, .controls, .add-main, .note-header, .sticker-del, .today-btn, #exit-pres-btn { display: none !important; } 
             .sticky-note, .sticker { box-shadow: none; border: 1px solid transparent; } 
         }
-        body.screenshot-mode .toolbar, body.screenshot-mode .toolbox-container, body.screenshot-mode .controls, body.screenshot-mode .note-header, body.screenshot-mode .sticker-del, body.screenshot-mode .add-main, body.screenshot-mode .today-btn { display: none !important; }
+        body.screenshot-mode .toolbar, body.screenshot-mode .toolbox-container, body.screenshot-mode .controls, body.screenshot-mode .note-header, body.screenshot-mode .sticker-del, body.screenshot-mode .add-main, body.screenshot-mode .today-btn, body.screenshot-mode #exit-pres-btn { display: none !important; }
 
     </style>
 </head>
@@ -274,7 +285,7 @@
     <div class="toolbar">
         <div class="tool-left">
             <div class="tool-title">
-                🧠 V22
+                🧠 V23
                 <span class="save-status" id="saveStatus"></span>
             </div>
             <div class="search-box">
@@ -296,6 +307,8 @@
             <input type="file" id="fileInput" hidden onchange="loadJSON(this)">
         </div>
     </div>
+
+    <button id="exit-pres-btn" onclick="togglePresentation()">❌ 退出簡報模式 (ESC)</button>
 
     <div class="toolbox-container" id="toolboxContainer">
         <div class="toolbox">
@@ -331,14 +344,14 @@
         }
 
         const defaultData = [
-            { id: 1, pos: 'left', mode: 'normal', color: 'blue', status: 0, label: '待辦功能優化', date_single: getTodayString(), date_start: '', date_end: '', content: '不用再找符號了！\n請看右上角的紫色按鈕「☑」，點一下直接新增待辦事項。' },
-            { id: 2, pos: 'right', mode: 'normal', color: 'green', status: 0, label: '行動版體驗', date_single: getTodayString(), date_start: '', date_end: '', content: '手機上打字比較慢，直接按按鈕最快。\n<span class="todo-box" onclick="toggleTodo(this)" style="cursor:pointer; font-size:1.2em;">☑</span>&nbsp;試著點我切換狀態' }
+            { id: 1, pos: 'left', mode: 'normal', color: 'blue', status: 0, label: '待辦功能', date_single: getTodayString(), date_start: '', date_end: '', content: '請看右上角的紫色按鈕「☑」，點一下直接新增待辦事項。' },
+            { id: 2, pos: 'right', mode: 'normal', color: 'green', status: 0, label: '簡報修復', date_single: getTodayString(), date_start: '', date_end: '', content: '現在進入簡報模式後，右上角會有紅色的「退出」按鈕，或者按 ESC 鍵也可以退出。' }
         ];
 
         function init() {
-            const savedData = localStorage.getItem('timeline_v22_data'); 
-            const savedNotes = localStorage.getItem('timeline_v22_notes');
-            const savedStickers = localStorage.getItem('timeline_v22_stickers');
+            const savedData = localStorage.getItem('timeline_v23_data'); 
+            const savedNotes = localStorage.getItem('timeline_v23_notes');
+            const savedStickers = localStorage.getItem('timeline_v23_stickers');
 
             if (savedData) renderFromData(JSON.parse(savedData));
             else renderFromData(defaultData);
@@ -347,43 +360,35 @@
             if (savedStickers) renderStickers(JSON.parse(savedStickers));
         }
 
-        // --- V22: 新增待辦按鈕邏輯 ---
         function insertTodoLine(btn) {
             const item = btn.closest('.timeline-item');
             const contentDiv = item.querySelector('.content');
-            
-            // 在內容最下方新增一行
             const newDiv = document.createElement('div');
             newDiv.innerHTML = '<span class="todo-box" onclick="toggleTodo(this)" style="cursor:pointer; font-size:1.2em;">☐</span>&nbsp;新項目';
             contentDiv.appendChild(newDiv);
-            
-            // 自動儲存
             autoSave();
-            
-            // 嘗試將焦點移到新的一行 (讓使用者可以直接打字)
-            // 在手機上可能需要使用者再點一次，但至少省去打符號
             try {
-                const range = document.createRange();
-                const sel = window.getSelection();
-                // 聚焦到 "新項目" 這個文字節點
-                range.selectNodeContents(newDiv);
-                sel.removeAllRanges();
-                sel.addRange(range);
+                const range = document.createRange(); const sel = window.getSelection();
+                range.selectNodeContents(newDiv); sel.removeAllRanges(); sel.addRange(range);
             } catch(e) {}
         }
 
         function togglePresentation() {
             const body = document.body;
             body.classList.toggle('presentation-mode');
-            const btn = document.querySelector('.pres-btn');
+            
             if(body.classList.contains('presentation-mode')) {
-                btn.innerHTML = '❌ 退出';
                 if(currentView === 'gantt') toggleView(); 
-                alert('進入簡報模式。');
-            } else {
-                btn.innerHTML = '📽️ 簡報';
+                alert('已進入簡報模式。\n點擊右上角紅色按鈕或按 [ESC] 鍵可退出。');
             }
         }
+
+        // V23: ESC 鍵監聽
+        document.addEventListener('keydown', function(event) {
+            if (event.key === "Escape" && document.body.classList.contains('presentation-mode')) {
+                togglePresentation();
+            }
+        });
 
         function filterNodes(keyword) {
             keyword = keyword.toLowerCase();
@@ -411,7 +416,6 @@
             navigator.clipboard.writeText(prompt).then(() => { alert('✅ AI Prompt 已複製！'); });
         }
 
-        // 輸入快捷鍵邏輯 (保留給電腦版)
         function handleInput(e) {
             autoSave();
             const el = e.target;
@@ -630,14 +634,14 @@
                 }
             });
             const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([csvContent], { type: 'text/csv;charset=utf-8;' }));
-            link.download = `timeline_v22_${getTodayString()}.csv`; link.click();
+            link.download = `timeline_v23_${getTodayString()}.csv`; link.click();
         }
 
         function takeScreenshot() {
             if(currentView === 'gantt') { alert('建議切換回列表模式再截圖！'); }
             document.body.classList.add('screenshot-mode'); window.scrollTo(0, 0); saveStatus.innerText = '處理中...';
             html2canvas(document.body, { backgroundColor: '#f3f4f6', scale: 2, useCORS: true }).then(canvas => {
-                const link = document.createElement('a'); link.download = `report_v22_${getTodayString()}.png`; link.href = canvas.toDataURL(); link.click();
+                const link = document.createElement('a'); link.download = `report_v23_${getTodayString()}.png`; link.href = canvas.toDataURL(); link.click();
                 document.body.classList.remove('screenshot-mode'); saveStatus.innerText = '';
             }).catch(err => { document.body.classList.remove('screenshot-mode'); alert('截圖錯誤'); });
         }
@@ -705,12 +709,12 @@
         function gatherStickers(){const l=[]; document.querySelectorAll('.sticker').forEach(el=>{l.push({id:el.id.replace('sticker-',''),type:el.dataset.type,x:el.offsetLeft,y:el.offsetTop});}); return l;}
         
         function autoSave() {
-            localStorage.setItem('timeline_v22_data', JSON.stringify(gatherData()));
-            localStorage.setItem('timeline_v22_notes', JSON.stringify(gatherNotes()));
-            localStorage.setItem('timeline_v22_stickers', JSON.stringify(gatherStickers()));
+            localStorage.setItem('timeline_v23_data', JSON.stringify(gatherData()));
+            localStorage.setItem('timeline_v23_notes', JSON.stringify(gatherNotes()));
+            localStorage.setItem('timeline_v23_stickers', JSON.stringify(gatherStickers()));
             saveStatus.innerText = '已儲存'; setTimeout(() => saveStatus.innerText = '', 2000);
         }
-        window.downloadJSON=function(){const d={timeline:gatherData(),notes:gatherNotes(),stickers:gatherStickers(),version:'v22'}; const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([JSON.stringify(d,null,2)],{type:'application/json;charset=utf-8'})); a.download=`timeline_v22_${getTodayString()}.json`; a.click();}
+        window.downloadJSON=function(){const d={timeline:gatherData(),notes:gatherNotes(),stickers:gatherStickers(),version:'v23'}; const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([JSON.stringify(d,null,2)],{type:'application/json;charset=utf-8'})); a.download=`timeline_v23_${getTodayString()}.json`; a.click();}
         window.loadJSON=function(inp){const f=inp.files[0]; if(!f)return; const r=new FileReader(); r.onload=function(e){try{const j=JSON.parse(e.target.result); if(j.timeline){renderFromData(j.timeline); if(j.notes)renderNotes(j.notes); if(j.stickers)renderStickers(j.stickers); autoSave(); alert('讀取成功');}}catch(x){alert('格式錯誤');}}; r.readAsText(f);}
 
         init();
