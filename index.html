@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>報告神器 V29：智慧繼承版</title>
+    <title>報告神器 V30：AI模式優化版</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         :root {
@@ -37,7 +37,6 @@
         .tool-title { font-weight: bold; font-size: 1.1rem; display: flex; align-items: center; gap: 10px; }
         .save-status { font-size: 0.8rem; color: #94a3b8; }
         
-        /* 搜尋框 */
         .search-box { position: relative; display: flex; align-items: center; gap: 10px; }
         .search-input {
             background: #334155; border: 1px solid #475569; color: white;
@@ -47,6 +46,12 @@
         .search-input:focus { width: 180px; border-color: #3b82f6; }
         .search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); opacity: 0.6; font-size: 12px; }
         
+        .filter-badge {
+            display: none; background: #fbbf24; color: #78350f; padding: 4px 10px; border-radius: 20px; 
+            font-size: 0.8rem; font-weight: bold; cursor: pointer; animation: fadeIn 0.3s;
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+
         .tool-btn-group { 
             display: flex; gap: 10px; 
             overflow-x: auto; 
@@ -72,7 +77,12 @@
         .tool-btn.danger-btn { background: #b91c1c; border-color: #991b1b; }
         .tool-btn.filter-btn { background: #d97706; border-color: #b45309; }
 
-        /* --- 專案過濾列 --- */
+        /* V30: AI 模式工具列 (預設隱藏) */
+        #ai-toolbar { display: none; }
+        body.ai-selecting #normal-toolbar { display: none; }
+        body.ai-selecting #ai-toolbar { display: flex; }
+        
+        /* 專案過濾列 */
         #project-bar {
             position: fixed; top: 70px; left: 0; right: 0;
             background: #f8fafc; border-bottom: 1px solid #e2e8f0;
@@ -91,9 +101,10 @@
         .proj-badge.active { background: #dbeafe; border-color: #3b82f6; color: #2563eb; font-weight: bold; box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2); }
         .proj-hint { font-size: 0.8rem; color: #94a3b8; margin-right: 10px; }
 
-        /* --- 左側圖形工具箱 --- */
+        /* --- 左側圖形工具箱 (V30: 位置修正) --- */
         .toolbox-container {
-            position: fixed; top: 130px; left: 20px; z-index: 1900;
+            position: fixed; top: 160px; /* 從 130 改為 160，避開專案列 */
+            left: 20px; z-index: 1800; /* 降低 z-index 避免蓋過上方 */
             transition: transform 0.3s ease;
         }
         .toolbox-container.closed { transform: translateX(-130%); }
@@ -130,7 +141,7 @@
             min-height: calc(100vh - 100px); background: var(--bg);
             transition: margin-top 0.3s;
         }
-        body.has-proj-bar .main-area { margin-top: 130px; }
+        body.has-proj-bar .main-area { margin-top: 140px; } /* 配合專案列展開 */
 
         /* --- Timeline --- */
         .timeline { position: relative; padding: 20px 0; }
@@ -171,20 +182,26 @@
         .card-body { margin-top: 5px; }
         
         .project-row { display: flex; justify-content: flex-end; margin-bottom: 5px; }
+        
+        /* V30: 專案輸入框樣式優化，看起來更像可以編輯 */
         .project-input {
-            border: 1px solid #e2e8f0; background: #f1f5f9; color: #475569;
-            padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; 
+            border: 1px solid #cbd5e1; background: #fff; color: #475569;
+            padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; 
             width: 100px; text-align: right; outline: none; transition: width 0.3s;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
         }
-        .project-input:focus { width: 150px; border-color: #94a3b8; background: white; }
-        .project-input::placeholder { color: #cbd5e1; font-style: italic; }
-        .project-input:not(:placeholder-shown) {
-            background: #e0e7ff; color: #4338ca; border-color: #c7d2fe; font-weight: bold;
-        }
-
+        .project-input:focus { width: 150px; border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1); }
+        .project-input::placeholder { color: #94a3b8; }
+        
         .header-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
 
-        .select-chk { width: 18px; height: 18px; margin-right: 5px; cursor: pointer; accent-color: #8b5cf6; transform: scale(1.1); }
+        /* V30: AI 選取框，預設隱藏 */
+        .select-chk {
+            width: 20px; height: 20px; margin-right: 8px; cursor: pointer; accent-color: #8b5cf6;
+            transform: scale(1.2); display: none; /* 預設不顯示 */
+        }
+        /* AI 模式下顯示勾選框 */
+        body.ai-selecting .select-chk { display: inline-block; }
 
         .date-input {
             border: 1px solid #cbd5e1; background: #f8fafc; padding: 4px 8px; border-radius: 6px;
@@ -278,7 +295,7 @@
         @media screen and (max-width: 768px) {
             body { padding: 10px; }
             .main-area { margin-top: 50px; padding: 10px 0; }
-            body.has-proj-bar .main-area { margin-top: 130px; }
+            body.has-proj-bar .main-area { margin-top: 140px; }
             .toolbox-container { display: none !important; }
             .toolbar { padding: 10px; gap: 10px; }
             .tool-left { gap: 5px; }
@@ -314,7 +331,7 @@
     <div class="toolbar">
         <div class="tool-left">
             <div class="tool-title">
-                🧠 V29
+                🧠 V30
                 <span class="save-status" id="saveStatus"></span>
             </div>
             <div class="search-box">
@@ -323,11 +340,11 @@
             </div>
         </div>
         
-        <div class="tool-btn-group">
+        <div class="tool-btn-group" id="normal-toolbar">
             <button class="tool-btn filter-btn" onclick="toggleProjectBar()" title="展開專案過濾列">📁 專案</button>
             <button class="tool-btn view-btn" onclick="toggleView()" id="viewBtn">📊 甘特圖</button>
             <button class="tool-btn pres-btn" onclick="togglePresentation()" title="簡報模式">📽️ 簡報</button>
-            <button class="tool-btn ai-btn" onclick="generateAIPrompt()" title="複製 AI Prompt">🤖 AI輸出</button>
+            <button class="tool-btn ai-btn" onclick="enterAIMode()" title="進入選取模式生成 Prompt">🤖 AI輸出</button>
             <button class="tool-btn cal-btn" onclick="exportToCSV()">📅 CSV</button>
             <button class="tool-btn highlight" onclick="sortByDate()">📅 排序</button>
             <button class="tool-btn danger-btn" onclick="clearAllImages()" title="刪除圖片">🧹 清圖</button>
@@ -335,6 +352,12 @@
             <button class="tool-btn" onclick="downloadJSON()">📥 備份</button>
             <button class="tool-btn" onclick="document.getElementById('fileInput').click()">📤 讀取</button>
             <input type="file" id="fileInput" hidden onchange="loadJSON(this)">
+        </div>
+
+        <div class="tool-btn-group" id="ai-toolbar">
+            <button class="tool-btn camera-btn" onclick="confirmAIOutput()">✅ 確認生成</button>
+            <button class="tool-btn highlight" onclick="selectAllAI()">☑ 全選</button>
+            <button class="tool-btn danger-btn" onclick="exitAIMode()">❌ 取消</button>
         </div>
     </div>
 
@@ -381,14 +404,13 @@
         }
 
         const defaultData = [
-            { id: 1, pos: 'left', mode: 'range', color: 'blue', status: 0, project: '專案A', label: '基礎建設', date_single: '', date_start: getTodayString(), date_end: getTodayString(), content: '試試看：\n1. 點擊上方「📁 專案」選擇「專案A」\n2. 點擊下方「＋ 新增節點」\n3. 新卡片會自動填入「專案A」！' },
-            { id: 2, pos: 'right', mode: 'range', color: 'green', status: 0, project: '專案B', label: '行銷活動', date_single: '', date_start: getTodayString(), date_end: getTodayString(), content: '這是一個綠色條，會標上 [專案B]。\n因為日期相同，它們在甘特圖上會重疊顯示，方便比對。' }
+            { id: 1, pos: 'left', mode: 'normal', color: 'blue', status: 0, project: '專案A', label: '介面優化', date_single: getTodayString(), date_start: '', date_end: '', content: '1. 左側工具箱下移，不再擋住專案列。\n2. AI 選取功能改為模式切換，平常不會看到勾選框。' }
         ];
 
         function init() {
-            const savedData = localStorage.getItem('timeline_v29_data'); 
-            const savedNotes = localStorage.getItem('timeline_v29_notes');
-            const savedStickers = localStorage.getItem('timeline_v29_stickers');
+            const savedData = localStorage.getItem('timeline_v30_data'); 
+            const savedNotes = localStorage.getItem('timeline_v30_notes');
+            const savedStickers = localStorage.getItem('timeline_v30_stickers');
 
             if (savedData) renderFromData(JSON.parse(savedData));
             else renderFromData(defaultData);
@@ -399,6 +421,60 @@
             refreshProjectBar();
         }
 
+        // --- V30: AI 選取模式邏輯 ---
+        function enterAIMode() {
+            document.body.classList.add('ai-selecting');
+            alert('進入 AI 選取模式：\n請勾選您想要分析的卡片，然後點擊上方「✅ 確認生成」。');
+        }
+
+        function exitAIMode() {
+            document.body.classList.remove('ai-selecting');
+            // 清除所有勾選
+            document.querySelectorAll('.select-chk').forEach(chk => chk.checked = false);
+        }
+
+        function selectAllAI() {
+            document.querySelectorAll('.select-chk').forEach(chk => chk.checked = true);
+        }
+
+        function confirmAIOutput() {
+            const timelineItems = document.querySelectorAll('.timeline-item');
+            const selectedIndices = [];
+            timelineItems.forEach((item, index) => {
+                const checkbox = item.querySelector('.select-chk');
+                if (checkbox && checkbox.checked) selectedIndices.push(index);
+            });
+
+            const allData = gatherData();
+            let targetData = [];
+            let promptIntro = "";
+
+            if (selectedIndices.length > 0) {
+                targetData = allData.filter((_, index) => selectedIndices.includes(index));
+                promptIntro = `【注意：使用者僅選取了部分重點卡片進行討論】`;
+            } else {
+                if(!confirm('您未勾選任何卡片，是否輸出「全部」內容？')) return;
+                targetData = allData;
+                promptIntro = `【完整專案資料】`;
+            }
+
+            let prompt = `請分析以下專案資料：\n${promptIntro}\n日期：${getTodayString()}\n\n`;
+            targetData.forEach((item, index) => {
+                const date = item.mode === 'range' ? `${item.date_start}~${item.date_end}` : item.date_single;
+                const status = ['未開始', '進行中', '已完成', '延遲'][item.status] || '未知';
+                const project = item.project ? `[${item.project}] ` : ''; 
+                const cleanContent = item.content.replace(/<[^>]+>/g, '').replace(/\n+/g, ' ');
+                prompt += `${index+1}. ${project}[${status}] ${date} - ${item.label}: ${cleanContent}\n`;
+            });
+            prompt += `\n請針對以上內容進行專案進度摘要、風險評估或下一步建議。`;
+
+            navigator.clipboard.writeText(prompt).then(() => { 
+                alert('✅ AI Prompt 已複製成功！');
+                exitAIMode(); // 生成後自動退出
+            });
+        }
+
+        // --- 其他既有功能 ---
         function toggleProjectBar() {
             projectBar.classList.toggle('show');
             document.body.classList.toggle('has-proj-bar');
@@ -469,47 +545,6 @@
 
         function filterNodes(val) { applyFilters(); }
 
-        function generateAIPrompt() {
-            const timelineItems = document.querySelectorAll('.timeline-item');
-            const selectedIndices = [];
-            timelineItems.forEach((item, index) => {
-                const checkbox = item.querySelector('.select-chk');
-                if (checkbox && checkbox.checked) selectedIndices.push(index);
-            });
-
-            const allData = gatherData();
-            let targetData = [];
-            let promptIntro = "";
-
-            if (selectedIndices.length > 0) {
-                targetData = allData.filter((_, index) => selectedIndices.includes(index));
-                promptIntro = `【注意：使用者僅選取了部分重點卡片進行討論】`;
-            } else {
-                if (activeProjectFilters.size > 0) {
-                    targetData = allData.filter(item => activeProjectFilters.has(item.project));
-                    promptIntro = `【專案過濾：${Array.from(activeProjectFilters).join(', ')}】`;
-                } else {
-                    targetData = allData;
-                    promptIntro = `【完整專案資料】`;
-                }
-            }
-
-            let prompt = `請分析以下專案資料：\n${promptIntro}\n日期：${getTodayString()}\n\n`;
-            targetData.forEach((item, index) => {
-                const date = item.mode === 'range' ? `${item.date_start}~${item.date_end}` : item.date_single;
-                const status = ['未開始', '進行中', '已完成', '延遲'][item.status] || '未知';
-                const project = item.project ? `[${item.project}] ` : ''; 
-                const cleanContent = item.content.replace(/<[^>]+>/g, '').replace(/\n+/g, ' ');
-                prompt += `${index+1}. ${project}[${status}] ${date} - ${item.label}: ${cleanContent}\n`;
-            });
-            prompt += `\n請針對以上內容進行專案進度摘要、風險評估或下一步建議。`;
-
-            navigator.clipboard.writeText(prompt).then(() => { 
-                const aiBtn = document.querySelector('.ai-btn'); const originalText = aiBtn.innerText;
-                aiBtn.innerText = '✅ 已複製'; setTimeout(() => aiBtn.innerText = originalText, 2000);
-            });
-        }
-
         function createNodeElement(item) {
             const div = document.createElement('div');
             div.className = `timeline-item ${item.pos==='left'?'force-left':item.pos==='right'?'force-right':''} ${item.mode==='range'?'range-mode':''}`;
@@ -530,10 +565,10 @@
                     </div>
                     <div class="card-body">
                         <div class="project-row">
-                            <input type="text" class="project-input" autocomplete="off" value="${item.project || ''}" placeholder="🏷️ 專案名稱..." oninput="autoSave(); refreshProjectBar();" onclick="handleProjectClick(event)" title="輸入名稱，再次點擊可過濾專案">
+                            <input type="text" class="project-input" autocomplete="off" value="${item.project || ''}" placeholder="🏷️ 專案..." oninput="autoSave(); refreshProjectBar();" onclick="handleProjectClick(event)">
                         </div>
                         <div class="header-row">
-                            <input type="checkbox" class="select-chk" title="勾選以進行 AI 分析">
+                            <input type="checkbox" class="select-chk">
                             <input type="date" class="date-input single-date" value="${item.date_single}" onchange="autoSave()" title="日期">
                             <button class="today-btn single-date" onclick="setToday(this)" title="設定為今天">今</button>
                             <div class="range-container">
@@ -679,7 +714,6 @@
             chart.innerHTML = '';
             let data = gatherData();
             
-            // V28: 支援過濾
             if (activeProjectFilters.size > 0) {
                 data = data.filter(item => activeProjectFilters.has(item.project));
             }
@@ -716,7 +750,6 @@
                 const endPct = ((item.visualEnd - plotStart) / plotDur) * 100;
                 let widthPct = endPct - startPct; if (widthPct < 0.5) widthPct = 0.5; 
                 
-                // V28: 顯示 [專案] + 標題
                 const projectPrefix = item.project ? `[${item.project}] ` : '';
                 const displayLabel = projectPrefix + (item.label || '無標題');
                 
@@ -799,14 +832,14 @@
                 }
             });
             const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([csvContent], { type: 'text/csv;charset=utf-8;' }));
-            link.download = `timeline_v29_${getTodayString()}.csv`; link.click();
+            link.download = `timeline_v30_${getTodayString()}.csv`; link.click();
         }
 
         function takeScreenshot() {
             if(currentView === 'gantt') { alert('建議切換回列表模式再截圖！'); }
             document.body.classList.add('screenshot-mode'); window.scrollTo(0, 0); saveStatus.innerText = '處理中...';
             html2canvas(document.body, { backgroundColor: '#f3f4f6', scale: 2, useCORS: true }).then(canvas => {
-                const link = document.createElement('a'); link.download = `report_v29_${getTodayString()}.png`; link.href = canvas.toDataURL(); link.click();
+                const link = document.createElement('a'); link.download = `report_v30_${getTodayString()}.png`; link.href = canvas.toDataURL(); link.click();
                 document.body.classList.remove('screenshot-mode'); saveStatus.innerText = '';
             }).catch(err => { document.body.classList.remove('screenshot-mode'); alert('截圖錯誤'); });
         }
@@ -855,24 +888,20 @@
         window.deleteNode=function(btn){if(confirm('刪除?')){btn.closest('.timeline-item').remove(); autoSave();}}
         window.moveNode=function(btn,dir){const i=btn.closest('.timeline-item'); if(dir==='up'&&i.previousElementSibling)i.parentNode.insertBefore(i,i.previousElementSibling);else if(dir==='down'&&i.nextElementSibling)i.parentNode.insertBefore(i,i.nextElementSibling.nextSibling); autoSave();}
         
-        // V29: 智慧繼承邏輯
+        // V30: 智慧繼承邏輯
         document.getElementById('mainAddBtn').addEventListener('click',()=>{
             const t = getTodayString();
-            
-            // 檢查是否有「單一」被選取的專案
             let defaultProj = '';
             if (activeProjectFilters.size === 1) {
-                // 如果只選了一個專案，就自動填入
                 defaultProj = activeProjectFilters.values().next().value;
             }
-
             container.appendChild(createNodeElement({
                 id:Date.now(),
                 pos:'auto',
                 mode:'normal',
                 color:'blue',
                 status:0,
-                project: defaultProj, // 智慧繼承
+                project: defaultProj,
                 label:'',
                 date_single:t,
                 date_start:t,
@@ -897,12 +926,12 @@
         function gatherStickers(){const l=[]; document.querySelectorAll('.sticker').forEach(el=>{l.push({id:el.id.replace('sticker-',''),type:el.dataset.type,x:el.offsetLeft,y:el.offsetTop});}); return l;}
         
         function autoSave() {
-            localStorage.setItem('timeline_v29_data', JSON.stringify(gatherData()));
-            localStorage.setItem('timeline_v29_notes', JSON.stringify(gatherNotes()));
-            localStorage.setItem('timeline_v29_stickers', JSON.stringify(gatherStickers()));
+            localStorage.setItem('timeline_v30_data', JSON.stringify(gatherData()));
+            localStorage.setItem('timeline_v30_notes', JSON.stringify(gatherNotes()));
+            localStorage.setItem('timeline_v30_stickers', JSON.stringify(gatherStickers()));
             saveStatus.innerText = '已儲存'; setTimeout(() => saveStatus.innerText = '', 2000);
         }
-        window.downloadJSON=function(){const d={timeline:gatherData(),notes:gatherNotes(),stickers:gatherStickers(),version:'v29'}; const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([JSON.stringify(d,null,2)],{type:'application/json;charset=utf-8'})); a.download=`timeline_v29_${getTodayString()}.json`; a.click();}
+        window.downloadJSON=function(){const d={timeline:gatherData(),notes:gatherNotes(),stickers:gatherStickers(),version:'v30'}; const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([JSON.stringify(d,null,2)],{type:'application/json;charset=utf-8'})); a.download=`timeline_v30_${getTodayString()}.json`; a.click();}
         window.loadJSON=function(inp){const f=inp.files[0]; if(!f)return; const r=new FileReader(); r.onload=function(e){try{const j=JSON.parse(e.target.result); if(j.timeline){renderFromData(j.timeline); if(j.notes)renderNotes(j.notes); if(j.stickers)renderStickers(j.stickers); autoSave(); alert('讀取成功');}}catch(x){alert('格式錯誤');}}; r.readAsText(f);}
 
         init();
