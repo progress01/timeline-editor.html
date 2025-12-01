@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>報告神器 V54：日期排版與資料防護版</title>
+    <title>報告神器 V54 (甘特圖修復版)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         :root {
@@ -317,16 +317,109 @@
         }
         .add-main:hover { border-color: #3b82f6; color: #3b82f6; background: #eff6ff; }
 
-        /* --- Gantt View --- */
+        /* --- Gantt View (修復版 CSS) --- */
         #gantt-view { display: none; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); overflow-x: auto; margin-bottom: 30px; border: 1px solid #e2e8f0; }
-        .gantt-container { position: relative; min-width: 800px; padding-top: 40px; padding-bottom: 20px; }
-        .gantt-axis-labels { position: absolute; top: 0; left: 160px; right: 0; height: 30px; border-bottom: 1px solid #e2e8f0; }
-        .gantt-axis-mark { position: absolute; top: 0; font-size: 0.75rem; color: #94a3b8; border-left: 1px dashed #e2e8f0; height: 100vh; padding-left: 4px; pointer-events: none; }
-        .gantt-row { position: relative; height: 40px; margin-bottom: 8px; display: flex; align-items: center; border-bottom: 1px dashed #f1f5f9; }
-        .gantt-label-col { width: 150px; flex-shrink: 0; font-size: 0.85rem; font-weight: bold; color: #334155; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 15px; text-align: right; border-right: 2px solid #e2e8f0; margin-right: 0; line-height: 40px; background: white; z-index: 5; }
-        .gantt-bar-area { flex-grow: 1; position: relative; height: 100%; }
-        .gantt-bar { position: absolute; top: 8px; height: 24px; border-radius: 4px; font-size: 0.75rem; color: white; white-space: nowrap; display: flex; align-items: center; padding: 0 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.15); cursor: help; }
-        .gantt-bar[data-color="blue"] { background: #4f46e5; } .gantt-bar[data-color="green"] { background: #10b981; } .gantt-bar[data-color="red"] { background: #ef4444; } .gantt-bar[data-color="yellow"] { background: #f59e0b; color: #333; }
+        .gantt-container { position: relative; min-width: 800px; padding-bottom: 20px; }
+        
+        /* 標題與刻度容器：使用 Flex 確保對齊 */
+        .gantt-axis-labels { 
+            display: flex; 
+            height: 35px; 
+            border-bottom: 1px solid #e2e8f0; 
+            margin-bottom: 10px; 
+            align-items: flex-end;
+        }
+        
+        /* 左側標題佔位區 (150px) */
+        .gantt-header-placeholder {
+            width: 150px; 
+            flex-shrink: 0; 
+            border-right: 2px solid transparent; 
+            margin-right: 0;
+        }
+        
+        /* 右側時間軸區域 (彈性伸展) */
+        .gantt-axis-area {
+            flex-grow: 1;
+            position: relative;
+            height: 100%;
+        }
+
+        /* 刻度線與文字 */
+        .gantt-axis-mark { 
+            position: absolute; 
+            top: 0; 
+            bottom: -5px; /* 稍微突出 */
+            border-left: 1px dashed #cbd5e1; 
+            padding-left: 4px; 
+            pointer-events: none; 
+            white-space: nowrap;
+        }
+        .gantt-axis-mark span {
+            position: absolute;
+            top: -18px;
+            left: 0;
+            transform: translateX(-50%);
+            font-size: 0.75rem;
+            color: #64748b;
+        }
+
+        /* 資料列 */
+        .gantt-row { 
+            position: relative; 
+            height: 40px; 
+            margin-bottom: 8px; 
+            display: flex; 
+            align-items: center; 
+            border-bottom: 1px dashed #f1f5f9; 
+        }
+        
+        .gantt-label-col { 
+            width: 150px; 
+            flex-shrink: 0; 
+            font-size: 0.85rem; 
+            font-weight: bold; 
+            color: #334155; 
+            white-space: nowrap; 
+            overflow: hidden; 
+            text-overflow: ellipsis; 
+            padding-right: 15px; 
+            text-align: right; 
+            border-right: 2px solid #e2e8f0; 
+            margin-right: 0; 
+            line-height: 40px; 
+            background: white; 
+            z-index: 5; 
+        }
+        
+        .gantt-bar-area { 
+            flex-grow: 1; 
+            position: relative; 
+            height: 100%; 
+        }
+        
+        .gantt-bar { 
+            position: absolute; 
+            top: 8px; 
+            height: 24px; 
+            border-radius: 4px; 
+            font-size: 0.75rem; 
+            color: white; 
+            white-space: nowrap; 
+            display: flex; 
+            align-items: center; 
+            padding: 0 8px; 
+            overflow: hidden; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.15); 
+            cursor: help; 
+            transition: opacity 0.2s;
+        }
+        .gantt-bar:hover { opacity: 0.9; z-index: 10; overflow: visible; width: auto !important; min-width: 100%; }
+
+        .gantt-bar[data-color="blue"] { background: #4f46e5; } 
+        .gantt-bar[data-color="green"] { background: #10b981; } 
+        .gantt-bar[data-color="red"] { background: #ef4444; } 
+        .gantt-bar[data-color="yellow"] { background: #f59e0b; color: #333; }
 
         #exit-pres-btn {
             display: none; position: fixed; top: 20px; right: 20px; z-index: 3000;
@@ -367,7 +460,7 @@
     <div class="toolbar">
         <div class="tool-left">
             <div class="tool-title">
-                🧠 V54
+                🧠 V54 (修復)
                 <span class="save-status" id="saveStatus"></span>
             </div>
             <div class="search-box">
@@ -663,10 +756,11 @@
             renderFromData(newData); autoSave();
         }
 
-        // --- Gantt Logic ---
+        // --- Gantt Logic (修復版) ---
         function getMidnightTime(dateStr) {
             if(!dateStr) return null;
             const parts = dateStr.split('-');
+            if(parts.length < 3) return null;
             return new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]), 0, 0, 0).getTime();
         }
 
@@ -698,59 +792,101 @@
         });
 
         function renderGantt() {
-            const chart = document.getElementById('ganttChart'); chart.innerHTML='';
-            let data = gatherData().filter(i => !i.isMemo && i.date_single);
+            const chart = document.getElementById('ganttChart'); 
+            chart.innerHTML='';
+            
+            // 1. 過濾與準備資料
+            let data = gatherData().filter(i => !i.isMemo && (i.date_single || i.date_start));
             if (activeProjectFilters.size > 0) data = data.filter(i => activeProjectFilters.has(i.project));
-            if(data.length===0) { chart.innerHTML='<div style="text-align:center;padding:20px;color:#999">無有效日期資料</div>'; return; }
+            
+            if(data.length === 0) { 
+                chart.innerHTML='<div style="text-align:center;padding:20px;color:#999">無有效日期資料，請確認卡片是否為 memo 模式或已設定日期</div>'; 
+                return; 
+            }
 
+            // 2. 計算時間區間 (Min / Max)
             const parsed = data.map(d => {
-                let s = getMidnightTime(d.mode==='range'?d.date_start:d.date_single);
-                let e = getMidnightTime(d.mode==='range'?d.date_end:d.date_single);
-                if(!e || e<s) e=s;
+                let s = getMidnightTime(d.mode==='range' ? d.date_start : d.date_single);
+                let e = getMidnightTime(d.mode==='range' ? d.date_end : d.date_single);
+                
+                // 防呆：修復日期邏輯
+                if(!s && e) s = e;
+                if(s && !e) e = s;
+                if(!s && !e) return null;
+                if(e < s) e = s;
+                
                 return { ...d, start: s, end: e };
-            }).sort((a,b)=>a.start-b.start);
+            }).filter(d => d !== null).sort((a,b) => a.start - b.start);
+
+            if (parsed.length === 0) {
+                chart.innerHTML='<div style="text-align:center;padding:20px;color:#999">所有卡片日期格式皆無效</div>'; 
+                return;
+            }
 
             const dayMs = 86400000;
             let minT = Math.min(...parsed.map(p=>p.start));
             let maxT = Math.max(...parsed.map(p=>p.end));
             
-            if (maxT - minT < dayMs * 3) {
-                minT -= dayMs * 3;
-                maxT += dayMs * 3;
-            } else {
-                minT -= dayMs;
-                maxT += dayMs;
-            }
+            // 前後多留 3 天緩衝
+            minT -= dayMs * 3;
+            maxT += dayMs * 3;
 
             const plotDur = maxT - minT;
             if (plotDur <= 0) { chart.innerHTML='<div style="text-align:center;">時間區間計算錯誤</div>'; return; }
 
+            // 3. 繪製時間軸 (Header)
+            // 使用 Flex 佈局：左邊 150px 空白，右邊才是刻度區
             let axisHtml = '';
-            for(let i=0; i<=6; i++){
-                const pct = i * (100/6);
-                const t = minT + (plotDur * (i/6));
+            const ticks = 6; // 刻度數量
+            for(let i=0; i<=ticks; i++){
+                const pct = (i / ticks) * 100;
+                const t = minT + (plotDur * (i/ticks));
                 const d = new Date(t);
-                axisHtml += `<div class="gantt-axis-mark" style="left:${150 + (pct/100 * (100-20))}%; border-color:${i===0||i===6?'transparent':'#e2e8f0'}"></div>
-                             <div style="position:absolute; top:0; left:${150 + (pct/100 * (100-20))}%; font-size:10px; color:#999; transform:translateX(-50%)">${d.getMonth()+1}/${d.getDate()}</div>`;
+                const dateStr = `${d.getMonth()+1}/${d.getDate()}`;
+                
+                // 相對定位：相對於 gantt-axis-area 的百分比
+                axisHtml += `
+                    <div class="gantt-axis-mark" style="left:${pct}%;">
+                        <span>${dateStr}</span>
+                    </div>`;
             }
 
+            const headerHtml = `
+                <div class="gantt-axis-labels">
+                    <div class="gantt-header-placeholder"></div>
+                    <div class="gantt-axis-area">
+                        ${axisHtml}
+                    </div>
+                </div>`;
+
+            // 4. 繪製資料列 (Rows)
             let rowsHtml = '';
             parsed.forEach(item => {
-                const sPct = ((item.start - minT) / plotDur) * 100;
-                const ePct = ((item.end + dayMs - minT) / plotDur) * 100; 
+                // 計算百分比：相對於 plotDur
+                let sPct = ((item.start - minT) / plotDur) * 100;
+                let ePct = ((item.end + dayMs - minT) / plotDur) * 100; // +dayMs 包含結束當天
                 let widthPct = ePct - sPct;
-                if(widthPct < 0.5) widthPct = 0.5;
                 
+                // 最小寬度防呆
+                if(widthPct < 0.5) widthPct = 0.5;
+                // 邊界防呆
+                if (sPct < 0) { widthPct += sPct; sPct = 0; }
+                if (sPct + widthPct > 100) { widthPct = 100 - sPct; }
+
                 rowsHtml += `
                     <div class="gantt-row">
-                        <div class="gantt-label-col" title="${item.label}">${item.project?`[${item.project}]`:''} ${item.label}</div>
+                        <div class="gantt-label-col" title="${item.label}">
+                            ${item.project ? `<span style="color:#888;font-size:0.8em">[${item.project}]</span> ` : ''}${item.label}
+                        </div>
                         <div class="gantt-bar-area">
-                            <div class="gantt-bar" data-color="${item.color}" style="left:${sPct}%; width:${widthPct}%;"></div>
+                            <div class="gantt-bar" data-color="${item.color}" style="left:${sPct}%; width:${widthPct}%;">
+                                ${widthPct > 5 ? item.label : ''}
+                            </div>
                         </div>
                     </div>`;
             });
 
-            chart.innerHTML = `<div class="gantt-axis-labels" style="padding-left:150px; position:relative; height:20px;">${axisHtml}</div>${rowsHtml}`;
+            chart.innerHTML = headerHtml + rowsHtml;
         }
 
         // --- 截圖 ---
