@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>報告神器 V47：穩定修復版</title>
+    <title>報告神器 V48：樣式與功能全修復版</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         :root {
@@ -13,15 +13,17 @@
             --font-stack: "Microsoft JhengHei", "Heiti TC", sans-serif; 
         }
 
+        * { box-sizing: border-box; }
+
         body {
             font-family: var(--font-stack);
             background-color: var(--bg);
             color: var(--text);
             margin: 0;
-            padding: 20px;
+            padding: 0; /* V48: 改為 0 以避免截圖邊緣問題 */
             position: relative; 
             min-height: 100vh;
-            transition: background-color 0.3s;
+            -webkit-font-smoothing: antialiased;
         }
 
         /* --- 頂部工具列 --- */
@@ -30,7 +32,7 @@
             background: #1e293b; color: white; padding: 10px 20px;
             display: flex; justify-content: space-between; align-items: center;
             z-index: 2000; box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-            height: 50px;
+            height: 60px; /* V48: 固定高度 */
         }
 
         .tool-left { display: flex; align-items: center; gap: 15px; flex-shrink: 0; }
@@ -46,33 +48,30 @@
         .search-input:focus { width: 180px; border-color: #3b82f6; }
         .search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); opacity: 0.6; font-size: 12px; }
         
-        .tool-btn-group { display: flex; gap: 10px; overflow-x: auto; padding-right: 10px; align-items: center; height: 100%; }
+        .tool-btn-group { display: flex; gap: 8px; overflow-x: auto; padding-right: 10px; align-items: center; height: 100%; }
         .tool-btn-group::-webkit-scrollbar { display: none; }
         
         .tool-btn {
             background: transparent; 
             border: 1px solid #475569; 
             color: #e2e8f0; 
-            padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 0.9rem;
+            padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.9rem;
             display: flex; align-items: center; gap: 6px; transition: 0.2s; white-space: nowrap; flex-shrink: 0;
         }
         .tool-btn:hover { background: rgba(255,255,255,0.1); border-color: white; color: white; }
-        
         .tool-btn.highlight { border-color: #a78bfa; color: #a78bfa; }
         .tool-btn.camera-btn { border-color: #34d399; color: #34d399; }
         .tool-btn.danger-btn { border-color: #f87171; color: #f87171; }
         .tool-btn.ai-btn { border-color: #c084fc; color: #c084fc; }
         .tool-btn.filter-btn { border-color: #d97706; color: #fbbf24; }
-        .tool-btn.google-btn { border-color: #60a5fa; color: #60a5fa; } 
-        .tool-btn.keep-btn { border-color: #facc15; color: #facc15; } 
-
+        
         #ai-toolbar { display: none; }
         body.ai-selecting #normal-toolbar { display: none; }
         body.ai-selecting #ai-toolbar { display: flex; }
         
         /* 專案過濾列 */
         #project-bar {
-            position: fixed; top: 70px; left: 0; right: 0;
+            position: fixed; top: 60px; left: 0; right: 0;
             background: #f8fafc; border-bottom: 1px solid #e2e8f0;
             padding: 10px 20px; z-index: 1950;
             display: none; flex-wrap: wrap; gap: 10px; 
@@ -87,25 +86,20 @@
             display: flex; align-items: center; gap: 5px; user-select: none;
         }
         .proj-badge:hover { background: #f1f5f9; border-color: #94a3b8; }
-        .proj-badge.active { background: #dbeafe; border-color: #3b82f6; color: #2563eb; font-weight: bold; box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2); }
-        .proj-hint { font-size: 0.8rem; color: #94a3b8; margin-right: 10px; }
-        
-        .rename-btn {
-            font-size: 0.8rem; padding: 4px 10px; background: #8b5cf6; color: white;
-            border-radius: 4px; cursor: pointer; border: none; display: flex; align-items: center; gap: 4px;
-        }
+        .proj-badge.active { background: #dbeafe; border-color: #3b82f6; color: #2563eb; font-weight: bold; }
+        .rename-btn { font-size: 0.75rem; padding: 2px 8px; background: #8b5cf6; color: white; border-radius: 4px; cursor: pointer; border: none; }
 
         /* 左側圖形工具箱 */
         .toolbox-container {
-            position: fixed; top: 220px; left: 20px; z-index: 1800;
+            position: fixed; top: 200px; left: 20px; z-index: 1800;
             transition: transform 0.3s ease;
         }
-        .toolbox-container.closed { transform: translateX(-130%); }
+        .toolbox-container.closed { transform: translateX(-140%); }
 
         .toolbox {
-            width: 80px; background: white; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            display: flex; flex-direction: column; gap: 8px; padding: 15px 5px;
-            align-items: center; position: relative;
+            width: 70px; background: white; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            display: flex; flex-direction: column; gap: 5px; padding: 10px 5px;
+            align-items: center; position: relative; border: 1px solid #e2e8f0;
         }
 
         .toolbox-toggle-btn {
@@ -114,19 +108,48 @@
             background: #3b82f6; color: white;
             border-top-right-radius: 8px; border-bottom-right-radius: 8px;
             display: flex; align-items: center; justify-content: center;
-            cursor: pointer; box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
-            font-size: 14px;
+            cursor: pointer; box-shadow: 2px 2px 5px rgba(0,0,0,0.1); font-size: 14px;
         }
 
-        .toolbox-header { font-size: 0.8rem; color: #64748b; font-weight:bold; margin: 5px 0 2px 0; border-bottom: 1px solid #eee; width: 100%; text-align: center; padding-bottom: 2px;}
+        .toolbox-header { font-size: 0.75rem; color: #64748b; font-weight:bold; margin: 5px 0 2px 0; border-bottom: 1px solid #eee; width: 100%; text-align: center; }
         .tool-item {
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            width: 60px; padding: 5px 0; cursor: pointer; border-radius: 6px; transition: 0.2s;
+            width: 50px; padding: 5px 0; cursor: pointer; border-radius: 6px; transition: 0.2s;
             border: 1px solid transparent;
         }
         .tool-item:hover { background: #f1f5f9; border-color: #cbd5e1; }
-        .tool-icon { font-size: 1.4rem; line-height: 1; margin-bottom: 2px; }
-        .tool-text { font-size: 0.75rem; color: #475569; }
+        .tool-icon { font-size: 1.2rem; line-height: 1; margin-bottom: 2px; }
+        .tool-text { font-size: 0.7rem; color: #475569; }
+
+        /* V48 修復: 便利貼與貼紙樣式 (補回遺失的CSS) */
+        .sticky-note {
+            position: absolute; width: 160px; height: 160px;
+            background: #fef3c7; border: 1px solid #d97706;
+            box-shadow: 3px 3px 10px rgba(0,0,0,0.2);
+            z-index: 1500; display: flex; flex-direction: column;
+            transform: rotate(-1deg); border-radius: 2px;
+        }
+        .note-header {
+            height: 24px; background: rgba(0,0,0,0.05); cursor: move;
+            display: flex; justify-content: flex-end; align-items: center; padding: 0 5px;
+        }
+        .note-close { cursor: pointer; color: #78350f; font-weight: bold; font-size: 16px; padding: 0 5px; }
+        .note-content {
+            flex: 1; background: transparent; border: none; resize: none;
+            padding: 10px; font-family: inherit; outline: none; font-size: 1rem; color: #451a03;
+        }
+        .sticker {
+            position: absolute; width: 80px; height: 80px; z-index: 1500; cursor: move;
+        }
+        .sticker svg { width: 100%; height: 100%; drop-shadow: 2px 2px 2px rgba(0,0,0,0.2); }
+        .sticker-del {
+            position: absolute; top: -8px; right: -8px; width: 20px; height: 20px;
+            background: #ef4444; color: white; font-size: 12px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; cursor: pointer;
+            display: none; box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .sticker:hover { border: 1px dashed #cbd5e1; }
+        .sticker:hover .sticker-del { display: flex; }
 
         /* 主區域 */
         .main-area {
@@ -134,45 +157,44 @@
             min-height: calc(100vh - 100px); background: var(--bg);
             transition: margin-top 0.3s;
         }
-        body.has-proj-bar .main-area { margin-top: 180px; }
+        body.has-proj-bar .main-area { margin-top: 140px; }
 
         /* Timeline & Card */
         .timeline { position: relative; padding: 20px 0; }
         .timeline::before {
-            content: ''; position: absolute; top: 10px; bottom: 10px; left: 50%;
+            content: ''; position: absolute; top: 0; bottom: 0; left: 50%;
             width: 4px; background: #e5e7eb; transform: translateX(-50%);
-            border-radius: 2px; z-index: 0; transition: left 0.3s;
+            border-radius: 2px; z-index: 0;
         }
 
         .timeline-item {
-            position: relative; margin-bottom: 50px; 
+            position: relative; margin-bottom: 40px; 
             width: 100%;
-            display: flex; justify-content: center; transition: all 0.5s ease;
+            display: flex; justify-content: center; 
         }
         .timeline-item.hidden-by-filter { display: none !important; } 
 
-        .timeline-item .card { width: 45%; transition: margin 0.3s, width 0.3s; }
-        .timeline-item:nth-child(odd) .card { margin-right: 50%; border-right: 4px solid transparent; }
-        .timeline-item:nth-child(even) .card { margin-left: 50%; border-left: 4px solid transparent; }
-        .timeline-item.force-left .card { margin-right: 50% !important; margin-left: 0 !important; border-right: 4px solid transparent; border-left: none; }
-        .timeline-item.force-right .card { margin-left: 50% !important; margin-right: 0 !important; border-left: 4px solid transparent; border-right: none; }
+        /* V48 修復: 卡片寬度與邊距計算 */
+        .timeline-item .card { width: 45%; }
+        .timeline-item:nth-child(odd) .card { margin-right: 50%; margin-left: auto; border-right: 4px solid transparent; }
+        .timeline-item:nth-child(even) .card { margin-left: 50%; margin-right: auto; border-left: 4px solid transparent; }
+        
+        .timeline-item.force-left .card { margin-right: 50% !important; margin-left: auto !important; border-right: 4px solid transparent; border-left: none; }
+        .timeline-item.force-right .card { margin-left: 50% !important; margin-right: auto !important; border-left: 4px solid transparent; border-right: none; }
 
+        /* V48 修復: 卡片內部 Flex 結構，確保 Footer 永遠在底部 */
         .card {
             display: flex; flex-direction: column; 
             background: white; border-radius: 12px;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
             position: relative; z-index: 10; 
-            padding: 0; 
             overflow: hidden;
             border-top: 5px solid var(--primary);
-            min-height: 180px;
+            min-height: 220px; /* 增加最小高度 */
+            height: 100%; /* 撐滿容器 */
         }
         
-        .card.memo-mode {
-            border-top-style: dashed; 
-            background-color: #fcfcfc;
-        }
-        
+        .card.memo-mode { border-top-style: dashed; background-color: #fcfcfc; }
         .card[data-color="blue"] { border-top-color: #4f46e5; }
         .card[data-color="green"] { border-top-color: #10b981; background: #f0fdf4; }
         .card[data-color="red"] { border-top-color: #ef4444; background: #fef2f2; }
@@ -185,43 +207,38 @@
         /* 頂部區域 */
         .card-top-area {
             display: flex; justify-content: space-between; align-items: center;
-            padding: 15px 50px 5px 20px; 
+            padding: 12px 15px 8px 15px; 
             border-bottom: 1px dashed #e2e8f0;
             flex-shrink: 0; 
-            min-height: 40px;
         }
-        .card-top-left { display: flex; align-items: center; gap: 8px; flex: 1; flex-wrap: wrap; }
-        .card-top-right { 
-            display: flex; gap: 3px; margin-left: 10px; flex-shrink: 0; flex-wrap: nowrap;
-            opacity: 1;
-        }
+        .card-top-left { display: flex; align-items: center; gap: 8px; flex: 1; }
+        .card-top-right { display: flex; gap: 4px; flex-shrink: 0; }
 
         /* 內容區域 */
         .card-body {
-            padding: 15px 60px 20px 25px; 
-            flex-grow: 1; 
+            padding: 15px 40px 15px 20px; /* 右側留空間給側邊欄 */
+            flex-grow: 1; /* 關鍵: 佔據剩餘空間 */
+            display: flex; flex-direction: column;
         }
 
-        /* 底部標籤 */
+        /* 底部標籤 - V48 強制固定樣式 */
         .project-footer {
             width: 100%;
-            height: 32px; 
+            height: 36px; 
             display: flex; align-items: center; justify-content: flex-end;
             padding: 0 15px;
             background: #cbd5e1;
-            transition: background-color 0.3s;
-            margin-top: auto;
-            box-sizing: border-box;
+            margin-top: auto; /* 關鍵: 推到底部 */
+            flex-shrink: 0;
         }
         .card[data-color="blue"] .project-footer { background: #4f46e5; }
         .card[data-color="green"] .project-footer { background: #10b981; }
         .card[data-color="red"] .project-footer { background: #ef4444; }
         .card[data-color="yellow"] .project-footer { background: #f59e0b; }
-        .card.memo-mode .project-footer { opacity: 0.7; }
 
         .footer-project-input {
             background: transparent; border: none; 
-            color: white; font-weight: bold; font-size: 0.9rem;
+            color: white; font-weight: bold; font-size: 0.95rem;
             text-align: right; width: 100%; outline: none;
             text-shadow: 0 1px 1px rgba(0,0,0,0.1);
         }
@@ -229,153 +246,118 @@
 
         /* 側邊垂直工具列 */
         .card-side-tools {
-            position: absolute; right: 8px; top: 60px; bottom: 40px; 
+            position: absolute; right: 6px; top: 55px; bottom: 40px; 
             display: flex; flex-direction: column; gap: 6px;
-            align-items: center; justify-content: flex-start;
-            width: 30px; 
-            padding-left: 5px; 
-            border-left: 1px dashed #f1f5f9;
-            opacity: 1; 
-            z-index: 20;
+            align-items: center;
+            width: 32px; 
+            border-left: 1px dashed #e2e8f0;
+            z-index: 20; padding-top: 5px;
         }
 
-        .status-dot {
-            width: 14px; height: 14px; border-radius: 50%; cursor: pointer; border: 2px solid rgba(0,0,0,0.1); flex-shrink: 0;
-        }
+        .status-dot { width: 14px; height: 14px; border-radius: 50%; cursor: pointer; border: 2px solid rgba(0,0,0,0.1); }
         .status-0 { background: #9ca3af; } .status-1 { background: #f59e0b; } .status-2 { background: #10b981; } .status-3 { background: #ef4444; }
 
         .btn-icon { 
-            border: 1px solid #334155; background: transparent; color: #334155; 
-            cursor: pointer; width: 28px; height: 28px; border-radius: 4px; 
+            border: 1px solid #cbd5e1; background: white; color: #64748b; 
+            cursor: pointer; width: 26px; height: 26px; border-radius: 4px; 
             display: flex; align-items: center; justify-content: center; font-size: 14px;
-            flex-shrink: 0; transition: 0.2s;
+            transition: 0.2s;
         }
-        .btn-icon:hover { background: #f1f5f9; border-color: #1e293b; color: #1e293b; }
-        .side-btn { width: 26px; height: 26px; font-size: 12px; }
+        .btn-icon:hover { background: #f1f5f9; color: #1e293b; border-color: #94a3b8; }
+        .side-btn { width: 24px; height: 24px; font-size: 12px; background: #f8fafc; }
+
+        .select-chk { width: 18px; height: 18px; margin-right: 8px; cursor: pointer; display: none; }
+        body.ai-selecting .select-chk { display: inline-block; }
 
         .mode-toggle-btn {
             font-size: 12px; border: 1px solid #94a3b8; border-radius: 4px; 
-            padding: 2px 6px; cursor: pointer; background: #f1f5f9; color: #64748b;
+            padding: 2px 6px; cursor: pointer; background: #f1f5f9; color: #64748b; margin-right: 5px;
         }
-        .mode-toggle-btn:hover { background: #e2e8f0; }
-
-        .select-chk { width: 20px; height: 20px; margin-right: 8px; cursor: pointer; accent-color: #8b5cf6; transform: scale(1.2); display: none; }
-        body.ai-selecting .select-chk { display: inline-block; }
 
         .date-input {
-            border: 1px solid #cbd5e1; background: #f8fafc; padding: 4px 8px; border-radius: 6px;
-            font-family: inherit; font-size: 0.85rem; color: #334155; outline: none; cursor: pointer; width: 115px;
+            border: 1px solid #cbd5e1; background: #f8fafc; padding: 4px 6px; border-radius: 4px;
+            font-family: inherit; font-size: 0.85rem; color: #334155; outline: none; cursor: pointer; width: 110px;
         }
         .card.memo-mode .date-input, .card.memo-mode .today-btn, .card.memo-mode .range-container { display: none !important; }
 
         .today-btn {
             background: #e0e7ff; color: #4338ca; border: none; border-radius: 4px;
-            padding: 4px 8px; font-size: 0.75rem; cursor: pointer; font-weight: bold;
+            padding: 4px 6px; font-size: 0.75rem; cursor: pointer; font-weight: bold; margin-left: 3px;
         }
         .label-input {
-            border: none; border-bottom: 1px dashed #cbd5e1; padding: 4px 8px; font-weight: bold;
-            color: var(--primary); font-size: 1rem; outline: none; flex: 1; min-width: 120px;
+            border: none; border-bottom: 1px dashed #cbd5e1; padding: 5px 0; font-weight: bold;
+            color: var(--primary); font-size: 1.1rem; outline: none; width: 100%; margin-top: 5px; display: block;
         }
-        .range-container { display: none; align-items: center; gap: 5px; font-size: 0.85rem; color: #555; flex-wrap: wrap;}
+        .range-container { display: none; align-items: center; gap: 3px; font-size: 0.8rem; color: #555; flex-wrap: wrap;}
         .timeline-item.range-mode .single-date { display: none; }
         .timeline-item.range-mode .range-container { display: flex; }
 
         .content { 
-            line-height: 1.6; color: #4b5563; outline: none; min-height: 1.5em; font-size: 0.95rem; 
-            white-space: pre-wrap; margin-bottom: 10px;
+            line-height: 1.6; color: #4b5563; outline: none; min-height: 60px; font-size: 0.95rem; 
+            white-space: pre-wrap; margin-top: 10px;
         }
         .content img { max-width: 100%; height: auto; border-radius: 4px; margin: 5px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: block; }
         .todo-box { display: inline-block; width: 1.2em; text-align: center; cursor: pointer; color: #4f46e5; }
-        .highlight-text { background-color: #fef08a; padding: 0 2px; border-radius: 2px; }
 
         .dot {
-            position: absolute; left: 50%; top: 25px; width: 14px; height: 14px; background: white;
-            border: 4px solid #ccc; border-radius: 50%; transform: translateX(-50%); z-index: 20; transition: left 0.3s;
+            position: absolute; left: 50%; top: 30px; width: 16px; height: 16px; background: white;
+            border: 4px solid #cbd5e1; border-radius: 50%; transform: translateX(-50%); z-index: 20; 
         }
 
-        /* 新增節點按鈕美化 */
         .add-main {
-            display: block; margin: 50px auto; padding: 12px 30px;
-            background: transparent; 
-            color: #64748b;
-            border: 2px dashed #cbd5e1;
-            border-radius: 12px;
-            font-size: 1rem; font-weight: bold; cursor: pointer;
+            display: block; margin: 30px auto 60px auto; padding: 12px 30px;
+            background: white; color: #64748b; border: 2px dashed #cbd5e1;
+            border-radius: 12px; font-size: 1rem; font-weight: bold; cursor: pointer;
             transition: 0.2s; width: 100%; max-width: 300px;
         }
-        .add-main:hover { border-color: #94a3b8; color: #334155; background: #f8fafc; }
+        .add-main:hover { border-color: #3b82f6; color: #3b82f6; background: #eff6ff; }
 
         /* --- Gantt View --- */
         #gantt-view { display: none; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); overflow-x: auto; margin-bottom: 30px; border: 1px solid #e2e8f0; }
         .gantt-container { position: relative; min-width: 800px; padding-top: 40px; padding-bottom: 20px; }
         .gantt-axis-labels { position: absolute; top: 0; left: 160px; right: 0; height: 30px; border-bottom: 1px solid #e2e8f0; }
-        .gantt-axis-mark { position: absolute; top: 0; font-size: 0.75rem; color: #64748b; border-left: 1px dashed #e2e8f0; height: 100vh; padding-left: 4px; pointer-events: none; }
+        /* V48: 甘特圖格線 */
+        .gantt-axis-mark { position: absolute; top: 0; font-size: 0.75rem; color: #94a3b8; border-left: 1px dashed #e2e8f0; height: 100vh; padding-left: 4px; pointer-events: none; }
         .gantt-row { position: relative; height: 40px; margin-bottom: 8px; display: flex; align-items: center; border-bottom: 1px dashed #f1f5f9; }
-        .gantt-label-col { width: 150px; flex-shrink: 0; font-size: 0.85rem; font-weight: bold; color: #334155; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 10px; text-align: right; border-right: 2px solid #e2e8f0; margin-right: 10px; line-height: 40px; }
+        .gantt-label-col { width: 150px; flex-shrink: 0; font-size: 0.85rem; font-weight: bold; color: #334155; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 15px; text-align: right; border-right: 2px solid #e2e8f0; margin-right: 0; line-height: 40px; background: white; z-index: 5; }
         .gantt-bar-area { flex-grow: 1; position: relative; height: 100%; }
-        .gantt-bar { position: absolute; top: 8px; height: 24px; border-radius: 4px; font-size: 0.75rem; color: white; white-space: nowrap; display: flex; align-items: center; padding: 0 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.15); cursor: help; transition: all 0.2s; }
+        .gantt-bar { position: absolute; top: 8px; height: 24px; border-radius: 4px; font-size: 0.75rem; color: white; white-space: nowrap; display: flex; align-items: center; padding: 0 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.15); cursor: help; }
         .gantt-bar[data-color="blue"] { background: #4f46e5; } .gantt-bar[data-color="green"] { background: #10b981; } .gantt-bar[data-color="red"] { background: #ef4444; } .gantt-bar[data-color="yellow"] { background: #f59e0b; color: #333; }
 
         #exit-pres-btn {
             display: none; position: fixed; top: 20px; right: 20px; z-index: 3000;
-            padding: 10px 20px; background: #ef4444; color: white;
-            border: none; border-radius: 30px; cursor: pointer;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3); font-weight: bold; font-size: 1rem;
+            padding: 10px 20px; background: #ef4444; color: white; border: none; border-radius: 30px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.3); font-weight: bold;
         }
 
-        body.presentation-mode { background-color: #ffffff; padding: 0; }
+        body.presentation-mode { background-color: #ffffff; padding: 20px; }
         body.presentation-mode #exit-pres-btn { display: block; }
-        body.presentation-mode .toolbar, body.presentation-mode .toolbox-container, body.presentation-mode .add-main, body.presentation-mode .sticker-del, body.presentation-mode .today-btn, body.presentation-mode .note-header, body.presentation-mode .select-chk, body.presentation-mode .project-input::placeholder, body.presentation-mode #project-bar,
-        body.presentation-mode .card-top-right, body.presentation-mode .card-side-tools,
-        body.presentation-mode .mode-toggle-btn 
+        body.presentation-mode .toolbar, body.presentation-mode .toolbox-container, body.presentation-mode .add-main, body.presentation-mode .sticker-del, body.presentation-mode .today-btn, body.presentation-mode .note-header, body.presentation-mode .select-chk, body.presentation-mode .footer-project-input::placeholder, body.presentation-mode #project-bar,
+        body.presentation-mode .card-top-right, body.presentation-mode .card-side-tools, body.presentation-mode .mode-toggle-btn 
         { display: none !important; }
 
-        body.presentation-mode .project-footer { height: 20px; padding: 0 10px; }
-        body.presentation-mode .footer-project-input { pointer-events: none; font-size: 0.8rem; }
-        body.presentation-mode .main-area { margin-top: 0 !important; padding-top: 20px; max-width: 1200px; }
-        body.presentation-mode .card { box-shadow: none; border: 1px solid #e5e7eb; border-top: none; padding-bottom: 0; padding-right: 20px; } 
+        body.presentation-mode .main-area { margin-top: 0 !important; max-width: 1200px; }
+        body.presentation-mode .card { box-shadow: none; border: 1px solid #e5e7eb; border-top: none; padding-right: 20px; min-height: auto; } 
         body.presentation-mode .card.memo-mode { border-top: 1px dashed #cbd5e1; }
-        body.presentation-mode .date-input, body.presentation-mode .label-input { background: transparent; border: none; font-size: 1.1rem; }
-        body.presentation-mode .content { font-size: 1.1rem; }
-        body.presentation-mode .sticky-note { box-shadow: 2px 2px 5px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; }
-
-        /* =========================================
-           V47: 行動版 (Mobile) 介面優化 (按鈕精簡)
-           ========================================= */
+        body.presentation-mode .date-input, body.presentation-mode .label-input { background: transparent; border: none; font-size: 1.2rem; }
+        body.presentation-mode .content { font-size: 1.2rem; }
+        
         @media screen and (max-width: 768px) {
-            body { padding: 10px; }
-            .main-area { margin-top: 50px; padding: 10px 0; }
-            body.has-proj-bar .main-area { margin-top: 140px; }
+            .main-area { margin-top: 60px; padding: 10px; }
+            body.has-proj-bar .main-area { margin-top: 150px; }
             .toolbox-container { display: none !important; }
-            .toolbar { padding: 10px; gap: 10px; }
-            .tool-left { gap: 5px; }
-            .tool-title span { display: none; }
-            .search-input { width: 80px; padding-left: 25px; }
-            .search-input:focus { width: 120px; }
-            .search-icon { left: 8px; }
-            .timeline::before { left: 20px; transform: none; }
-            .dot { left: 20px; transform: none; margin-left: -7px; }
-            .timeline-item { flex-direction: column; align-items: flex-end; width: 100%; margin-left: 0; }
-            .timeline-item .card, .timeline-item:nth-child(odd) .card, .timeline-item:nth-child(even) .card, .timeline-item.force-left .card, .timeline-item.force-right .card {
-                width: calc(100% - 50px) !important; margin: 0 0 20px 0 !important; border-left: none !important; border-right: none !important;
+            .timeline-item { flex-direction: column; width: 100%; margin-left: 0; }
+            .timeline-item .card, .timeline-item:nth-child(odd) .card, .timeline-item:nth-child(even) .card {
+                width: 100% !important; margin: 0 0 20px 0 !important; border: none !important; border-top: 5px solid var(--primary) !important;
             }
-            .header-row { align-items: flex-start; }
-            .label-input { width: 100%; margin-top: 5px; }
-            #gantt-view { padding: 10px; }
-            .gantt-label-col { width: 100px; font-size: 0.75rem; }
-
-            /* V47: 手機版隱藏不必要按鈕 */
+            .timeline::before { left: 10px; }
+            .dot { left: 10px; }
             .mobile-hidden { display: none !important; }
-            /* 側邊欄只留換色 */
-            .card-side-tools .side-btn:not([title="換色"]) { display: none; }
         }
 
         @media print { 
             .toolbar, .toolbox-container, .card-top-right, .card-side-tools, .add-main, .note-header, .sticker-del, .today-btn, #exit-pres-btn, .select-chk, #project-bar, .mode-toggle-btn { display: none !important; } 
-            .sticky-note, .sticker { box-shadow: none; border: 1px solid transparent; } 
+            .sticky-note, .sticker { border: none; box-shadow: none; }
         }
-        body.screenshot-mode .toolbar, body.screenshot-mode .toolbox-container, body.screenshot-mode .card-top-right, body.screenshot-mode .card-side-tools, body.screenshot-mode .note-header, body.screenshot-mode .sticker-del, body.screenshot-mode .add-main, body.screenshot-mode .today-btn, body.screenshot-mode #exit-pres-btn, body.screenshot-mode .select-chk, body.screenshot-mode #project-bar, body.screenshot-mode .mode-toggle-btn { display: none !important; }
-
     </style>
 </head>
 <body>
@@ -383,7 +365,7 @@
     <div class="toolbar">
         <div class="tool-left">
             <div class="tool-title">
-                🧠 V47
+                🧠 V48
                 <span class="save-status" id="saveStatus"></span>
             </div>
             <div class="search-box">
@@ -393,15 +375,13 @@
         </div>
         
         <div class="tool-btn-group" id="normal-toolbar">
-            <button class="tool-btn filter-btn" onclick="toggleProjectBar()" title="展開專案過濾列">📁 專案</button>
+            <button class="tool-btn filter-btn" onclick="toggleProjectBar()" title="過濾">📁 專案</button>
             <button class="tool-btn view-btn" onclick="toggleView()" id="viewBtn">📊 甘特圖</button>
-            <button class="tool-btn pres-btn" onclick="togglePresentation()" title="簡報模式">📽️ 簡報</button>
-            <button class="tool-btn ai-btn" onclick="enterAIMode()" title="進入選取模式生成 Prompt">🤖 AI輸出</button>
+            <button class="tool-btn pres-btn" onclick="togglePresentation()">📽️ 簡報</button>
+            <button class="tool-btn ai-btn" onclick="enterAIMode()">🤖 AI</button>
             <button class="tool-btn cal-btn" onclick="exportToCSV()">📅 CSV</button>
             <button class="tool-btn highlight" onclick="sortByDate()">📅 排序</button>
-            <button class="tool-btn danger-btn" onclick="clearAllImages()" title="刪除圖片">🧹 清圖</button>
-            <button class="tool-btn google-btn mobile-hidden" onclick="openTasksWeb()" title="開啟 Google Tasks">☑ Tasks</button>
-            <button class="tool-btn keep-btn mobile-hidden" onclick="openKeepWeb()" title="開啟 Google Keep">💡 Keep</button>
+            <button class="tool-btn danger-btn" onclick="clearAllImages()">🧹 清圖</button>
             <button class="tool-btn camera-btn" onclick="takeScreenshot()">📸 截圖</button>
             <button class="tool-btn" onclick="downloadJSON()">📥 備份</button>
             <button class="tool-btn" onclick="document.getElementById('fileInput').click()">📤 讀取</button>
@@ -409,15 +389,13 @@
         </div>
 
         <div class="tool-btn-group" id="ai-toolbar">
-            <button class="tool-btn camera-btn" onclick="confirmAIOutput()">✅ 確認生成</button>
+            <button class="tool-btn camera-btn" onclick="confirmAIOutput()">✅ 確認</button>
             <button class="tool-btn highlight" onclick="selectAllAI()">☑ 全選</button>
             <button class="tool-btn danger-btn" onclick="exitAIMode()">❌ 取消</button>
         </div>
     </div>
 
-    <div id="project-bar">
-        <span class="proj-hint">請點選專案進行過濾：</span>
-    </div>
+    <div id="project-bar"></div>
 
     <button id="exit-pres-btn" onclick="togglePresentation()">❌ 退出簡報模式 (ESC)</button>
 
@@ -433,10 +411,10 @@
             <div class="tool-item" onclick="addSticker('circle-red')"><span class="tool-icon">⭕</span><span class="tool-text">紅圈</span></div>
             <div class="tool-item" onclick="addSticker('rect-blue')"><span class="tool-icon">🟦</span><span class="tool-text">藍框</span></div>
         </div>
-        <div class="toolbox-toggle-btn" onclick="toggleToolbox()" title="收納/展開工具箱">◀</div>
+        <div class="toolbox-toggle-btn" onclick="toggleToolbox()">◀</div>
     </div>
 
-    <div class="main-area">
+    <div class="main-area" id="captureArea">
         <div class="timeline" id="container"></div>
         <div id="gantt-view">
             <div style="text-align:center; color:#888; margin-bottom:10px; font-size:0.8rem;">💡 左右滑動可查看完整時間軸</div>
@@ -449,7 +427,6 @@
         const container = document.getElementById('container');
         const saveStatus = document.getElementById('saveStatus');
         const projectBar = document.getElementById('project-bar');
-        
         let activeProjectFilters = new Set(); 
 
         function getTodayString() {
@@ -457,27 +434,31 @@
             return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
         }
 
-        const defaultData = [
-            { id: 1, pos: 'left', mode: 'normal', color: 'blue', status: 0, isMemo: false, project: '專案A', label: 'V47修復版', date_single: getTodayString(), date_start: '', date_end: '', content: '1. 已修復所有按鈕功能。\n2. 核心邏輯（刪除、移動、換色）已補回。\n3. 資料存取功能已恢復正常。' }
-        ];
-
+        // 初始化
         function init() {
             const savedData = localStorage.getItem('timeline_v47_data'); 
             const savedNotes = localStorage.getItem('timeline_v47_notes');
             const savedStickers = localStorage.getItem('timeline_v47_stickers');
 
             if (savedData) renderFromData(JSON.parse(savedData));
-            else renderFromData(defaultData);
+            else {
+                // 預設範例
+                const defaultItem = {
+                    id: Date.now(), pos: 'left', mode: 'normal', color: 'blue', status: 0, isMemo: false,
+                    project: 'V48更新', label: '樣式功能全修復', date_single: getTodayString(), date_start: '', date_end: '', 
+                    content: '1. 卡片高度與專案標籤已修正。\n2. 便利貼與貼紙功能已恢復。\n3. 甘特圖時間軸校準。\n4. 截圖功能修復。'
+                };
+                container.appendChild(createNodeElement(defaultItem));
+            }
 
             if (savedNotes) renderNotes(JSON.parse(savedNotes));
             if (savedStickers) renderStickers(JSON.parse(savedStickers));
             
             refreshProjectBar();
 
-            // V47 修復: 綁定新增按鈕事件
             document.getElementById('mainAddBtn').onclick = function() {
                 const newItem = {
-                    id: Date.now(), pos: 'right', mode: 'normal', color: 'blue', status: 0, isMemo: false,
+                    id: Date.now(), pos: 'auto', mode: 'normal', color: 'blue', status: 0, isMemo: false,
                     project: '', label: '', date_single: getTodayString(), date_start: '', date_end: '', content: ''
                 };
                 container.appendChild(createNodeElement(newItem));
@@ -485,637 +466,261 @@
             };
         }
 
-        // --- 核心操作功能 (原本遺失的部分) ---
-        
-        function deleteNode(btn) {
-            if(confirm('確定要刪除此節點嗎？')) {
-                btn.closest('.timeline-item').remove();
-                autoSave();
-                refreshProjectBar();
-            }
-        }
-
+        // --- 核心操作 ---
+        function deleteNode(btn) { if(confirm('刪除此節點？')) { btn.closest('.timeline-item').remove(); autoSave(); refreshProjectBar(); } }
         function changeColor(btn) {
-            const card = btn.closest('.card');
-            const colors = ['blue', 'green', 'red', 'yellow'];
+            const card = btn.closest('.card'); const colors = ['blue', 'green', 'red', 'yellow'];
             let current = card.dataset.color || 'blue';
             let nextIndex = (colors.indexOf(current) + 1) % colors.length;
-            card.dataset.color = colors[nextIndex];
-            autoSave();
+            card.dataset.color = colors[nextIndex]; autoSave();
         }
-
         function moveNode(btn, dir) {
             const item = btn.closest('.timeline-item');
-            if (dir === 'up') {
-                const prev = item.previousElementSibling;
-                if (prev) { item.parentNode.insertBefore(item, prev); autoSave(); }
-            } else if (dir === 'down') {
-                const next = item.nextElementSibling;
-                if (next) { item.parentNode.insertBefore(next, item); autoSave(); }
-            }
+            if (dir === 'up') { const prev = item.previousElementSibling; if (prev) { item.parentNode.insertBefore(item, prev); autoSave(); } }
+            else if (dir === 'down') { const next = item.nextElementSibling; if (next) { item.parentNode.insertBefore(next, item); autoSave(); } }
         }
-
         function togglePos(btn, pos) {
-            const item = btn.closest('.timeline-item');
-            item.classList.remove('force-left', 'force-right');
-            if(pos === 'left') item.classList.add('force-left');
-            if(pos === 'right') item.classList.add('force-right');
-            autoSave();
+            const item = btn.closest('.timeline-item'); item.classList.remove('force-left', 'force-right');
+            if(pos === 'left') item.classList.add('force-left'); if(pos === 'right') item.classList.add('force-right'); autoSave();
         }
-
         function toggleRange(btn) {
-            const item = btn.closest('.timeline-item');
-            const isRange = item.classList.toggle('range-mode');
-            if(isRange) {
-                // 如果切換成區間，將單日日期填入起始日
-                const singleDate = item.querySelector('.single-date').value;
-                if(!item.querySelector('.date-start').value) item.querySelector('.date-start').value = singleDate;
-            }
+            const item = btn.closest('.timeline-item'); const isRange = item.classList.toggle('range-mode');
+            if(isRange && !item.querySelector('.date-start').value) item.querySelector('.date-start').value = item.querySelector('.single-date').value;
             autoSave();
         }
-
         function cycleStatus(dot) {
             const classes = ['status-0', 'status-1', 'status-2', 'status-3'];
             let currentClass = classes.find(c => dot.classList.contains(c));
-            let idx = classes.indexOf(currentClass);
-            dot.classList.remove(currentClass);
-            let nextIdx = (idx + 1) % classes.length;
-            dot.classList.add(classes[nextIdx]);
-            autoSave();
+            let nextIdx = (classes.indexOf(currentClass) + 1) % classes.length;
+            dot.classList.remove(currentClass); dot.classList.add(classes[nextIdx]); autoSave();
         }
-
         function sortByDate() {
-            if(!confirm('確定要依日期重新排序嗎？')) return;
+            if(!confirm('重新排序？')) return;
             const items = Array.from(document.querySelectorAll('.timeline-item'));
-            items.sort((a, b) => {
-                const dateA = a.querySelector('.single-date').value || '9999-99-99';
-                const dateB = b.querySelector('.single-date').value || '9999-99-99';
-                return dateA.localeCompare(dateB);
-            });
-            items.forEach(item => container.appendChild(item));
-            autoSave();
+            items.sort((a, b) => (a.querySelector('.single-date').value || '9999').localeCompare(b.querySelector('.single-date').value || '9999'));
+            items.forEach(item => container.appendChild(item)); autoSave();
         }
 
-        // --- 資料蒐集與存檔 (原本遺失的部分) ---
-
+        // --- 資料 ---
         function gatherData() {
             return Array.from(document.querySelectorAll('.timeline-item')).map(item => {
                 const card = item.querySelector('.card');
                 const dot = item.querySelector('.status-dot');
                 let status = 0;
-                if(dot.classList.contains('status-1')) status = 1;
-                else if(dot.classList.contains('status-2')) status = 2;
-                else if(dot.classList.contains('status-3')) status = 3;
-
+                if(dot.classList.contains('status-1')) status = 1; else if(dot.classList.contains('status-2')) status = 2; else if(dot.classList.contains('status-3')) status = 3;
                 return {
-                    pos: item.classList.contains('force-left') ? 'left' : (item.classList.contains('force-right') ? 'right' : 'auto'),
-                    mode: item.classList.contains('range-mode') ? 'range' : 'normal',
-                    color: card.dataset.color || 'blue',
-                    status: status,
-                    isMemo: card.classList.contains('memo-mode'),
+                    pos: item.classList.contains('force-left')?'left':(item.classList.contains('force-right')?'right':'auto'),
+                    mode: item.classList.contains('range-mode')?'range':'normal',
+                    color: card.dataset.color || 'blue', status: status, isMemo: card.classList.contains('memo-mode'),
                     project: item.querySelector('.footer-project-input').value,
                     label: item.querySelector('.label-input').value,
                     date_single: item.querySelector('.single-date').value,
-                    date_start: item.querySelector('.date-start').value,
-                    date_end: item.querySelector('.date-end').value,
+                    date_start: item.querySelector('.date-start').value, date_end: item.querySelector('.date-end').value,
                     content: item.querySelector('.content').innerHTML
                 };
             });
         }
+        function gatherNotes() { return Array.from(document.querySelectorAll('.sticky-note')).map(n => ({ id: n.id, x: parseInt(n.style.left), y: parseInt(n.style.top), content: n.querySelector('textarea').value })); }
+        function gatherStickers() { return Array.from(document.querySelectorAll('.sticker')).map(s => ({ id: s.id, type: s.dataset.type, x: parseInt(s.style.left), y: parseInt(s.style.top) })); }
 
-        function gatherNotes() {
-            return Array.from(document.querySelectorAll('.sticky-note')).map(note => ({
-                id: note.id.replace('note-', ''),
-                x: parseInt(note.style.left),
-                y: parseInt(note.style.top),
-                content: note.querySelector('textarea').value
-            }));
-        }
-
-        function gatherStickers() {
-            return Array.from(document.querySelectorAll('.sticker')).map(s => ({
-                id: s.id.replace('sticker-', ''),
-                type: s.dataset.type,
-                x: parseInt(s.style.left),
-                y: parseInt(s.style.top)
-            }));
-        }
-
-        // --- 現有功能 ---
-
-        function insertBullet(btn) {
-            const item = btn.closest('.timeline-item');
-            const contentDiv = item.querySelector('.content');
-            const newDiv = document.createElement('div');
-            newDiv.innerHTML = '&nbsp;•&nbsp;項目內容';
-            contentDiv.appendChild(newDiv);
-            autoSave();
-        }
-
-        function addHighlight(btn) {
-            document.execCommand('styleWithCSS', false, true);
-            document.execCommand('hiliteColor', false, '#fef08a');
-            autoSave();
-        }
-
-        function clearFormatting(btn) {
-            document.execCommand('styleWithCSS', false, true);
-            document.execCommand('removeFormat', false, null); 
-            document.execCommand('hiliteColor', false, 'transparent'); 
-            autoSave();
-        }
-
-        function copyForTasks(btn) {
-            const item = btn.closest('.timeline-item');
-            const projInput = item.querySelector('.footer-project-input'); 
-            const project = projInput ? projInput.value.trim() : '';
-            const title = item.querySelector('.label-input').value;
-            const date = item.classList.contains('range-mode') 
-                ? `${item.querySelector('.date-start').value} ~ ${item.querySelector('.date-end').value}` 
-                : item.querySelector('.single-date').value;
-            const content = item.querySelector('.content').innerText;
-            
-            let text = ``;
-            if(project) text += `【${project}】`;
-            text += `${title}\n`;
-            if(!item.querySelector('.card').classList.contains('memo-mode')) { 
-                text += `📅 ${date}\n`;
-            }
-            text += `----------------\n${content}`;
-            
-            navigator.clipboard.writeText(text).then(() => { 
-                const originalText = btn.innerHTML;
-                btn.innerHTML = '✅';
-                setTimeout(() => btn.innerHTML = originalText, 1500);
-            });
-        }
-
-        function openTasksWeb() {
-            window.open('https://tasks.google.com/embed/list/~default', '_blank', 'width=400,height=600');
-        }
-        function openKeepWeb() {
-            window.open('https://keep.google.com/', '_blank', 'width=600,height=800');
-        }
-
-        function enterAIMode() {
-            document.body.classList.add('ai-selecting');
-            alert('進入 AI 選取模式：\n請勾選您想要分析的卡片，然後點擊上方「✅ 確認生成」。');
-        }
-
-        function exitAIMode() {
-            document.body.classList.remove('ai-selecting');
-            document.querySelectorAll('.select-chk').forEach(chk => chk.checked = false);
-        }
-
-        function selectAllAI() {
-            document.querySelectorAll('.select-chk').forEach(chk => chk.checked = true);
-        }
-
-        function confirmAIOutput() {
-            const timelineItems = document.querySelectorAll('.timeline-item');
-            const selectedIndices = [];
-            timelineItems.forEach((item, index) => {
-                const checkbox = item.querySelector('.select-chk');
-                if (checkbox && checkbox.checked) selectedIndices.push(index);
-            });
-
-            const allData = gatherData();
-            let targetData = [];
-            let promptIntro = "";
-
-            if (selectedIndices.length > 0) {
-                targetData = allData.filter((_, index) => selectedIndices.includes(index));
-                promptIntro = `【注意：使用者僅選取了部分重點卡片進行討論】`;
-            } else {
-                if(!confirm('您未勾選任何卡片，是否輸出「全部」內容？')) return;
-                targetData = allData;
-                promptIntro = `【完整專案資料】`;
-            }
-
-            let prompt = `請分析以下專案資料：\n${promptIntro}\n日期：${getTodayString()}\n\n`;
-            targetData.forEach((item, index) => {
-                const dateStr = item.isMemo ? "(備忘/無日期)" : (item.mode === 'range' ? `${item.date_start}~${item.date_end}` : item.date_single);
-                const status = ['未開始', '進行中', '已完成', '延遲'][item.status] || '未知';
-                const project = item.project ? `[${item.project}] ` : ''; 
-                const cleanContent = item.content.replace(/<[^>]+>/g, '').replace(/\n+/g, ' ');
-                prompt += `${index+1}. ${project}[${status}] ${dateStr} - ${item.label}: ${cleanContent}\n`;
-            });
-            prompt += `\n請針對以上內容進行專案進度摘要、風險評估或下一步建議。`;
-
-            navigator.clipboard.writeText(prompt).then(() => { 
-                alert('✅ AI Prompt 已複製成功！');
-                exitAIMode(); 
-            });
-        }
-
-        function toggleProjectBar() {
-            projectBar.classList.toggle('show');
-            document.body.classList.toggle('has-proj-bar');
-            refreshProjectBar();
-        }
-
-        function refreshProjectBar() {
-            const allData = gatherData();
-            const projects = new Set();
-            allData.forEach(item => {
-                if (item.project && item.project.trim() !== '') {
-                    projects.add(item.project.trim());
-                }
-            });
-
-            let html = '<span class="proj-hint">過濾：</span>';
-            if (projects.size === 0) {
-                html += '<span style="color:#999; font-size:0.8rem;">(無專案)</span>';
-            } else {
-                projects.forEach(p => {
-                    const isActive = activeProjectFilters.has(p) ? 'active' : '';
-                    html += `<div class="proj-badge ${isActive}" onclick="toggleFilter('${p}')">${p}</div>`;
-                });
-                if(activeProjectFilters.size > 0) {
-                    html += `<div class="proj-badge" style="color:#ef4444; border-color:#ef4444;" onclick="clearProjectFilters()">✕ 清除</div>`;
-                    if(activeProjectFilters.size === 1) {
-                        const currentProj = activeProjectFilters.values().next().value;
-                        html += `<button class="rename-btn" onclick="renameProject('${currentProj}')">✏️ 改名</button>`;
-                    }
-                }
-            }
-            projectBar.innerHTML = html;
-        }
-
-        function toggleFilter(projectName) {
-            if (activeProjectFilters.has(projectName)) {
-                activeProjectFilters.delete(projectName);
-            } else {
-                activeProjectFilters.add(projectName);
-            }
-            refreshProjectBar();
-            applyFilters();
-        }
-
-        function clearProjectFilters() {
-            activeProjectFilters.clear();
-            refreshProjectBar();
-            applyFilters();
-        }
-
-        function renameProject(oldName) {
-            const newName = prompt(`請輸入「${oldName}」的新名稱：`, oldName);
-            if(newName && newName !== oldName) {
-                const items = document.querySelectorAll('.timeline-item');
-                let count = 0;
-                items.forEach(item => {
-                    const input = item.querySelector('.footer-project-input'); 
-                    if(input && input.value === oldName) {
-                        input.value = newName;
-                        count++;
-                    }
-                });
-                autoSave();
-                activeProjectFilters.delete(oldName);
-                activeProjectFilters.add(newName);
-                refreshProjectBar();
-                applyFilters();
-                alert(`已更新 ${count} 個項目的專案名稱！`);
-            }
-        }
-
-        function applyFilters() {
-            const keyword = document.querySelector('.search-input').value.toLowerCase();
-            const items = document.querySelectorAll('.timeline-item');
-            
-            items.forEach(item => {
-                const projInput = item.querySelector('.footer-project-input'); 
-                const project = projInput ? projInput.value.trim() : '';
-                const projectMatch = (activeProjectFilters.size === 0) || activeProjectFilters.has(project);
-                const text = item.innerText.toLowerCase();
-                const inputs = item.querySelectorAll('input');
-                let textMatch = text.includes(keyword);
-                inputs.forEach(inp => { if(inp.value.toLowerCase().includes(keyword)) textMatch = true; });
-
-                if (projectMatch && textMatch) {
-                    item.classList.remove('hidden-by-filter');
-                } else {
-                    item.classList.add('hidden-by-filter');
-                }
-            });
-            if (currentView === 'gantt') renderGantt();
-        }
-
-        function filterNodes(val) { applyFilters(); }
-
-        function toggleCardMode(btn) {
-            const item = btn.closest('.timeline-item');
-            const card = item.querySelector('.card');
-            const isMemo = card.classList.toggle('memo-mode');
-            
-            if(isMemo) {
-                btn.innerText = '♾️'; 
-            } else {
-                btn.innerText = '📅'; 
-            }
-            autoSave();
-        }
-
+        // --- 元素創建 ---
         function createNodeElement(item) {
             const div = document.createElement('div');
             div.className = `timeline-item ${item.pos==='left'?'force-left':item.pos==='right'?'force-right':''} ${item.mode==='range'?'range-mode':''}`;
-            
-            const isMemoClass = item.isMemo ? 'memo-mode' : '';
-            const modeBtnText = item.isMemo ? '♾️' : '📅';
-
+            const isMemo = item.isMemo ? 'memo-mode' : '';
             div.innerHTML = `
                 <div class="dot"></div>
-                <div class="card ${isMemoClass}" data-color="${item.color}">
-                    
+                <div class="card ${isMemo}" data-color="${item.color}">
                     <div class="card-side-tools">
-                        <button class="btn-icon side-btn bg-gray" onclick="changeColor(this)" title="換色">🎨</button>
-                        <button class="btn-icon side-btn bg-gray mobile-hidden" onclick="moveNode(this,'up')" title="上移">⬆️</button>
-                        <button class="btn-icon side-btn bg-gray mobile-hidden" onclick="moveNode(this,'down')" title="下移">⬇️</button>
-                        <button class="btn-icon side-btn bg-gray mobile-hidden" onclick="togglePos(this,'left')" title="靠左">⬅️</button>
-                        <button class="btn-icon side-btn bg-gray mobile-hidden" onclick="togglePos(this,'right')" title="靠右">➡️</button>
+                        <button class="btn-icon side-btn" onclick="changeColor(this)" title="換色">🎨</button>
+                        <button class="btn-icon side-btn mobile-hidden" onclick="moveNode(this,'up')">⬆️</button>
+                        <button class="btn-icon side-btn mobile-hidden" onclick="moveNode(this,'down')">⬇️</button>
+                        <button class="btn-icon side-btn mobile-hidden" onclick="togglePos(this,'left')">⬅️</button>
+                        <button class="btn-icon side-btn mobile-hidden" onclick="togglePos(this,'right')">➡️</button>
                     </div>
-
                     <div class="card-top-area">
                         <div class="card-top-left">
                             <input type="checkbox" class="select-chk">
-                            <div class="status-dot status-${item.status}" onclick="cycleStatus(this)" title="切換狀態"></div>
+                            <div class="status-dot status-${item.status}" onclick="cycleStatus(this)"></div>
                         </div>
-                        <div class="card-top-right controls">
-                            <button class="btn-icon bg-blue" onclick="toggleRange(this)" title="切換時段">↔️</button>
-                            <button class="btn-icon bg-purple" onclick="insertTodoLine(this)" title="新增待辦">☑</button>
-                            <button class="btn-icon bg-teal mobile-hidden" onclick="insertBullet(this)" title="項目符號">🔹</button>
-                            <button class="btn-icon bg-teal mobile-hidden" onclick="addHighlight(this)" title="文字高亮">🖍️</button>
-                            <button class="btn-icon bg-rose mobile-hidden" onmousedown="event.preventDefault()" onclick="clearFormatting(this)" title="清除格式 (橡皮擦)">🧹</button>
-                            <button class="btn-icon bg-orange" onclick="copyForTasks(this)" title="複製到Tasks">📋</button>
-                            <button class="btn-icon bg-orange mobile-hidden" onclick="addToGoogleCal(this)" title="加到日曆">📅</button>
-                            <button class="btn-icon bg-red" onclick="deleteNode(this)" title="刪除">×</button>
+                        <div class="card-top-right">
+                            <button class="btn-icon" onclick="toggleRange(this)">↔️</button>
+                            <button class="btn-icon" onclick="insertTodoLine(this)">☑</button>
+                            <button class="btn-icon mobile-hidden" onclick="insertBullet(this)">🔹</button>
+                            <button class="btn-icon mobile-hidden" onclick="addHighlight(this)">🖍️</button>
+                            <button class="btn-icon mobile-hidden" onmousedown="event.preventDefault()" onclick="clearFormatting(this)">🧹</button>
+                            <button class="btn-icon" onclick="copyForTasks(this)">📋</button>
+                            <button class="btn-icon bg-red" style="color:red; border-color:red;" onclick="deleteNode(this)">×</button>
                         </div>
                     </div>
-
                     <div class="card-body">
                         <div class="header-row">
-                            <button class="mode-toggle-btn" onclick="toggleCardMode(this)" title="切換 時間/備忘 模式">${modeBtnText}</button>
-
-                            <input type="date" class="date-input single-date" value="${item.date_single}" onchange="autoSave()" title="日期">
-                            <button class="today-btn single-date" onclick="setToday(this)" title="設定為今天">今</button>
-                            <div class="range-container">
-                                <span class="range-label">起:</span><input type="date" class="date-input date-start" value="${item.date_start}" onchange="autoSave()">
-                                <button class="today-btn" onclick="setToday(this)" title="今">今</button>
-                                <span class="range-label">迄:</span><input type="date" class="date-input date-end" value="${item.date_end}" onchange="autoSave()">
-                                <button class="today-btn" onclick="setToday(this)" title="今">今</button>
+                            <div style="display:flex; align-items:center;">
+                                <button class="mode-toggle-btn" onclick="toggleCardMode(this)">${item.isMemo?'♾️':'📅'}</button>
+                                <input type="date" class="date-input single-date" value="${item.date_single}" onchange="autoSave()">
+                                <button class="today-btn single-date" onclick="setToday(this)">今</button>
+                                <div class="range-container">
+                                    <span>起</span><input type="date" class="date-input date-start" value="${item.date_start}" onchange="autoSave()">
+                                    <button class="today-btn" onclick="setToday(this)">今</button>
+                                    <span>迄</span><input type="date" class="date-input date-end" value="${item.date_end}" onchange="autoSave()">
+                                    <button class="today-btn" onclick="setToday(this)">今</button>
+                                </div>
                             </div>
                             <input type="text" class="label-input" value="${item.label}" placeholder="標題" oninput="autoSave()">
                         </div>
                         <div class="content" contenteditable="true" oninput="handleInput(event)">${item.content}</div>
                     </div>
-
                     <div class="project-footer">
                         <input type="text" class="footer-project-input" autocomplete="off" value="${item.project || ''}" placeholder="🏷️ 專案名稱..." oninput="autoSave(); refreshProjectBar();">
                     </div>
                 </div>`;
-            const contentDiv = div.querySelector('.content');
-            contentDiv.addEventListener('paste', handlePaste);
+            div.querySelector('.content').addEventListener('paste', handlePaste);
             return div;
         }
 
-        function insertTodoLine(btn) {
+        // --- 輔助功能 ---
+        function toggleCardMode(btn) {
+            const card = btn.closest('.card');
+            const isMemo = card.classList.toggle('memo-mode');
+            btn.innerText = isMemo ? '♾️' : '📅'; autoSave();
+        }
+        function setToday(btn) { btn.previousElementSibling.value = getTodayString(); autoSave(); }
+        function insertBullet(btn) { btn.closest('.timeline-item').querySelector('.content').innerHTML += '<div>&nbsp;•&nbsp;內容</div>'; autoSave(); }
+        function addHighlight(btn) { document.execCommand('styleWithCSS', false, true); document.execCommand('hiliteColor', false, '#fef08a'); autoSave(); }
+        function clearFormatting(btn) { document.execCommand('removeFormat'); document.execCommand('hiliteColor', false, 'transparent'); autoSave(); }
+        function copyForTasks(btn) {
             const item = btn.closest('.timeline-item');
-            const contentDiv = item.querySelector('.content');
-            const newDiv = document.createElement('div');
-            newDiv.innerHTML = '<span class="todo-box" onclick="toggleTodo(this)" style="cursor:pointer; font-size:1.2em;">☐</span>&nbsp;新項目';
-            contentDiv.appendChild(newDiv);
-            autoSave();
+            const text = `【${item.querySelector('.footer-project-input').value}】${item.querySelector('.label-input').value}\n${item.querySelector('.content').innerText}`;
+            navigator.clipboard.writeText(text).then(()=>alert('已複製'));
         }
-
-        function togglePresentation() {
-            const body = document.body;
-            body.classList.toggle('presentation-mode');
-            if(body.classList.contains('presentation-mode')) {
-                if(currentView === 'gantt') toggleView(); 
-                alert('已進入簡報模式。\n點擊右上角紅色按鈕或按 [ESC] 鍵可退出。');
+        function insertTodoLine(btn) {
+            btn.closest('.timeline-item').querySelector('.content').innerHTML += '<div><span class="todo-box" onclick="toggleTodo(this)">☐</span>&nbsp;新項目</div>'; autoSave();
+        }
+        window.toggleTodo = function(span) { span.innerText = span.innerText==='☐'?'☑':'☐'; autoSave(); event.stopPropagation(); }
+        function handleInput(e) { autoSave(); }
+        function handlePaste(e) {
+            const items = (e.clipboardData||e.originalEvent.clipboardData).items;
+            for(let i=0;i<items.length;i++){
+                if(items[i].type.indexOf("image")===0){
+                    e.preventDefault(); const reader=new FileReader();
+                    reader.onload=ev=>{ document.execCommand('insertImage',false,ev.target.result); autoSave(); };
+                    reader.readAsDataURL(items[i].getAsFile()); break;
+                }
             }
         }
+        function clearAllImages() {
+            if(!confirm('清除圖片？')) return;
+            const data = gatherData();
+            const newData = data.map(item => ({...item, content: item.content.replace(/<img[^>]*>/g, '[圖]')}));
+            renderFromData(newData); autoSave();
+        }
 
-        document.addEventListener('keydown', function(event) {
-            if (event.key === "Escape" && document.body.classList.contains('presentation-mode')) {
-                togglePresentation();
-            }
-        });
-
-        function handleInput(e) {
-            autoSave();
-            const el = e.target;
-            if (el.classList.contains('content')) {
-                let html = el.innerHTML;
-                let changed = false;
-                if (html.includes('[]&nbsp;') || html.includes('[] ')) {
-                    html = html.replace(/\[\](&nbsp;| )/g, '<span class="todo-box" onclick="toggleTodo(this)" style="cursor:pointer; font-size:1.2em;">☐</span>&nbsp;');
-                    changed = true;
-                }
-                if (html.includes('[x]&nbsp;') || html.includes('[x] ')) {
-                    html = html.replace(/\[x\](&nbsp;| )/g, '<span class="todo-box" onclick="toggleTodo(this)" style="cursor:pointer; font-size:1.2em;">☑</span>&nbsp;');
-                    changed = true;
-                }
-                if (changed) {
-                    el.innerHTML = html;
-                    placeCaretAtEnd(el);
-                }
+        // --- 甘特圖 (V48 修復時間軸) ---
+        function toggleView() {
+            const tl = document.getElementById('container'); const gt = document.getElementById('gantt-view');
+            const btn = document.getElementById('viewBtn'); const add = document.getElementById('mainAddBtn');
+            if(tl.style.display !== 'none') {
+                tl.style.display='none'; gt.style.display='block'; add.style.display='none';
+                btn.innerText='📝 列表'; renderGantt(); window.currentView='gantt';
+            } else {
+                tl.style.display='block'; gt.style.display='none'; add.style.display='block';
+                btn.innerText='📊 甘特圖'; window.currentView='timeline';
             }
         }
         
-        window.toggleTodo = function(span) {
-            if(span.innerText === '☐') span.innerText = '☑';
-            else span.innerText = '☐';
-            autoSave();
-            event.stopPropagation();
-        }
-
-        function placeCaretAtEnd(el) {
-            el.focus();
-            if (typeof window.getSelection != "undefined" && typeof document.createRange != "undefined") {
-                var range = document.createRange();
-                range.selectNodeContents(el);
-                range.collapse(false);
-                var sel = window.getSelection();
-                sel.removeAllRanges();
-                sel.addRange(range);
-            }
-        }
-
-        function toggleToolbox() {
-            const box = document.getElementById('toolboxContainer');
-            const btn = box.querySelector('.toolbox-toggle-btn');
-            box.classList.toggle('closed');
-            if(box.classList.contains('closed')) { btn.innerHTML = '▶'; } else { btn.innerHTML = '◀'; }
-        }
-
-        function clearAllImages() {
-            if(!confirm('確定要清除所有圖片嗎？')) return;
-            const data = gatherData();
-            let cleanedCount = 0;
-            const newData = data.map(item => {
-                if (item.content.includes('<img')) {
-                    cleanedCount++;
-                    const newContent = item.content.replace(/<img[^>]*>/g, ' <span style="color:#999; font-size:0.8em;">[已移除圖片]</span> ');
-                    return { ...item, content: newContent };
-                }
-                return item;
-            });
-            renderFromData(newData);
-            autoSave();
-            alert(`已清理 ${cleanedCount} 個節點中的圖片！`);
-        }
-
-        function setToday(btn) {
-            const input = btn.previousElementSibling; 
-            if(input) { input.value = getTodayString(); autoSave(); }
-        }
-
-        let currentView = 'timeline';
-        function toggleView() {
-            const tl = document.getElementById('container');
-            const gt = document.getElementById('gantt-view');
-            const btn = document.getElementById('viewBtn');
-            const addBtn = document.getElementById('mainAddBtn');
-
-            if (currentView === 'timeline') {
-                tl.style.display = 'none'; gt.style.display = 'block'; addBtn.style.display = 'none';
-                btn.innerHTML = '📝 列表'; btn.classList.remove('view-btn'); btn.classList.add('highlight');
-                renderGantt(); currentView = 'gantt';
-            } else {
-                tl.style.display = 'block'; gt.style.display = 'none'; addBtn.style.display = 'block';
-                btn.innerHTML = '📊 甘特圖'; btn.classList.add('view-btn'); btn.classList.remove('highlight');
-                currentView = 'timeline';
-            }
-        }
-
-        function getLocalTime(dateStr) {
-            if (!dateStr) return null;
+        function getMidnightTime(dateStr) {
+            if(!dateStr) return null;
             const parts = dateStr.split('-');
-            if (parts.length !== 3) return null;
-            return new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2])).getTime();
+            // V48: 強制設為午夜，避免時區偏差
+            return new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]), 0, 0, 0).getTime();
         }
 
         function renderGantt() {
-            const chart = document.getElementById('ganttChart');
-            chart.innerHTML = '';
-            let data = gatherData();
-            
-            if (activeProjectFilters.size > 0) {
-                data = data.filter(item => activeProjectFilters.has(item.project));
-            }
+            const chart = document.getElementById('ganttChart'); chart.innerHTML='';
+            let data = gatherData().filter(i => !i.isMemo && i.date_single);
+            if (activeProjectFilters.size > 0) data = data.filter(i => activeProjectFilters.has(i.project));
+            if(data.length===0) { chart.innerHTML='<div style="text-align:center;padding:20px">無資料</div>'; return; }
 
-            // V41: 甘特圖自動過濾掉 Memo 卡片
-            data = data.filter(item => !item.isMemo);
+            const parsed = data.map(d => {
+                let s = getMidnightTime(d.mode==='range'?d.date_start:d.date_single);
+                let e = getMidnightTime(d.mode==='range'?d.date_end:d.date_single);
+                if(!e || e<s) e=s;
+                return { ...d, start: s, end: e };
+            }).sort((a,b)=>a.start-b.start);
 
-            if (data.length === 0) { chart.innerHTML = '<div style="padding:20px; text-align:center;">無資料 (備忘錄不顯示於此)</div>'; return; }
-            let validData = data.map(item => {
-                let start, end;
-                if (item.mode === 'range' && item.date_start) {
-                    start = getLocalTime(item.date_start); end = item.date_end ? getLocalTime(item.date_end) : start;
-                } else if (item.date_single) { start = getLocalTime(item.date_single); end = start; }
-                if(end < start) end = start;
-                let visualEnd = end; if (start === end) { visualEnd = start + (24 * 60 * 60 * 1000) - 1; }
-                return { ...item, start, end, visualEnd, isValid: (start && !isNaN(start)) };
-            }).filter(item => item.isValid);
-
-            if(validData.length === 0) { chart.innerHTML = '<div style="padding:20px; text-align:center;">請先設定卡片日期</div>'; return; }
-            validData.sort((a,b) => a.start - b.start);
-
-            let minT = Math.min(...validData.map(d => d.start));
-            let maxT = Math.max(...validData.map(d => d.visualEnd));
+            // V48: 計算時間軸範圍 (前後各多 2 天)
             const dayMs = 86400000;
-            const plotStart = minT - (dayMs * 3); const plotEnd = maxT + (dayMs * 3); const plotDur = plotEnd - plotStart;
+            const minT = Math.min(...parsed.map(p=>p.start));
+            const maxT = Math.max(...parsed.map(p=>p.end));
+            const plotStart = minT - (dayMs * 2);
+            const plotEnd = maxT + (dayMs * 2);
+            const plotDur = plotEnd - plotStart;
 
+            // 繪製座標軸 (7條線)
             let axisHtml = '';
             for(let i=0; i<=6; i++){
-                const percent = i * (100/6);
-                const timeAtLine = plotStart + (plotDur * (i/6));
-                axisHtml += `<div class="gantt-axis-mark" style="left: ${150 + (percent/100 * (100-20))}%; border-left-color: ${i===0||i===6?'transparent':'#e2e8f0'}"></div>`;
+                const pct = i * (100/6);
+                const t = plotStart + (plotDur * (i/6));
+                const d = new Date(t);
+                axisHtml += `<div class="gantt-axis-mark" style="left:${150 + (pct/100 * (100-20))}%; border-color:${i===0||i===6?'transparent':'#e2e8f0'}"></div>
+                             <div style="position:absolute; top:0; left:${150 + (pct/100 * (100-20))}%; font-size:10px; color:#999; transform:translateX(-50%)">${d.getMonth()+1}/${d.getDate()}</div>`;
             }
-            
+
             let rowsHtml = '';
-            validData.forEach(item => {
-                const startPct = ((item.start - plotStart) / plotDur) * 100;
-                const endPct = ((item.visualEnd - plotStart) / plotDur) * 100;
-                let widthPct = endPct - startPct; if (widthPct < 0.5) widthPct = 0.5; 
-                
-                const projectPrefix = item.project ? `[${item.project}] ` : '';
-                const displayLabel = projectPrefix + (item.label || '無標題');
-                const cleanContent = item.content.replace(/<[^>]+>/g, '').substring(0,50);
+            parsed.forEach(item => {
+                // V48: 修正 Bar 長度計算，結束時間需 +1 天的毫秒數才會有長度
+                const sPct = ((item.start - plotStart) / plotDur) * 100;
+                const ePct = ((item.end + dayMs - plotStart) / plotDur) * 100; // 視覺上加一天
+                const wPct = Math.max(ePct - sPct, 0.5);
                 
                 rowsHtml += `
-                <div class="gantt-row">
-                    <div class="gantt-label-col" title="${displayLabel}">${displayLabel}</div>
-                    <div class="gantt-bar-area">
-                        <div class="gantt-bar" data-color="${item.color}" 
-                             style="left: ${startPct}%; width: ${widthPct}%;" 
-                             title="${displayLabel} (${cleanContent}...)">
-                             ${displayLabel}
+                    <div class="gantt-row">
+                        <div class="gantt-label-col" title="${item.label}">${item.project?`[${item.project}]`:''} ${item.label}</div>
+                        <div class="gantt-bar-area">
+                            <div class="gantt-bar" data-color="${item.color}" style="left:${sPct}%; width:${wPct}%;"></div>
                         </div>
-                    </div>
-                </div>`;
+                    </div>`;
             });
 
-            let marksHtml = '';
-            for(let i=0; i<=6; i++) {
-                const percent = i * (100/6); const timeAtLine = plotStart + (plotDur * (i/6)); const d = new Date(timeAtLine);
-                marksHtml += `<div style="position:absolute; top:5px; font-size:10px; color:#999; transform:translateX(-50%); left:${percent}%;">${d.getMonth()+1}/${d.getDate()}</div>`;
-            }
-
-            chart.innerHTML = `<div class="gantt-axis-labels" style="padding-left:150px; position:relative; height:20px; margin-bottom:10px;"><div style="position:relative; width:100%; height:100%;">${marksHtml}</div></div>${rowsHtml}`;
+            chart.innerHTML = `<div class="gantt-axis-labels" style="padding-left:150px; position:relative; height:20px;">${axisHtml}</div>${rowsHtml}`;
         }
 
-        function handlePaste(e) {
-            const items = (e.clipboardData || e.originalEvent.clipboardData).items;
-            let blob = null;
-            for (let i = 0; i < items.length; i++) { if (items[i].type.indexOf("image") === 0) { blob = items[i].getAsFile(); break; } }
-            if (blob) {
-                e.preventDefault(); const reader = new FileReader();
-                reader.onload = function(event) {
-                    const img = document.createElement("img"); img.src = event.target.result;
-                    const selection = window.getSelection(); if (!selection.rangeCount) return;
-                    selection.deleteFromDocument(); selection.getRangeAt(0).insertNode(img); selection.collapseToEnd(); autoSave();
-                }; reader.readAsDataURL(blob);
-            }
-        }
-
-        function addToGoogleCal(btn) {
-            const itemEl = btn.closest('.timeline-item'); const isRange = itemEl.classList.contains('range-mode');
-            let title = itemEl.querySelector('.label-input').value || '未命名事件'; let desc = itemEl.querySelector('.content').innerText;
-            let startDate, endDate; if (isRange) { startDate = itemEl.querySelector('.date-start').value; endDate = itemEl.querySelector('.date-end').value; } else { startDate = itemEl.querySelector('.single-date').value; endDate = startDate; }
-            if(!startDate) { alert('請先選擇日期！'); return; }
-            const startStr = startDate.replace(/-/g, ''); let endObj = new Date(endDate); endObj.setDate(endObj.getDate() + 1);
-            const endStr = endObj.toISOString().slice(0,10).replace(/-/g, '');
-            window.open(`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${startStr}/${endStr}&details=${encodeURIComponent(desc)}`, '_blank');
-        }
-
-        function exportToCSV() {
-            let csvContent = "Project,Subject,Start Date,End Date,All Day Event,Description\n";
-            gatherData().forEach(item => {
-                let project = (item.project || '').replace(/,/g, '，'); 
-                let title = (item.label || '未命名事件').replace(/,/g, '，');
-                let desc = item.content.replace(/<img[^>]*>/g, '[圖片]').replace(/,/g, '，').replace(/\n/g, ' '); 
-                let start = item.mode === 'range' ? item.date_start : item.date_single;
-                let end = item.mode === 'range' ? item.date_end : item.date_single;
-                if(start && end) {
-                    let endObj = new Date(end); endObj.setDate(endObj.getDate() + 1);
-                    csvContent += `${project},${title},${start},${endObj.toISOString().slice(0,10)},True,${desc}\n`;
-                }
-            });
-            const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([csvContent], { type: 'text/csv;charset=utf-8;' }));
-            link.download = `timeline_v47_${getTodayString()}.csv`; link.click();
-        }
-
+        // --- 截圖 (V48 修復) ---
         function takeScreenshot() {
-            if(currentView === 'gantt') { alert('建議切換回列表模式再截圖！'); }
-            document.body.classList.add('screenshot-mode'); window.scrollTo(0, 0); saveStatus.innerText = '處理中...';
-            html2canvas(document.body, { backgroundColor: '#f3f4f6', scale: 2, useCORS: true }).then(canvas => {
-                const link = document.createElement('a'); link.download = `report_v47_${getTodayString()}.png`; link.href = canvas.toDataURL(); link.click();
-                document.body.classList.remove('screenshot-mode'); saveStatus.innerText = '';
-            }).catch(err => { document.body.classList.remove('screenshot-mode'); alert('截圖錯誤'); });
+            if(window.currentView === 'gantt') { alert('請切換回列表模式再截圖'); return; }
+            document.body.classList.add('screenshot-mode');
+            saveStatus.innerText = '截圖中...';
+            // V48: 強制滾動到頂部並針對 main-area 截圖，設定白色背景
+            window.scrollTo(0,0);
+            
+            setTimeout(() => {
+                html2canvas(document.querySelector(".main-area"), {
+                    backgroundColor: "#ffffff",
+                    scale: 2,
+                    useCORS: true,
+                    scrollY: -window.scrollY // 修正捲動偏移
+                }).then(canvas => {
+                    const link = document.createElement('a');
+                    link.download = `report_v48_${getTodayString()}.png`;
+                    link.href = canvas.toDataURL();
+                    link.click();
+                    document.body.classList.remove('screenshot-mode');
+                    saveStatus.innerText = '';
+                }).catch(err => {
+                    alert('截圖失敗'); console.error(err);
+                    document.body.classList.remove('screenshot-mode');
+                });
+            }, 500);
         }
 
+        // --- 便利貼與工具箱 ---
+        function toggleToolbox() {
+            const box = document.getElementById('toolboxContainer');
+            box.classList.toggle('closed');
+            box.querySelector('.toolbox-toggle-btn').innerText = box.classList.contains('closed') ? '▶' : '◀';
+        }
+        
+        // V48: 實作便利貼拖拉邏輯
         const stickerSVGs = {
             'arrow-right': '<svg viewBox="0 0 100 100" fill="none" stroke="#334155" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 50h80m-30-30l30 30-30 30"/></svg>',
             'arrow-down': '<svg viewBox="0 0 100 100" fill="none" stroke="#334155" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"><path d="M50 10v80m-30-30l30 30 30-30"/></svg>',
@@ -1123,39 +728,90 @@
             'circle-red': '<svg viewBox="0 0 100 100" fill="none" stroke="#ef4444" stroke-width="6"><circle cx="50" cy="50" r="40"/></svg>',
             'rect-blue': '<svg viewBox="0 0 100 100" fill="none" stroke="#3b82f6" stroke-width="6" stroke-dasharray="10 5"><rect x="10" y="20" width="80" height="60" rx="5"/></svg>'
         };
-        function addSticker(type) { createStickerElement({ id: Date.now(), type: type, x: 150 + window.scrollY, y: 150 + window.scrollY }); autoSave(); }
-        function createStickerElement(sticker) {
-            const div = document.createElement('div'); div.className = 'sticker'; div.style.left = sticker.x + 'px'; div.style.top = sticker.y + 'px'; div.setAttribute('id', 'sticker-' + sticker.id); div.dataset.type = sticker.type;
-            div.innerHTML = `${stickerSVGs[sticker.type]}<div class="sticker-del" onclick="deleteSticker(this)">✕</div>`; div.onmousedown = function(e) { dragMouseDown(e, div); }; document.body.appendChild(div);
-        }
-        function deleteSticker(btn) { btn.closest('.sticker').remove(); autoSave(); event.stopPropagation(); }
-        function addStickyNote() { createStickyElement({ id: Date.now(), x: 250, y: 200 + window.scrollY, content: '' }); autoSave(); }
-        function createStickyElement(note) {
-            const div = document.createElement('div'); div.className = 'sticky-note'; div.style.left = note.x + 'px'; div.style.top = note.y + 'px'; div.setAttribute('id', 'note-' + note.id);
-            div.innerHTML = `<div class="note-header" onmousedown="dragMouseDown(event, this.parentNode)"><span class="note-close" onclick="deleteSticky(this)">×</span></div><textarea class="note-content" oninput="autoSave()" placeholder="筆記...">${note.content}</textarea>`; document.body.appendChild(div);
-        }
-        function deleteSticky(btn) { if(confirm('刪除?')) { btn.closest('.sticky-note').remove(); autoSave(); } }
 
-        let pos1=0,pos2=0,pos3=0,pos4=0;
-        window.dragMouseDown = function(e, elmnt) {
-            if(e.target.tagName==='BUTTON'||e.target.tagName==='TEXTAREA'||e.target.className==='sticker-del') return;
-            e = e || window.event; e.preventDefault(); pos3 = e.clientX; pos4 = e.clientY;
-            document.onmouseup = function() { document.onmouseup=null; document.onmousemove=null; autoSave(); };
-            document.onmousemove = function(e) { e = e || window.event; e.preventDefault(); pos1=pos3-e.clientX; pos2=pos4-e.clientY; pos3=e.clientX; pos4=e.clientY; elmnt.style.top=(elmnt.offsetTop-pos2)+"px"; elmnt.style.left=(elmnt.offsetLeft-pos1)+"px"; };
+        function addStickyNote() { createStickyElement({ id: 'note-'+Date.now(), x: 250, y: window.scrollY + 200, content: '' }); autoSave(); }
+        function addSticker(type) { createStickerElement({ id: 'sticker-'+Date.now(), type: type, x: 150, y: window.scrollY + 200 }); autoSave(); }
+
+        function createStickyElement(n) {
+            const el = document.createElement('div'); el.className='sticky-note'; el.id=n.id; el.style.left=n.x+'px'; el.style.top=n.y+'px';
+            el.innerHTML=`<div class="note-header" onmousedown="dragStart(event, this.parentNode)"><span class="note-close" onclick="this.parentNode.parentNode.remove();autoSave()">×</span></div><textarea class="note-content" oninput="autoSave()">${n.content}</textarea>`;
+            document.body.appendChild(el);
+        }
+        function createStickerElement(s) {
+            const el = document.createElement('div'); el.className='sticker'; el.id=s.id; el.style.left=s.x+'px'; el.style.top=s.y+'px'; el.dataset.type=s.type;
+            el.innerHTML=`${stickerSVGs[s.type]}<div class="sticker-del" onclick="this.parentNode.remove();autoSave()">✕</div>`;
+            el.onmousedown=function(e){dragStart(e, el)}; document.body.appendChild(el);
         }
 
-        function renderFromData(data) { container.innerHTML = ''; data.forEach(item => container.appendChild(createNodeElement(item))); }
-        function renderNotes(n){document.querySelectorAll('.sticky-note').forEach(e=>e.remove());n.forEach(x=>createStickyElement(x));}
-        function renderStickers(s){document.querySelectorAll('.sticker').forEach(e=>e.remove());s.forEach(x=>createStickerElement(x));}
-        
+        let dragEl=null, diffX=0, diffY=0;
+        function dragStart(e, el) {
+            if(e.target.className==='sticker-del') return;
+            dragEl=el; diffX=e.clientX-el.offsetLeft; diffY=e.clientY-el.offsetTop;
+            document.onmousemove=dragMove; document.onmouseup=dragEnd; e.preventDefault();
+        }
+        function dragMove(e) { if(dragEl){ dragEl.style.left=(e.clientX-diffX)+'px'; dragEl.style.top=(e.clientY-diffY)+'px'; } }
+        function dragEnd() { dragEl=null; document.onmousemove=null; document.onmouseup=null; autoSave(); }
+
+        // --- 存檔/過濾/AI ---
         function autoSave() {
             localStorage.setItem('timeline_v47_data', JSON.stringify(gatherData()));
             localStorage.setItem('timeline_v47_notes', JSON.stringify(gatherNotes()));
             localStorage.setItem('timeline_v47_stickers', JSON.stringify(gatherStickers()));
-            saveStatus.innerText = '已儲存'; setTimeout(() => saveStatus.innerText = '', 2000);
+            saveStatus.innerText = '已儲存'; setTimeout(() => saveStatus.innerText = '', 1000);
         }
-        window.downloadJSON=function(){const d={timeline:gatherData(),notes:gatherNotes(),stickers:gatherStickers(),version:'v47'}; const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([JSON.stringify(d,null,2)],{type:'application/json;charset=utf-8'})); a.download=`timeline_v47_${getTodayString()}.json`; a.click();}
-        window.loadJSON=function(inp){const f=inp.files[0]; if(!f)return; const r=new FileReader(); r.onload=function(e){try{const j=JSON.parse(e.target.result); if(j.timeline){renderFromData(j.timeline); if(j.notes)renderNotes(j.notes); if(j.stickers)renderStickers(j.stickers); autoSave(); alert('讀取成功');}}catch(x){alert('格式錯誤');}}; r.readAsText(f);}
+        
+        function toggleProjectBar() {
+            const bar = document.getElementById('project-bar'); bar.classList.toggle('show'); document.body.classList.toggle('has-proj-bar'); refreshProjectBar();
+        }
+        function refreshProjectBar() {
+            const projects = new Set();
+            gatherData().forEach(i => { if(i.project) projects.add(i.project); });
+            let html = '<span style="font-size:0.8rem;color:#888">過濾:</span>';
+            projects.forEach(p => {
+                const active = activeProjectFilters.has(p) ? 'active' : '';
+                html += `<div class="proj-badge ${active}" onclick="toggleFilter('${p}')">${p}</div>`;
+            });
+            if(activeProjectFilters.size > 0) html += `<div class="proj-badge" style="color:red;border-color:red" onclick="activeProjectFilters.clear();refreshProjectBar();applyFilter()">✕ 清除</div>`;
+            document.getElementById('project-bar').innerHTML = html || '<span style="color:#ccc;font-size:0.8rem">無專案</span>';
+        }
+        function toggleFilter(p) { if(activeProjectFilters.has(p)) activeProjectFilters.delete(p); else activeProjectFilters.add(p); refreshProjectBar(); applyFilter(); }
+        function applyFilter() {
+            const key = document.querySelector('.search-input').value.toLowerCase();
+            document.querySelectorAll('.timeline-item').forEach(item => {
+                const p = item.querySelector('.footer-project-input').value;
+                const txt = item.innerText.toLowerCase() + item.querySelector('input').value.toLowerCase();
+                const pMatch = activeProjectFilters.size === 0 || activeProjectFilters.has(p);
+                const kMatch = txt.includes(key);
+                if(pMatch && kMatch) item.classList.remove('hidden-by-filter'); else item.classList.add('hidden-by-filter');
+            });
+        }
+        function filterNodes() { applyFilter(); }
+
+        function enterAIMode() { document.body.classList.add('ai-selecting'); alert('請勾選卡片後按「✅ 確認」'); }
+        function exitAIMode() { document.body.classList.remove('ai-selecting'); document.querySelectorAll('.select-chk').forEach(c=>c.checked=false); }
+        function selectAllAI() { document.querySelectorAll('.select-chk').forEach(c=>c.checked=true); }
+        function confirmAIOutput() {
+            const items = Array.from(document.querySelectorAll('.timeline-item')).filter(i => i.querySelector('.select-chk').checked);
+            const data = items.length ? items.map(i => i.innerText) : gatherData().map(d => `${d.date_single} ${d.project} ${d.label}: ${d.content}`);
+            navigator.clipboard.writeText(`請分析:\n${data.join('\n')}`).then(()=>alert('Prompt 已複製')); exitAIMode();
+        }
+
+        function downloadJSON() { 
+            const blob = new Blob([JSON.stringify({timeline:gatherData(), notes:gatherNotes(), stickers:gatherStickers()},null,2)], {type:'application/json'});
+            const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `backup_v48_${getTodayString()}.json`; a.click();
+        }
+        function loadJSON(inp) {
+            const f = inp.files[0]; if(!f) return;
+            const r = new FileReader(); r.onload = e => {
+                try { const d = JSON.parse(e.target.result); renderFromData(d.timeline); if(d.notes) renderNotes(d.notes); if(d.stickers) renderStickers(d.stickers); autoSave(); }
+                catch(err) { alert('格式錯誤'); }
+            }; r.readAsText(f);
+        }
+        function exportToCSV() {
+            let csv = "Project,Subject,Start,End,Desc\n";
+            gatherData().forEach(i => { csv += `${i.project},${i.label},${i.date_start||i.date_single},${i.date_end||i.date_single},${i.content.replace(/\n/g,' ')}\n` });
+            const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'})); a.download = `export_${getTodayString()}.csv`; a.click();
+        }
 
         init();
     </script>
