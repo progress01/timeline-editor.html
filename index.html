@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>報告神氣 V54</title>
+    <title>專案神器 V54</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         :root {
@@ -322,11 +322,11 @@
         /* 標題與刻度容器 */
         .swimlane-header-row { 
             display: flex; 
-            height: 35px; 
-            border-bottom: 1px solid #e2e8f0; 
+            height: 40px; 
+            border-bottom: 2px solid #e2e8f0; 
             margin-bottom: 10px; 
             align-items: flex-end;
-            position: sticky; top: 0; background: white; z-index: 20;
+            position: sticky; top: 0; background: white; z-index: 30; /* Sticky Header */
         }
         
         .swimlane-title-placeholder {
@@ -336,41 +336,54 @@
             margin-right: 0;
             font-weight: bold;
             color: #1e293b;
-            padding: 0 10px 5px 0;
+            padding: 0 10px 8px 0;
             text-align: right;
-            font-size: 0.9rem;
+            font-size: 0.95rem;
+            background: white;
         }
         
         .swimlane-axis-area {
             flex-grow: 1;
             position: relative;
             height: 100%;
+            background: white;
         }
 
-        .swimlane-axis-mark { 
+        /* 表頭的日期刻度 (有文字) */
+        .swimlane-header-mark { 
             position: absolute; 
-            top: 0; 
-            bottom: -5px; 
-            border-left: 1px dashed #cbd5e1; 
+            bottom: 0; 
+            border-left: 1px solid #cbd5e1; 
+            height: 10px; /* 只在表頭顯示短線 */
             padding-left: 4px; 
             pointer-events: none; 
             white-space: nowrap;
         }
-        .swimlane-axis-mark span {
+        .swimlane-header-mark span {
             position: absolute;
-            top: -18px;
+            top: -20px;
             left: 0;
             transform: translateX(-50%);
-            font-size: 0.75rem;
+            font-size: 0.8rem;
             color: #64748b;
+            font-weight: bold;
+        }
+
+        /* 內容區的網格線 (無文字，純背景) */
+        .swimlane-grid-line {
+            position: absolute;
+            top: 0; bottom: 0;
+            border-left: 1px dashed #f1f5f9;
+            pointer-events: none;
+            z-index: 0;
         }
 
         /* 專案泳道 (Row) */
         .swimlane-row { 
             position: relative; 
             display: flex; 
-            border-bottom: 1px solid #f1f5f9; 
-            min-height: 50px;
+            border-bottom: 1px solid #e2e8f0; 
+            min-height: 60px; /* 增加最小高度 */
         }
         
         .swimlane-project-label { 
@@ -379,7 +392,7 @@
             font-size: 0.9rem; 
             font-weight: bold; 
             color: #334155; 
-            padding: 10px 15px 10px 0; 
+            padding: 15px 15px 15px 10px; 
             text-align: right; 
             border-right: 2px solid #e2e8f0; 
             background: #f8fafc;
@@ -395,21 +408,22 @@
         
         .swimlane-bar { 
             position: absolute; 
-            height: 24px; 
+            height: 28px; /* 增加 Bar 高度 */
             border-radius: 4px; 
-            font-size: 0.75rem; 
+            font-size: 0.8rem; 
             color: white; 
             white-space: nowrap; 
             display: flex; 
             align-items: center; 
-            padding: 0 8px; 
+            padding: 0 10px; 
             overflow: hidden; 
             text-overflow: ellipsis;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1); 
             cursor: pointer; 
             transition: opacity 0.2s;
+            z-index: 10;
         }
-        .swimlane-bar:hover { opacity: 0.8; z-index: 10; } /* 移除寬度變化的樣式 */
+        .swimlane-bar:hover { opacity: 0.85; z-index: 20; box-shadow: 0 4px 6px rgba(0,0,0,0.15); }
 
         .swimlane-bar[data-color="blue"] { background: #4f46e5; } 
         .swimlane-bar[data-color="green"] { background: #10b981; } 
@@ -455,7 +469,7 @@
     <div class="toolbar">
         <div class="tool-left">
             <div class="tool-title">
-                🧠 報告神氣 V54
+                🧠 專案神器 V54
                 <span class="save-status" id="saveStatus"></span>
             </div>
             <div class="search-box">
@@ -548,8 +562,8 @@
             if (!hasData) {
                 const defaultItem = {
                     id: Date.now(), pos: 'left', mode: 'normal', color: 'blue', status: 0, isMemo: false,
-                    project: '報告神氣', label: '系統初始化', date_single: getTodayString(), date_start: '', date_end: '', 
-                    content: '歡迎使用報告神氣 V54。'
+                    project: '專案神器', label: '系統初始化', date_single: getTodayString(), date_start: '', date_end: '', 
+                    content: '歡迎使用專案神器 V54。'
                 };
                 container.appendChild(createNodeElement(defaultItem));
             }
@@ -783,7 +797,7 @@
             const chart = document.getElementById('swimlaneChart'); 
             chart.innerHTML='';
             
-            // 1. 準備資料並分組
+            // 1. 準備資料
             let data = gatherData().filter(i => !i.isMemo && (i.date_single || i.date_start));
             if (activeProjectFilters.size > 0) data = data.filter(i => activeProjectFilters.has(i.project));
             
@@ -792,7 +806,7 @@
                 return; 
             }
 
-            // 2. 解析日期並計算全局範圍
+            // 2. 解析日期範圍
             const parsed = data.map(d => {
                 let s = getMidnightTime(d.mode==='range' ? d.date_start : d.date_single);
                 let e = getMidnightTime(d.mode==='range' ? d.date_end : d.date_single);
@@ -817,21 +831,28 @@
                 grouped[pName].push(item);
             });
 
-            // 4. 繪製時間軸 (Header)
-            let axisHtml = '';
+            // 4.1 繪製時間軸 (Header) - 帶文字
+            let headerAxisHtml = '';
             const ticks = 6;
             for(let i=0; i<=ticks; i++){
                 const pct = (i / ticks) * 100;
                 const t = minT + (plotDur * (i/ticks));
                 const d = new Date(t);
                 const dateStr = `${d.getMonth()+1}/${d.getDate()}`;
-                axisHtml += `<div class="swimlane-axis-mark" style="left:${pct}%;"><span>${dateStr}</span></div>`;
+                headerAxisHtml += `<div class="swimlane-header-mark" style="left:${pct}%;"><span>${dateStr}</span></div>`;
+            }
+
+            // 4.2 繪製背景網格 (Body) - 無文字，純直線
+            let gridHtml = '';
+            for(let i=0; i<=ticks; i++){
+                const pct = (i / ticks) * 100;
+                gridHtml += `<div class="swimlane-grid-line" style="left:${pct}%;"></div>`;
             }
 
             const headerHtml = `
                 <div class="swimlane-header-row">
                     <div class="swimlane-title-placeholder">專案名稱</div>
-                    <div class="swimlane-axis-area">${axisHtml}</div>
+                    <div class="swimlane-axis-area">${headerAxisHtml}</div>
                 </div>`;
 
             // 5. 繪製專案泳道 (Rows)
@@ -840,13 +861,13 @@
             Object.keys(grouped).sort().forEach(pName => {
                 const items = grouped[pName].sort((a,b) => a.start - b.start);
                 
-                // 堆疊演算法 (Packing)
-                const tracks = []; // 每個 track 記錄最後一個 item 的結束時間
+                // 簡單堆疊計算
+                const tracks = [];
                 items.forEach(item => {
                     let placed = false;
                     for(let i=0; i<tracks.length; i++) {
-                        // 如果這個 track 的最後結束時間 < 當前 item 的開始時間 (加一點緩衝)，就可以放
-                        if (tracks[i] + dayMs <= item.start) {
+                        // 檢查緩衝區間 (防止文字太長重疊，這裡多加 2 天緩衝)
+                        if (tracks[i] + (dayMs * 2) <= item.start) {
                             item.trackIndex = i;
                             tracks[i] = item.end;
                             placed = true;
@@ -859,7 +880,8 @@
                     }
                 });
 
-                const rowHeight = tracks.length * 30 + 20; // 計算高度: 每個 bar 24px + gap
+                // 計算高度 (Bar高度 28px + 間距 8px + 上下緩衝)
+                const rowHeight = Math.max(60, tracks.length * 36 + 20);
                 
                 let barsHtml = '';
                 items.forEach(item => {
@@ -870,7 +892,7 @@
                     if (sPct < 0) { widthPct += sPct; sPct = 0; }
                     if (sPct + widthPct > 100) widthPct = 100 - sPct;
 
-                    const topPos = item.trackIndex * 30 + 10;
+                    const topPos = item.trackIndex * 36 + 10;
                     barsHtml += `<div class="swimlane-bar" data-color="${item.color}" title="${item.label} (${item.date_single || item.date_start})" style="left:${sPct}%; width:${widthPct}%; top:${topPos}px;">${item.label}</div>`;
                 });
 
@@ -878,8 +900,7 @@
                     <div class="swimlane-row" style="height:${rowHeight}px">
                         <div class="swimlane-project-label">${pName}</div>
                         <div class="swimlane-tracks-area">
-                            ${barsHtml}
-                            ${axisHtml.replace(/swimlane-axis-mark/g, 'swimlane-axis-mark style="opacity:0.3; height:100%"')} 
+                            ${gridHtml} ${barsHtml}
                         </div>
                     </div>`;
             });
@@ -902,7 +923,7 @@
                     scrollY: -window.scrollY
                 }).then(canvas => {
                     const link = document.createElement('a');
-                    link.download = `report_v54_${getTodayString()}.png`;
+                    link.download = `project_artifact_${getTodayString()}.png`;
                     link.href = canvas.toDataURL();
                     link.click();
                     document.body.classList.remove('screenshot-mode');
