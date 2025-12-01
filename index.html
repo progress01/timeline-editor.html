@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>報告神器版</title>
+    <title>報告神器 V47：穩定修復版</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         :root {
@@ -157,7 +157,6 @@
         .timeline-item.force-left .card { margin-right: 50% !important; margin-left: 0 !important; border-right: 4px solid transparent; border-left: none; }
         .timeline-item.force-right .card { margin-left: 50% !important; margin-right: 0 !important; border-left: 4px solid transparent; border-right: none; }
 
-        /* V46: 卡片結構 */
         .card {
             display: flex; flex-direction: column; 
             background: white; border-radius: 12px;
@@ -186,7 +185,7 @@
         /* 頂部區域 */
         .card-top-area {
             display: flex; justify-content: space-between; align-items: center;
-            padding: 15px 50px 5px 20px; /* 預留右側給 Side Tools */
+            padding: 15px 50px 5px 20px; 
             border-bottom: 1px dashed #e2e8f0;
             flex-shrink: 0; 
             min-height: 40px;
@@ -294,7 +293,7 @@
             border: 4px solid #ccc; border-radius: 50%; transform: translateX(-50%); z-index: 20; transition: left 0.3s;
         }
 
-        /* V46: 新增節點按鈕美化 */
+        /* 新增節點按鈕美化 */
         .add-main {
             display: block; margin: 50px auto; padding: 12px 30px;
             background: transparent; 
@@ -341,7 +340,7 @@
         body.presentation-mode .sticky-note { box-shadow: 2px 2px 5px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; }
 
         /* =========================================
-           V45: 行動版 (Mobile) 專屬介面優化
+           V47: 行動版 (Mobile) 介面優化 (按鈕精簡)
            ========================================= */
         @media screen and (max-width: 768px) {
             body { padding: 10px; }
@@ -365,9 +364,9 @@
             #gantt-view { padding: 10px; }
             .gantt-label-col { width: 100px; font-size: 0.75rem; }
 
-            /* V45: 手機版隱藏不必要按鈕 (保留 日曆, 待辦, 換色, 複製, 刪除, 橡皮擦) */
+            /* V47: 手機版隱藏不必要按鈕 */
             .mobile-hidden { display: none !important; }
-            /* 調整側邊欄，只留換色 */
+            /* 側邊欄只留換色 */
             .card-side-tools .side-btn:not([title="換色"]) { display: none; }
         }
 
@@ -384,7 +383,7 @@
     <div class="toolbar">
         <div class="tool-left">
             <div class="tool-title">
-                🧠 V46
+                🧠 V47
                 <span class="save-status" id="saveStatus"></span>
             </div>
             <div class="search-box">
@@ -459,34 +458,14 @@
         }
 
         const defaultData = [
-            { id: 1, pos: 'left', mode: 'normal', color: 'blue', status: 0, isMemo: false, project: '專案A', label: 'V46資料救援', date_single: getTodayString(), date_start: '', date_end: '', content: '1. 系統會自動偵測並還原 V45/V44/V43 的資料。\n2. 橡皮擦已修復！選取這段文字按「🧹」試試。\n3. 手機模式下介面已大幅簡化。' }
+            { id: 1, pos: 'left', mode: 'normal', color: 'blue', status: 0, isMemo: false, project: '專案A', label: 'V47穩定版', date_single: getTodayString(), date_start: '', date_end: '', content: '1. 程式碼全面簡化，解決按鈕失效問題。\n2. 卡片內的「開啟Tasks」已移除，統一使用上方工具列。\n3. 手機版只會顯示「換色、時段、待辦、複製、日曆、橡皮擦、刪除」等核心功能。' }
         ];
 
-        // V46: 自動資料救援 init
         function init() {
-            let savedData = localStorage.getItem('timeline_v46_data');
-            let savedNotes = localStorage.getItem('timeline_v46_notes');
-            let savedStickers = localStorage.getItem('timeline_v46_stickers');
-
-            // 如果新版沒資料，嘗試搜尋舊版
-            if (!savedData) {
-                const legacyVersions = ['v45', 'v44', 'v43', 'v42', 'v41', 'v40', 'v39', 'v38', 'v37', 'v36', 'v35', 'v34', 'v33', 'v32', 'v31', 'v30'];
-                for (let ver of legacyVersions) {
-                    const legacyData = localStorage.getItem(`timeline_${ver}_data`);
-                    if (legacyData) {
-                        console.log(`Found legacy data from ${ver}, migrating...`);
-                        savedData = legacyData;
-                        savedNotes = localStorage.getItem(`timeline_${ver}_notes`);
-                        savedStickers = localStorage.getItem(`timeline_${ver}_stickers`);
-                        alert(`已為您還原 ${ver} 版本的資料！`);
-                        // 立即儲存到新版
-                        localStorage.setItem('timeline_v46_data', savedData);
-                        if(savedNotes) localStorage.setItem('timeline_v46_notes', savedNotes);
-                        if(savedStickers) localStorage.setItem('timeline_v46_stickers', savedStickers);
-                        break;
-                    }
-                }
-            }
+            // V47: 移除自動恢復邏輯，直接讀取
+            const savedData = localStorage.getItem('timeline_v47_data'); 
+            const savedNotes = localStorage.getItem('timeline_v47_notes');
+            const savedStickers = localStorage.getItem('timeline_v47_stickers');
 
             if (savedData) renderFromData(JSON.parse(savedData));
             else renderFromData(defaultData);
@@ -512,8 +491,9 @@
             autoSave();
         }
 
-        // V45: 橡皮擦修復 (prevent default on mousedown)
+        // V47: 橡皮擦修復 (強制取得焦點)
         function clearFormatting(btn) {
+            // onmousedown="event.preventDefault()" 已在 HTML 加入
             document.execCommand('styleWithCSS', false, true);
             document.execCommand('removeFormat', false, null); 
             document.execCommand('hiliteColor', false, 'transparent'); 
@@ -740,10 +720,9 @@
                             <button class="btn-icon bg-purple" onclick="insertTodoLine(this)" title="新增待辦">☑</button>
                             <button class="btn-icon bg-teal mobile-hidden" onclick="insertBullet(this)" title="項目符號">🔹</button>
                             <button class="btn-icon bg-teal mobile-hidden" onclick="addHighlight(this)" title="文字高亮">🖍️</button>
-                            <button class="btn-icon bg-rose" onmousedown="event.preventDefault()" onclick="clearFormatting(this)" title="清除格式 (橡皮擦)">🧹</button>
+                            <button class="btn-icon bg-rose mobile-hidden" onmousedown="event.preventDefault()" onclick="clearFormatting(this)" title="清除格式 (橡皮擦)">🧹</button>
                             <button class="btn-icon bg-orange" onclick="copyForTasks(this)" title="複製到Tasks">📋</button>
-                            <button class="btn-icon bg-tasks mobile-hidden" onclick="openTasksWeb()" title="↗️ 打開 Google Tasks">↗️</button>
-                            <button class="btn-icon bg-orange" onclick="addToGoogleCal(this)" title="加到日曆">📅</button>
+                            <button class="btn-icon bg-orange mobile-hidden" onclick="addToGoogleCal(this)" title="加到日曆">📅</button>
                             <button class="btn-icon bg-red" onclick="deleteNode(this)" title="刪除">×</button>
                         </div>
                     </div>
@@ -1000,14 +979,14 @@
                 }
             });
             const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([csvContent], { type: 'text/csv;charset=utf-8;' }));
-            link.download = `timeline_v46_${getTodayString()}.csv`; link.click();
+            link.download = `timeline_v47_${getTodayString()}.csv`; link.click();
         }
 
         function takeScreenshot() {
             if(currentView === 'gantt') { alert('建議切換回列表模式再截圖！'); }
             document.body.classList.add('screenshot-mode'); window.scrollTo(0, 0); saveStatus.innerText = '處理中...';
             html2canvas(document.body, { backgroundColor: '#f3f4f6', scale: 2, useCORS: true }).then(canvas => {
-                const link = document.createElement('a'); link.download = `report_v46_${getTodayString()}.png`; link.href = canvas.toDataURL(); link.click();
+                const link = document.createElement('a'); link.download = `report_v47_${getTodayString()}.png`; link.href = canvas.toDataURL(); link.click();
                 document.body.classList.remove('screenshot-mode'); saveStatus.innerText = '';
             }).catch(err => { document.body.classList.remove('screenshot-mode'); alert('截圖錯誤'); });
         }
@@ -1045,12 +1024,12 @@
         function renderStickers(s){document.querySelectorAll('.sticker').forEach(e=>e.remove());s.forEach(x=>createStickerElement(x));}
         
         function autoSave() {
-            localStorage.setItem('timeline_v46_data', JSON.stringify(gatherData()));
-            localStorage.setItem('timeline_v46_notes', JSON.stringify(gatherNotes()));
-            localStorage.setItem('timeline_v46_stickers', JSON.stringify(gatherStickers()));
+            localStorage.setItem('timeline_v47_data', JSON.stringify(gatherData()));
+            localStorage.setItem('timeline_v47_notes', JSON.stringify(gatherNotes()));
+            localStorage.setItem('timeline_v47_stickers', JSON.stringify(gatherStickers()));
             saveStatus.innerText = '已儲存'; setTimeout(() => saveStatus.innerText = '', 2000);
         }
-        window.downloadJSON=function(){const d={timeline:gatherData(),notes:gatherNotes(),stickers:gatherStickers(),version:'v46'}; const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([JSON.stringify(d,null,2)],{type:'application/json;charset=utf-8'})); a.download=`timeline_v46_${getTodayString()}.json`; a.click();}
+        window.downloadJSON=function(){const d={timeline:gatherData(),notes:gatherNotes(),stickers:gatherStickers(),version:'v47'}; const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([JSON.stringify(d,null,2)],{type:'application/json;charset=utf-8'})); a.download=`timeline_v47_${getTodayString()}.json`; a.click();}
         window.loadJSON=function(inp){const f=inp.files[0]; if(!f)return; const r=new FileReader(); r.onload=function(e){try{const j=JSON.parse(e.target.result); if(j.timeline){renderFromData(j.timeline); if(j.notes)renderNotes(j.notes); if(j.stickers)renderStickers(j.stickers); autoSave(); alert('讀取成功');}}catch(x){alert('格式錯誤');}}; r.readAsText(f);}
 
         init();
