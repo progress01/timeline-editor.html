@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>報告神器 V54 (甘特圖修復版)</title>
+    <title>報告神氣 V54</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         :root {
@@ -215,18 +215,16 @@
         .card-top-left { display: flex; align-items: center; gap: 8px; flex: 1; }
         .card-top-right { display: flex; gap: 4px; flex-shrink: 0; }
 
-        /* V54: 空間修復 - 增加頂部間距與分行 */
         .card-body {
             padding: 12px 40px 15px 20px; 
             flex: 1; display: flex; flex-direction: column;
         }
         
         .header-row {
-            display: flex; flex-direction: column; /* 強制上下分行 */
+            display: flex; flex-direction: column;
             gap: 8px; margin-bottom: 12px;
         }
         
-        /* 日期/工具列：水平排列，空間寬鬆 */
         .header-meta {
             display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
         }
@@ -285,7 +283,7 @@
             background: #e0e7ff; color: #4338ca; border: none; border-radius: 4px;
             padding: 0 8px; font-size: 0.8rem; cursor: pointer; font-weight: bold; margin-left: 3px; height: 28px;
         }
-        /* V54: 標題欄獨立一行，空間加大 */
+
         .label-input {
             border: none; border-bottom: 1px dashed #cbd5e1; padding: 5px 0; font-weight: bold;
             color: var(--primary); font-size: 1.25rem; outline: none; width: 100%; display: block;
@@ -317,45 +315,48 @@
         }
         .add-main:hover { border-color: #3b82f6; color: #3b82f6; background: #eff6ff; }
 
-        /* --- Gantt View (修復版 CSS) --- */
-        #gantt-view { display: none; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); overflow-x: auto; margin-bottom: 30px; border: 1px solid #e2e8f0; }
-        .gantt-container { position: relative; min-width: 800px; padding-bottom: 20px; }
+        /* --- 專案泳道圖 (Swimlane View) --- */
+        #chart-view { display: none; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); overflow-x: auto; margin-bottom: 30px; border: 1px solid #e2e8f0; }
+        .swimlane-container { position: relative; min-width: 800px; padding-bottom: 20px; }
         
-        /* 標題與刻度容器：使用 Flex 確保對齊 */
-        .gantt-axis-labels { 
+        /* 標題與刻度容器 */
+        .swimlane-header-row { 
             display: flex; 
             height: 35px; 
             border-bottom: 1px solid #e2e8f0; 
             margin-bottom: 10px; 
             align-items: flex-end;
+            position: sticky; top: 0; background: white; z-index: 20;
         }
         
-        /* 左側標題佔位區 (150px) */
-        .gantt-header-placeholder {
-            width: 150px; 
+        .swimlane-title-placeholder {
+            width: 180px; 
             flex-shrink: 0; 
-            border-right: 2px solid transparent; 
+            border-right: 2px solid #e2e8f0; 
             margin-right: 0;
+            font-weight: bold;
+            color: #1e293b;
+            padding: 0 10px 5px 0;
+            text-align: right;
+            font-size: 0.9rem;
         }
         
-        /* 右側時間軸區域 (彈性伸展) */
-        .gantt-axis-area {
+        .swimlane-axis-area {
             flex-grow: 1;
             position: relative;
             height: 100%;
         }
 
-        /* 刻度線與文字 */
-        .gantt-axis-mark { 
+        .swimlane-axis-mark { 
             position: absolute; 
             top: 0; 
-            bottom: -5px; /* 稍微突出 */
+            bottom: -5px; 
             border-left: 1px dashed #cbd5e1; 
             padding-left: 4px; 
             pointer-events: none; 
             white-space: nowrap;
         }
-        .gantt-axis-mark span {
+        .swimlane-axis-mark span {
             position: absolute;
             top: -18px;
             left: 0;
@@ -364,43 +365,36 @@
             color: #64748b;
         }
 
-        /* 資料列 */
-        .gantt-row { 
+        /* 專案泳道 (Row) */
+        .swimlane-row { 
             position: relative; 
-            height: 40px; 
-            margin-bottom: 8px; 
             display: flex; 
-            align-items: center; 
-            border-bottom: 1px dashed #f1f5f9; 
+            border-bottom: 1px solid #f1f5f9; 
+            min-height: 50px;
         }
         
-        .gantt-label-col { 
-            width: 150px; 
+        .swimlane-project-label { 
+            width: 180px; 
             flex-shrink: 0; 
-            font-size: 0.85rem; 
+            font-size: 0.9rem; 
             font-weight: bold; 
             color: #334155; 
-            white-space: nowrap; 
-            overflow: hidden; 
-            text-overflow: ellipsis; 
-            padding-right: 15px; 
+            padding: 10px 15px 10px 0; 
             text-align: right; 
             border-right: 2px solid #e2e8f0; 
-            margin-right: 0; 
-            line-height: 40px; 
-            background: white; 
+            background: #f8fafc;
+            display: flex; align-items: center; justify-content: flex-end;
             z-index: 5; 
         }
         
-        .gantt-bar-area { 
+        .swimlane-tracks-area { 
             flex-grow: 1; 
             position: relative; 
-            height: 100%; 
+            background: white;
         }
         
-        .gantt-bar { 
+        .swimlane-bar { 
             position: absolute; 
-            top: 8px; 
             height: 24px; 
             border-radius: 4px; 
             font-size: 0.75rem; 
@@ -410,16 +404,17 @@
             align-items: center; 
             padding: 0 8px; 
             overflow: hidden; 
-            box-shadow: 0 2px 4px rgba(0,0,0,0.15); 
-            cursor: help; 
+            text-overflow: ellipsis;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1); 
+            cursor: pointer; 
             transition: opacity 0.2s;
         }
-        .gantt-bar:hover { opacity: 0.9; z-index: 10; overflow: visible; width: auto !important; min-width: 100%; }
+        .swimlane-bar:hover { opacity: 0.8; z-index: 10; } /* 移除寬度變化的樣式 */
 
-        .gantt-bar[data-color="blue"] { background: #4f46e5; } 
-        .gantt-bar[data-color="green"] { background: #10b981; } 
-        .gantt-bar[data-color="red"] { background: #ef4444; } 
-        .gantt-bar[data-color="yellow"] { background: #f59e0b; color: #333; }
+        .swimlane-bar[data-color="blue"] { background: #4f46e5; } 
+        .swimlane-bar[data-color="green"] { background: #10b981; } 
+        .swimlane-bar[data-color="red"] { background: #ef4444; } 
+        .swimlane-bar[data-color="yellow"] { background: #f59e0b; color: #333; }
 
         #exit-pres-btn {
             display: none; position: fixed; top: 20px; right: 20px; z-index: 3000;
@@ -460,7 +455,7 @@
     <div class="toolbar">
         <div class="tool-left">
             <div class="tool-title">
-                🧠 V54 (修復)
+                🧠 報告神氣 V54
                 <span class="save-status" id="saveStatus"></span>
             </div>
             <div class="search-box">
@@ -471,7 +466,7 @@
         
         <div class="tool-btn-group" id="normal-toolbar">
             <button class="tool-btn filter-btn" onclick="toggleProjectBar()" title="過濾">📁 專案</button>
-            <button class="tool-btn view-btn" onclick="toggleView()" id="viewBtn">📊 甘特圖</button>
+            <button class="tool-btn view-btn" onclick="toggleView()" id="viewBtn">🗺️ 專案圖</button>
             <button class="tool-btn pres-btn" onclick="togglePresentation()">📽️ 簡報</button>
             <button class="tool-btn ai-btn" onclick="enterAIMode()">🤖 AI</button>
             <button class="tool-btn cal-btn" onclick="exportToCSV()">📅 CSV</button>
@@ -511,9 +506,9 @@
 
     <div class="main-area" id="captureArea">
         <div class="timeline" id="container"></div>
-        <div id="gantt-view">
-            <div style="text-align:center; color:#888; margin-bottom:10px; font-size:0.8rem;">💡 左右滑動可查看完整時間軸</div>
-            <div class="gantt-container" id="ganttChart"></div>
+        <div id="chart-view">
+            <div style="text-align:center; color:#888; margin-bottom:10px; font-size:0.8rem;">💡 專案泳道圖：自動堆疊不重疊</div>
+            <div class="swimlane-container" id="swimlaneChart"></div>
         </div>
         <button class="add-main" id="mainAddBtn">＋ 新增節點</button>
     </div>
@@ -530,7 +525,6 @@
             return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
         }
 
-        // 初始化 - V54 防呆保護
         function init() {
             const savedData = localStorage.getItem('timeline_v47_data'); 
             const savedNotes = localStorage.getItem('timeline_v47_notes');
@@ -547,27 +541,21 @@
                     }
                 } catch (e) {
                     console.error("資料讀取失敗:", e);
-                    alert("⚠️ 警告：讀取舊資料時發生錯誤！\n系統將暫時載入預設卡片，請檢查備份。");
+                    alert("⚠️ 警告：讀取舊資料時發生錯誤！");
                 }
             }
             
-            // 如果沒資料，載入預設值
             if (!hasData) {
                 const defaultItem = {
                     id: Date.now(), pos: 'left', mode: 'normal', color: 'blue', status: 0, isMemo: false,
-                    project: 'V54更新', label: '修復完成', date_single: getTodayString(), date_start: '', date_end: '', 
-                    content: '1. 日期與標題欄位已修復，不再重疊。\n2. 加入資料防呆機制，防止刷新後卡片消失。\n3. 全局貼圖(Ctrl+V)功能正常。'
+                    project: '報告神氣', label: '系統初始化', date_single: getTodayString(), date_start: '', date_end: '', 
+                    content: '歡迎使用報告神氣 V54。'
                 };
                 container.appendChild(createNodeElement(defaultItem));
-                // 注意：這裡不強制 autoSave()，以免覆蓋可能存在的損壞資料，等待使用者操作後才存。
             }
 
-            if (savedNotes) {
-                try { renderNotes(JSON.parse(savedNotes)); } catch(e){}
-            }
-            if (savedStickers) {
-                try { renderStickers(JSON.parse(savedStickers)); } catch(e){}
-            }
+            if (savedNotes) { try { renderNotes(JSON.parse(savedNotes)); } catch(e){} }
+            if (savedStickers) { try { renderStickers(JSON.parse(savedStickers)); } catch(e){} }
             
             refreshProjectBar();
 
@@ -756,7 +744,7 @@
             renderFromData(newData); autoSave();
         }
 
-        // --- Gantt Logic (修復版) ---
+        // --- Swimlane Logic (泳道圖) ---
         function getMidnightTime(dateStr) {
             if(!dateStr) return null;
             const parts = dateStr.split('-');
@@ -765,21 +753,21 @@
         }
 
         function toggleView() {
-            const tl = document.getElementById('container'); const gt = document.getElementById('gantt-view');
+            const tl = document.getElementById('container'); const gt = document.getElementById('chart-view');
             const btn = document.getElementById('viewBtn'); const add = document.getElementById('mainAddBtn');
             if (currentView === 'timeline') {
                 tl.style.display = 'none'; gt.style.display = 'block'; add.style.display = 'none';
                 btn.innerText = '📝 列表'; btn.classList.remove('view-btn'); btn.classList.add('highlight');
-                renderGantt(); currentView = 'gantt';
+                renderSwimlane(); currentView = 'swimlane';
             } else {
                 tl.style.display = 'block'; gt.style.display = 'none'; add.style.display = 'block';
-                btn.innerText = '📊 甘特圖'; btn.classList.add('view-btn'); btn.classList.remove('highlight');
+                btn.innerText = '🗺️ 專案圖'; btn.classList.add('view-btn'); btn.classList.remove('highlight');
                 currentView = 'timeline';
             }
         }
 
         function togglePresentation() {
-            if (currentView === 'gantt') toggleView();
+            if (currentView === 'swimlane') toggleView();
             const body = document.body;
             body.classList.toggle('presentation-mode');
             if(body.classList.contains('presentation-mode')) {
@@ -791,97 +779,107 @@
             if (event.key === "Escape" && document.body.classList.contains('presentation-mode')) togglePresentation();
         });
 
-        function renderGantt() {
-            const chart = document.getElementById('ganttChart'); 
+        function renderSwimlane() {
+            const chart = document.getElementById('swimlaneChart'); 
             chart.innerHTML='';
             
-            // 1. 過濾與準備資料
+            // 1. 準備資料並分組
             let data = gatherData().filter(i => !i.isMemo && (i.date_single || i.date_start));
             if (activeProjectFilters.size > 0) data = data.filter(i => activeProjectFilters.has(i.project));
             
             if(data.length === 0) { 
-                chart.innerHTML='<div style="text-align:center;padding:20px;color:#999">無有效日期資料，請確認卡片是否為 memo 模式或已設定日期</div>'; 
+                chart.innerHTML='<div style="text-align:center;padding:20px;color:#999">無有效日期資料</div>'; 
                 return; 
             }
 
-            // 2. 計算時間區間 (Min / Max)
+            // 2. 解析日期並計算全局範圍
             const parsed = data.map(d => {
                 let s = getMidnightTime(d.mode==='range' ? d.date_start : d.date_single);
                 let e = getMidnightTime(d.mode==='range' ? d.date_end : d.date_single);
-                
-                // 防呆：修復日期邏輯
-                if(!s && e) s = e;
-                if(s && !e) e = s;
+                if(!s && e) s = e; if(s && !e) e = s;
                 if(!s && !e) return null;
                 if(e < s) e = s;
-                
                 return { ...d, start: s, end: e };
-            }).filter(d => d !== null).sort((a,b) => a.start - b.start);
+            }).filter(d => d !== null);
 
-            if (parsed.length === 0) {
-                chart.innerHTML='<div style="text-align:center;padding:20px;color:#999">所有卡片日期格式皆無效</div>'; 
-                return;
-            }
+            if (parsed.length === 0) return;
 
             const dayMs = 86400000;
-            let minT = Math.min(...parsed.map(p=>p.start));
-            let maxT = Math.max(...parsed.map(p=>p.end));
-            
-            // 前後多留 3 天緩衝
-            minT -= dayMs * 3;
-            maxT += dayMs * 3;
-
+            let minT = Math.min(...parsed.map(p=>p.start)) - dayMs * 3;
+            let maxT = Math.max(...parsed.map(p=>p.end)) + dayMs * 3;
             const plotDur = maxT - minT;
-            if (plotDur <= 0) { chart.innerHTML='<div style="text-align:center;">時間區間計算錯誤</div>'; return; }
 
-            // 3. 繪製時間軸 (Header)
-            // 使用 Flex 佈局：左邊 150px 空白，右邊才是刻度區
+            // 3. 依專案分組
+            const grouped = {};
+            parsed.forEach(item => {
+                const pName = item.project || '未分類';
+                if(!grouped[pName]) grouped[pName] = [];
+                grouped[pName].push(item);
+            });
+
+            // 4. 繪製時間軸 (Header)
             let axisHtml = '';
-            const ticks = 6; // 刻度數量
+            const ticks = 6;
             for(let i=0; i<=ticks; i++){
                 const pct = (i / ticks) * 100;
                 const t = minT + (plotDur * (i/ticks));
                 const d = new Date(t);
                 const dateStr = `${d.getMonth()+1}/${d.getDate()}`;
-                
-                // 相對定位：相對於 gantt-axis-area 的百分比
-                axisHtml += `
-                    <div class="gantt-axis-mark" style="left:${pct}%;">
-                        <span>${dateStr}</span>
-                    </div>`;
+                axisHtml += `<div class="swimlane-axis-mark" style="left:${pct}%;"><span>${dateStr}</span></div>`;
             }
 
             const headerHtml = `
-                <div class="gantt-axis-labels">
-                    <div class="gantt-header-placeholder"></div>
-                    <div class="gantt-axis-area">
-                        ${axisHtml}
-                    </div>
+                <div class="swimlane-header-row">
+                    <div class="swimlane-title-placeholder">專案名稱</div>
+                    <div class="swimlane-axis-area">${axisHtml}</div>
                 </div>`;
 
-            // 4. 繪製資料列 (Rows)
+            // 5. 繪製專案泳道 (Rows)
             let rowsHtml = '';
-            parsed.forEach(item => {
-                // 計算百分比：相對於 plotDur
-                let sPct = ((item.start - minT) / plotDur) * 100;
-                let ePct = ((item.end + dayMs - minT) / plotDur) * 100; // +dayMs 包含結束當天
-                let widthPct = ePct - sPct;
+            
+            Object.keys(grouped).sort().forEach(pName => {
+                const items = grouped[pName].sort((a,b) => a.start - b.start);
                 
-                // 最小寬度防呆
-                if(widthPct < 0.5) widthPct = 0.5;
-                // 邊界防呆
-                if (sPct < 0) { widthPct += sPct; sPct = 0; }
-                if (sPct + widthPct > 100) { widthPct = 100 - sPct; }
+                // 堆疊演算法 (Packing)
+                const tracks = []; // 每個 track 記錄最後一個 item 的結束時間
+                items.forEach(item => {
+                    let placed = false;
+                    for(let i=0; i<tracks.length; i++) {
+                        // 如果這個 track 的最後結束時間 < 當前 item 的開始時間 (加一點緩衝)，就可以放
+                        if (tracks[i] + dayMs <= item.start) {
+                            item.trackIndex = i;
+                            tracks[i] = item.end;
+                            placed = true;
+                            break;
+                        }
+                    }
+                    if (!placed) {
+                        item.trackIndex = tracks.length;
+                        tracks.push(item.end);
+                    }
+                });
+
+                const rowHeight = tracks.length * 30 + 20; // 計算高度: 每個 bar 24px + gap
+                
+                let barsHtml = '';
+                items.forEach(item => {
+                    let sPct = ((item.start - minT) / plotDur) * 100;
+                    let ePct = ((item.end + dayMs - minT) / plotDur) * 100;
+                    let widthPct = ePct - sPct;
+                    if(widthPct < 0.5) widthPct = 0.5;
+                    if (sPct < 0) { widthPct += sPct; sPct = 0; }
+                    if (sPct + widthPct > 100) widthPct = 100 - sPct;
+
+                    const topPos = item.trackIndex * 30 + 10;
+                    barsHtml += `<div class="swimlane-bar" data-color="${item.color}" title="${item.label} (${item.date_single || item.date_start})" style="left:${sPct}%; width:${widthPct}%; top:${topPos}px;">${item.label}</div>`;
+                });
 
                 rowsHtml += `
-                    <div class="gantt-row">
-                        <div class="gantt-label-col" title="${item.label}">
-                            ${item.project ? `<span style="color:#888;font-size:0.8em">[${item.project}]</span> ` : ''}${item.label}
-                        </div>
-                        <div class="gantt-bar-area">
-                            <div class="gantt-bar" data-color="${item.color}" style="left:${sPct}%; width:${widthPct}%;">
-                                ${widthPct > 5 ? item.label : ''}
-                            </div>
+                    <div class="swimlane-row" style="height:${rowHeight}px">
+                        <div class="swimlane-project-label">${pName}</div>
+                        <div class="swimlane-tracks-area">
+                            ${barsHtml}
+                            ${axisHtml.replace(/swimlane-axis-mark/g, 'swimlane-axis-mark style="opacity:0.3; height:100%"')} 
                         </div>
                     </div>`;
             });
@@ -891,7 +889,7 @@
 
         // --- 截圖 ---
         function takeScreenshot() {
-            if(currentView === 'gantt') { alert('請切換回列表模式再截圖'); return; }
+            if(currentView === 'swimlane') { alert('請切換回列表模式再截圖'); return; }
             document.body.classList.add('screenshot-mode');
             saveStatus.innerText = '截圖中...';
             window.scrollTo(0,0);
