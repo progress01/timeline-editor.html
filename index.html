@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>報告神器 V34：側邊標籤版</title>
+    <title>報告神器 V36：側邊控制台版</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         :root {
@@ -158,62 +158,63 @@
             background: white; border-radius: 12px;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
             position: relative; z-index: 10; 
-            padding: 15px 20px 15px 50px; /* V34: 左側留空間給側標 */
+            padding: 15px 50px 40px 20px; /* V36: 右側留50px給側邊工具列 */
             overflow: hidden;
         }
 
-        /* V34: 側邊專案標籤 (Side Project Tag) */
-        .side-project-tag {
-            position: absolute; left: 0; top: 0; bottom: 0;
-            width: 36px; display: flex; align-items: center; justify-content: center;
-            background: #cbd5e1; /* 預設色 */
+        /* 底部專案標籤 */
+        .project-footer {
+            position: absolute; bottom: 0; left: 0; right: 0;
+            height: 32px; display: flex; align-items: center; justify-content: flex-end;
+            padding: 0 15px;
+            background: #cbd5e1;
             transition: background-color 0.3s;
         }
-        /* 側邊標籤顏色跟隨卡片 */
-        .card[data-color="blue"] .side-project-tag { background: #4f46e5; }
-        .card[data-color="green"] .side-project-tag { background: #10b981; }
-        .card[data-color="red"] .side-project-tag { background: #ef4444; }
-        .card[data-color="yellow"] .side-project-tag { background: #f59e0b; }
+        .card[data-color="blue"] .project-footer { background: #4f46e5; }
+        .card[data-color="green"] .project-footer { background: #10b981; }
+        .card[data-color="red"] .project-footer { background: #ef4444; }
+        .card[data-color="yellow"] .project-footer { background: #f59e0b; }
 
-        /* 旋轉的輸入框 */
-        .side-project-input {
-            transform: rotate(-90deg);
+        .footer-project-input {
             background: transparent; border: none; 
             color: white; font-weight: bold; font-size: 0.9rem;
-            text-align: center; width: 120px; outline: none;
-            letter-spacing: 1px;
-            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+            text-align: right; width: 100%; outline: none;
+            text-shadow: 0 1px 1px rgba(0,0,0,0.1);
         }
-        .side-project-input::placeholder { color: rgba(255,255,255,0.6); font-style: italic; }
+        .footer-project-input::placeholder { color: rgba(255,255,255,0.7); }
 
-        /* V34: 頂部佈局 */
+        /* V36: 側邊垂直工具列 (Side Control Bar) */
+        .card-side-tools {
+            position: absolute; right: 8px; top: 50px; bottom: 40px; /* 避開標頭和底部 */
+            display: flex; flex-direction: column; gap: 6px;
+            align-items: center; justify-content: flex-start;
+            width: 30px; 
+            padding-left: 5px; 
+            border-left: 1px dashed #f1f5f9;
+        }
+
+        /* V36: 頂部工具列 (只留內容操作) */
         .card-top-area {
             display: flex; justify-content: space-between; align-items: center;
             margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px dashed #e2e8f0;
         }
-        
-        .card-top-left { display: flex; align-items: center; gap: 8px; flex: 1; }
-        
-        /* V34: 工具列強制單行，且不重疊 */
-        .card-top-right {
-            display: flex; gap: 2px; /* 緊湊間距 */
-            flex-wrap: nowrap; /* 強制不換行 */
-            overflow-x: auto; /* 若真的溢出可滑動 */
-            margin-left: 10px;
-        }
-        .card-top-right::-webkit-scrollbar { display: none; }
+        .card-top-left { display: flex; align-items: center; gap: 8px; flex: 1; flex-wrap: wrap; }
+        .card-top-right { display: flex; gap: 3px; margin-left: 10px; flex-shrink: 0; flex-wrap: nowrap; }
 
         .status-dot {
             width: 14px; height: 14px; border-radius: 50%; cursor: pointer; border: 2px solid rgba(0,0,0,0.1); flex-shrink: 0;
         }
         .status-0 { background: #9ca3af; } .status-1 { background: #f59e0b; } .status-2 { background: #10b981; } .status-3 { background: #ef4444; }
 
-        /* V34: 按鈕顏色高對比優化 (Deep Colors) */
+        /* 按鈕樣式 */
         .btn-icon { 
-            border: none; cursor: pointer; width: 26px; height: 26px; border-radius: 4px; 
-            display: flex; align-items: center; justify-content: center; color: white; font-size: 13px;
+            border: none; cursor: pointer; width: 28px; height: 28px; border-radius: 4px; 
+            display: flex; align-items: center; justify-content: center; color: white; font-size: 14px;
             flex-shrink: 0;
         }
+        /* 側邊按鈕稍微小一點，避免太搶眼 */
+        .side-btn { width: 26px; height: 26px; font-size: 12px; }
+
         .bg-gray { background: #475569; } .bg-gray:hover { background: #334155; }
         .bg-blue { background: #2563eb; } .bg-blue:hover { background: #1d4ed8; }
         .bg-red { background: #dc2626; } .bg-red:hover { background: #b91c1c; }
@@ -221,9 +222,6 @@
         .bg-purple { background: #7c3aed; } .bg-purple:hover { background: #6d28d9; }
         .bg-teal { background: #0f766e; } .bg-teal:hover { background: #0d9488; }
         .bg-tasks { background: #1e40af; } .bg-tasks:hover { background: #1e3a8a; }
-
-        .card-body { margin-top: 5px; }
-        .header-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
 
         .select-chk { width: 20px; height: 20px; margin-right: 8px; cursor: pointer; accent-color: #8b5cf6; transform: scale(1.2); display: none; }
         body.ai-selecting .select-chk { display: inline-block; }
@@ -238,7 +236,7 @@
         }
         .label-input {
             border: none; border-bottom: 1px dashed #cbd5e1; padding: 4px 8px; font-weight: bold;
-            color: var(--primary); font-size: 0.9rem; outline: none; flex: 1; min-width: 80px;
+            color: var(--primary); font-size: 1rem; outline: none; flex: 1; min-width: 120px;
         }
         .range-container { display: none; align-items: center; gap: 5px; font-size: 0.85rem; color: #555; flex-wrap: wrap;}
         .timeline-item.range-mode .single-date { display: none; }
@@ -246,7 +244,7 @@
 
         .content { 
             line-height: 1.6; color: #4b5563; outline: none; min-height: 1.5em; font-size: 0.95rem; 
-            white-space: pre-wrap; 
+            white-space: pre-wrap; margin-bottom: 10px;
         }
         .content img { max-width: 100%; height: auto; border-radius: 4px; margin: 5px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: block; }
         .todo-box { display: inline-block; width: 1.2em; text-align: center; cursor: pointer; color: #4f46e5; }
@@ -257,8 +255,8 @@
             border: 4px solid #ccc; border-radius: 50%; transform: translateX(-50%); z-index: 20; transition: left 0.3s;
         }
 
-        .controls { display: flex; opacity: 0; transition: opacity 0.2s; }
-        .card:hover .controls { opacity: 1; }
+        .controls, .card-side-tools { opacity: 0; transition: opacity 0.2s; }
+        .card:hover .controls, .card:hover .card-side-tools { opacity: 1; }
 
         /* --- Gantt View --- */
         #gantt-view { display: none; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); overflow-x: auto; margin-bottom: 30px; border: 1px solid #e2e8f0; }
@@ -271,17 +269,6 @@
         .gantt-bar { position: absolute; top: 8px; height: 24px; border-radius: 4px; font-size: 0.75rem; color: white; white-space: nowrap; display: flex; align-items: center; padding: 0 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.15); cursor: help; transition: all 0.2s; }
         .gantt-bar[data-color="blue"] { background: #4f46e5; } .gantt-bar[data-color="green"] { background: #10b981; } .gantt-bar[data-color="red"] { background: #ef4444; } .gantt-bar[data-color="yellow"] { background: #f59e0b; color: #333; }
 
-        .add-main { display: block; margin: 30px auto; padding: 12px 30px; background: var(--primary); color: white; border-radius: 30px; font-size: 1rem; border: none; cursor: pointer; box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3); width: 100%; max-width: 300px; }
-        .sticky-note, .sticker { position: absolute; z-index: 100; display: flex; flex-direction: column; cursor: grab; }
-        .sticky-note { width: 200px; min-height: 150px; padding: 0; border-radius: 2px; box-shadow: 3px 3px 10px rgba(0,0,0,0.2); border: 1px solid rgba(0,0,0,0.1); background: #fef08a; }
-        .note-header { height: 20px; background: rgba(0,0,0,0.05); display: flex; justify-content: flex-end; padding-right: 5px; }
-        .note-close { cursor: pointer; color: #666; font-weight: bold; font-size:14px; }
-        .note-content { flex: 1; width: 100%; border: none; background: transparent; resize: none; padding: 10px; font-family: inherit; font-size: 0.95rem; outline: none; }
-        .sticker { width: 80px; height: 80px; align-items: center; justify-content: center; }
-        .sticker svg { width: 100%; height: 100%; overflow: visible; }
-        .sticker-del { position: absolute; top: -10px; right: -10px; width: 20px; height: 20px; background: red; color: white; border-radius: 50%; display: none; align-items: center; justify-content: center; cursor: pointer; font-size: 12px; }
-        .sticker:hover .sticker-del { display: flex; }
-
         #exit-pres-btn {
             display: none; position: fixed; top: 20px; right: 20px; z-index: 3000;
             padding: 10px 20px; background: #ef4444; color: white;
@@ -291,14 +278,15 @@
 
         body.presentation-mode { background-color: #ffffff; padding: 0; }
         body.presentation-mode #exit-pres-btn { display: block; }
-        body.presentation-mode .toolbar, body.presentation-mode .toolbox-container, body.presentation-mode .add-main, body.presentation-mode .sticker-del, body.presentation-mode .today-btn, body.presentation-mode .note-header, body.presentation-mode .select-chk, body.presentation-mode #project-bar, body.presentation-mode .card-top-right 
+        body.presentation-mode .toolbar, body.presentation-mode .toolbox-container, body.presentation-mode .add-main, body.presentation-mode .sticker-del, body.presentation-mode .today-btn, body.presentation-mode .note-header, body.presentation-mode .select-chk, body.presentation-mode .project-input::placeholder, body.presentation-mode #project-bar,
+        body.presentation-mode .card-top-right, body.presentation-mode .card-side-tools 
         { display: none !important; }
 
-        body.presentation-mode .side-project-tag { width: 10px; } /* 簡報模式縮窄側標 */
-        body.presentation-mode .side-project-input { display: none; } /* 簡報模式不顯示專案名輸入框 */
-        body.presentation-mode .card-top-area { border-bottom: none; margin-bottom: 0; }
+        body.presentation-mode .project-footer { height: 20px; padding: 0 10px; }
+        body.presentation-mode .footer-project-input { pointer-events: none; font-size: 0.8rem; }
+        
         body.presentation-mode .main-area { margin-top: 0 !important; padding-top: 20px; max-width: 1200px; }
-        body.presentation-mode .card { box-shadow: none; border: 1px solid #e5e7eb; border-top: none; } /* 移除上邊框，改用側邊 */
+        body.presentation-mode .card { box-shadow: none; border: 1px solid #e5e7eb; border-top: none; padding-bottom: 30px; padding-right: 20px; } /* 簡報模式還原右邊距 */
         body.presentation-mode .date-input, body.presentation-mode .label-input { background: transparent; border: none; font-size: 1.1rem; }
         body.presentation-mode .content { font-size: 1.1rem; }
         body.presentation-mode .sticky-note { box-shadow: 2px 2px 5px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; }
@@ -321,7 +309,7 @@
                 width: calc(100% - 50px) !important; margin: 0 0 20px 0 !important; border-left: none !important; border-right: none !important;
             }
             /* 手機版工具列強制顯示 */
-            .controls { opacity: 1; position: static; justify-content: flex-end; } 
+            .controls, .card-side-tools { opacity: 1; }
             .header-row { align-items: flex-start; }
             .label-input { width: 100%; margin-top: 5px; }
             #gantt-view { padding: 10px; }
@@ -329,10 +317,10 @@
         }
 
         @media print { 
-            .toolbar, .toolbox-container, .card-top-right, .add-main, .note-header, .sticker-del, .today-btn, #exit-pres-btn, .select-chk, #project-bar { display: none !important; } 
+            .toolbar, .toolbox-container, .card-top-right, .card-side-tools, .add-main, .note-header, .sticker-del, .today-btn, #exit-pres-btn, .select-chk, #project-bar { display: none !important; } 
             .sticky-note, .sticker { box-shadow: none; border: 1px solid transparent; } 
         }
-        body.screenshot-mode .toolbar, body.screenshot-mode .toolbox-container, body.screenshot-mode .card-top-right, body.screenshot-mode .note-header, body.screenshot-mode .sticker-del, body.screenshot-mode .add-main, body.screenshot-mode .today-btn, body.screenshot-mode #exit-pres-btn, body.screenshot-mode .select-chk, body.screenshot-mode #project-bar { display: none !important; }
+        body.screenshot-mode .toolbar, body.screenshot-mode .toolbox-container, body.screenshot-mode .card-top-right, body.screenshot-mode .card-side-tools, body.screenshot-mode .note-header, body.screenshot-mode .sticker-del, body.screenshot-mode .add-main, body.screenshot-mode .today-btn, body.screenshot-mode #exit-pres-btn, body.screenshot-mode .select-chk, body.screenshot-mode #project-bar { display: none !important; }
 
     </style>
 </head>
@@ -341,7 +329,7 @@
     <div class="toolbar">
         <div class="tool-left">
             <div class="tool-title">
-                🧠 V34
+                🧠 V36
                 <span class="save-status" id="saveStatus"></span>
             </div>
             <div class="search-box">
@@ -414,13 +402,13 @@
         }
 
         const defaultData = [
-            { id: 1, pos: 'left', mode: 'normal', color: 'blue', status: 0, project: '專案A', label: '側邊標籤', date_single: getTodayString(), date_start: '', date_end: '', content: '1. 專案標籤現在是左側的垂直色條，文字由下往上讀，支援中英文。\n2. 工具按鈕改成深色底、白色字，對比更清晰。\n3. 右上角工具列強制單行，不會再亂跑了！' }
+            { id: 1, pos: 'left', mode: 'normal', color: 'blue', status: 0, project: '專案A', label: '側邊控制台', date_single: getTodayString(), date_start: '', date_end: '', content: '1. 專案標籤在最下方。\n2. 「位置與顏色」工具移到了右側垂直列。\n3. 「內容與動作」工具保留在上方，清爽不擁擠！' }
         ];
 
         function init() {
-            const savedData = localStorage.getItem('timeline_v34_data'); 
-            const savedNotes = localStorage.getItem('timeline_v34_notes');
-            const savedStickers = localStorage.getItem('timeline_v34_stickers');
+            const savedData = localStorage.getItem('timeline_v36_data'); 
+            const savedNotes = localStorage.getItem('timeline_v36_notes');
+            const savedStickers = localStorage.getItem('timeline_v36_stickers');
 
             if (savedData) renderFromData(JSON.parse(savedData));
             else renderFromData(defaultData);
@@ -455,7 +443,7 @@
 
         function copyForTasks(btn) {
             const item = btn.closest('.timeline-item');
-            const projInput = item.querySelector('.side-project-input');
+            const projInput = item.querySelector('.footer-project-input'); 
             const project = projInput ? projInput.value.trim() : '';
             const title = item.querySelector('.label-input').value;
             const date = item.classList.contains('range-mode') 
@@ -585,7 +573,7 @@
                 const items = document.querySelectorAll('.timeline-item');
                 let count = 0;
                 items.forEach(item => {
-                    const input = item.querySelector('.side-project-input'); // V34: Updated selector
+                    const input = item.querySelector('.footer-project-input'); 
                     if(input && input.value === oldName) {
                         input.value = newName;
                         count++;
@@ -605,7 +593,7 @@
             const items = document.querySelectorAll('.timeline-item');
             
             items.forEach(item => {
-                const projInput = item.querySelector('.side-project-input');
+                const projInput = item.querySelector('.footer-project-input'); 
                 const project = projInput ? projInput.value.trim() : '';
                 const projectMatch = (activeProjectFilters.size === 0) || activeProjectFilters.has(project);
                 const text = item.innerText.toLowerCase();
@@ -631,8 +619,12 @@
                 <div class="dot"></div>
                 <div class="card" data-color="${item.color}">
                     
-                    <div class="side-project-tag">
-                        <input type="text" class="side-project-input" autocomplete="off" value="${item.project || ''}" placeholder="專案" oninput="autoSave(); refreshProjectBar();">
+                    <div class="card-side-tools">
+                        <button class="btn-icon side-btn bg-gray" onclick="changeColor(this)" title="換色">🎨</button>
+                        <button class="btn-icon side-btn bg-gray" onclick="moveNode(this,'up')" title="上移">⬆️</button>
+                        <button class="btn-icon side-btn bg-gray" onclick="moveNode(this,'down')" title="下移">⬇️</button>
+                        <button class="btn-icon side-btn bg-gray" onclick="togglePos(this,'left')" title="靠左">⬅️</button>
+                        <button class="btn-icon side-btn bg-gray" onclick="togglePos(this,'right')" title="靠右">➡️</button>
                     </div>
 
                     <div class="card-top-area">
@@ -641,17 +633,12 @@
                             <div class="status-dot status-${item.status}" onclick="cycleStatus(this)" title="切換狀態"></div>
                         </div>
                         <div class="card-top-right controls">
-                            <button class="btn-icon bg-gray" onclick="changeColor(this)" title="換色">🎨</button>
-                            <button class="btn-icon bg-gray" onclick="moveNode(this,'up')" title="上移">⬆️</button>
-                            <button class="btn-icon bg-gray" onclick="moveNode(this,'down')" title="下移">⬇️</button>
-                            <button class="btn-icon bg-gray" onclick="togglePos(this,'left')" title="靠左">⬅️</button>
-                            <button class="btn-icon bg-gray" onclick="togglePos(this,'right')" title="靠右">➡️</button>
                             <button class="btn-icon bg-blue" onclick="toggleRange(this)" title="切換時段">↔️</button>
                             <button class="btn-icon bg-purple" onclick="insertTodoLine(this)" title="新增待辦">☑</button>
                             <button class="btn-icon bg-teal" onclick="insertBullet(this)" title="項目符號">🔹</button>
                             <button class="btn-icon bg-teal" onclick="addHighlight(this)" title="文字高亮">🖍️</button>
                             <button class="btn-icon bg-orange" onclick="copyForTasks(this)" title="複製到Tasks">📋</button>
-                            <button class="btn-icon bg-tasks" onclick="openTasksWeb()" title="↗️ 打開 Google Tasks 貼上">↗️</button>
+                            <button class="btn-icon bg-tasks" onclick="openTasksWeb()" title="↗️ 打開 Google Tasks">↗️</button>
                             <button class="btn-icon bg-orange" onclick="addToGoogleCal(this)" title="加到日曆">📅</button>
                             <button class="btn-icon bg-red" onclick="deleteNode(this)" title="刪除">×</button>
                         </div>
@@ -670,6 +657,10 @@
                             <input type="text" class="label-input" value="${item.label}" placeholder="標題" oninput="autoSave()">
                         </div>
                         <div class="content" contenteditable="true" oninput="handleInput(event)">${item.content}</div>
+                    </div>
+
+                    <div class="project-footer">
+                        <input type="text" class="footer-project-input" autocomplete="off" value="${item.project || ''}" placeholder="🏷️ 專案名稱..." oninput="autoSave(); refreshProjectBar();">
                     </div>
                 </div>`;
             const contentDiv = div.querySelector('.content');
@@ -917,14 +908,14 @@
                 }
             });
             const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([csvContent], { type: 'text/csv;charset=utf-8;' }));
-            link.download = `timeline_v34_${getTodayString()}.csv`; link.click();
+            link.download = `timeline_v36_${getTodayString()}.csv`; link.click();
         }
 
         function takeScreenshot() {
             if(currentView === 'gantt') { alert('建議切換回列表模式再截圖！'); }
             document.body.classList.add('screenshot-mode'); window.scrollTo(0, 0); saveStatus.innerText = '處理中...';
             html2canvas(document.body, { backgroundColor: '#f3f4f6', scale: 2, useCORS: true }).then(canvas => {
-                const link = document.createElement('a'); link.download = `report_v34_${getTodayString()}.png`; link.href = canvas.toDataURL(); link.click();
+                const link = document.createElement('a'); link.download = `report_v36_${getTodayString()}.png`; link.href = canvas.toDataURL(); link.click();
                 document.body.classList.remove('screenshot-mode'); saveStatus.innerText = '';
             }).catch(err => { document.body.classList.remove('screenshot-mode'); alert('截圖錯誤'); });
         }
@@ -992,9 +983,9 @@
                 const card=el.querySelector('.card'); const statusEl=el.querySelector('.status-dot');
                 let status=0; ['status-1','status-2','status-3'].forEach((c,i)=>{if(statusEl.classList.contains(c))status=i+1;});
                 let pos='auto'; if(el.classList.contains('force-left'))pos='left'; if(el.classList.contains('force-right'))pos='right';
-                // V34: 使用 side-project-input
+                // V36: 使用 footer-project-input
                 items.push({pos, mode:el.classList.contains('range-mode')?'range':'normal', color:card.getAttribute('data-color'), status, 
-                    project: el.querySelector('.side-project-input').value,
+                    project: el.querySelector('.footer-project-input').value,
                     label:el.querySelector('.label-input').value, date_single:el.querySelector('.single-date').value, date_start:el.querySelector('.date-start').value, date_end:el.querySelector('.date-end').value, content:el.querySelector('.content').innerHTML});
             }); return items;
         }
@@ -1002,12 +993,12 @@
         function gatherStickers(){const l=[]; document.querySelectorAll('.sticker').forEach(el=>{l.push({id:el.id.replace('sticker-',''),type:el.dataset.type,x:el.offsetLeft,y:el.offsetTop});}); return l;}
         
         function autoSave() {
-            localStorage.setItem('timeline_v34_data', JSON.stringify(gatherData()));
-            localStorage.setItem('timeline_v34_notes', JSON.stringify(gatherNotes()));
-            localStorage.setItem('timeline_v34_stickers', JSON.stringify(gatherStickers()));
+            localStorage.setItem('timeline_v36_data', JSON.stringify(gatherData()));
+            localStorage.setItem('timeline_v36_notes', JSON.stringify(gatherNotes()));
+            localStorage.setItem('timeline_v36_stickers', JSON.stringify(gatherStickers()));
             saveStatus.innerText = '已儲存'; setTimeout(() => saveStatus.innerText = '', 2000);
         }
-        window.downloadJSON=function(){const d={timeline:gatherData(),notes:gatherNotes(),stickers:gatherStickers(),version:'v34'}; const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([JSON.stringify(d,null,2)],{type:'application/json;charset=utf-8'})); a.download=`timeline_v34_${getTodayString()}.json`; a.click();}
+        window.downloadJSON=function(){const d={timeline:gatherData(),notes:gatherNotes(),stickers:gatherStickers(),version:'v36'}; const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([JSON.stringify(d,null,2)],{type:'application/json;charset=utf-8'})); a.download=`timeline_v36_${getTodayString()}.json`; a.click();}
         window.loadJSON=function(inp){const f=inp.files[0]; if(!f)return; const r=new FileReader(); r.onload=function(e){try{const j=JSON.parse(e.target.result); if(j.timeline){renderFromData(j.timeline); if(j.notes)renderNotes(j.notes); if(j.stickers)renderStickers(j.stickers); autoSave(); alert('讀取成功');}}catch(x){alert('格式錯誤');}}; r.readAsText(f);}
 
         init();
