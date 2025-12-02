@@ -26,6 +26,34 @@
             overflow-x: hidden;
         }
 
+        /* --- 🚦 左下角紅綠燈號 --- */
+        #save-light {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background-color: #22c55e; /* 預設綠燈 */
+            box-shadow: 0 0 8px #22c55e;
+            z-index: 9999;
+            transition: all 0.3s ease;
+            cursor: help;
+        }
+
+        /* 紅燈閃爍狀態 */
+        #save-light.unsaved {
+            background-color: #ef4444; /* 紅燈 */
+            box-shadow: 0 0 8px #ef4444;
+            animation: pulse-red 1s infinite;
+        }
+
+        @keyframes pulse-red {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(0.9); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
         /* --- 頂部工具列 --- */
         .toolbar {
             position: fixed; top: 0; left: 0; right: 0;
@@ -39,7 +67,6 @@
         .tool-right { display: flex; align-items: center; gap: 10px; margin-left: auto; }
 
         .tool-title { font-weight: bold; font-size: 1.1rem; display: flex; align-items: center; gap: 10px; }
-        .save-status { font-size: 0.8rem; color: #94a3b8; }
         
         .search-box { position: relative; display: flex; align-items: center; gap: 10px; }
         .search-input {
@@ -191,6 +218,7 @@
         .sticker:hover { outline: 2px dashed #3b82f6; }
         .sticker:hover .sticker-del { display: flex; }
         .sticker:hover .resize-handle { display: block; }
+        .sticky-note:hover .resize-handle { display: block; }
         
         .card:hover .resize-handle { display: block; }
         .card .resize-handle { bottom: 2px; right: 2px; z-index: 50; }
@@ -447,7 +475,7 @@
         }
 
         @media print { 
-            .toolbar, .toolbox-container, .card-top-right, .card-side-tools, .add-main, .note-header, .sticker-del, .today-btn, #exit-pres-btn, .select-chk, #project-bar, .mode-toggle-btn { display: none !important; } 
+            .toolbar, .toolbox-container, .card-top-right, .card-side-tools, .add-main, .note-header, .sticker-del, .today-btn, #exit-pres-btn, .select-chk, #project-bar, .mode-toggle-btn, #save-light { display: none !important; } 
             .sticky-note, .sticker { border: none; box-shadow: none; }
             .resize-handle { display: none !important; }
         }
@@ -455,11 +483,12 @@
 </head>
 <body>
 
+    <div id="save-light" title="綠燈:已儲存 / 紅燈:編輯中"></div>
+
     <div class="toolbar">
         <div class="tool-left">
             <div class="tool-title">
                 🧠 專案神器 
-                <span class="save-status" id="saveStatus"></span>
             </div>
             <div class="search-box">
                 <span class="search-icon">🔍</span>
@@ -539,7 +568,6 @@
 
     <script>
         const container = document.getElementById('container');
-        const saveStatus = document.getElementById('saveStatus');
         const projectBar = document.getElementById('project-bar');
         const tooltip = document.getElementById('custom-tooltip');
         let activeProjectFilters = new Set();
@@ -597,16 +625,37 @@
             window.addEventListener('paste', handleGlobalPaste);
         }
 
+        // 🚦 新的防抖存檔機制 (紅綠燈版)
+        let saveTimer = null;
+
         function autoSave() {
+            const light = document.getElementById('save-light');
+            
+            // 1. 變紅燈 (閃爍)，代表有更動未儲存
+            light.classList.add('unsaved');
+
+            // 2. 清除上一次的計時器
+            if (saveTimer) clearTimeout(saveTimer);
+
+            // 3. 延遲 1 秒後執行存檔
+            saveTimer = setTimeout(() => {
+                performActualSave();
+            }, 1000);
+        }
+
+        // 真正執行寫入硬碟的動作
+        function performActualSave() {
             const data = gatherData();
             const notes = gatherNotes();
             const stickers = gatherStickers();
+            
             localStorage.setItem('timeline_v47_data', JSON.stringify(data));
             localStorage.setItem('timeline_v47_notes', JSON.stringify(notes));
             localStorage.setItem('timeline_v47_stickers', JSON.stringify(stickers));
             
-            saveStatus.innerText = '已儲存';
-            setTimeout(() => { saveStatus.innerText = ''; }, 2000);
+            // 變回綠燈 (移除紅燈 class)
+            const light = document.getElementById('save-light');
+            light.classList.remove('unsaved');
         }
 
         // --- 核心操作 ---
@@ -644,7 +693,7 @@
             items.forEach(item => container.appendChild(item)); autoSave();
         }
 
-        // 🔧 新增：一鍵重置資料
+        // 一鍵重置資料
         function resetAllData() {
             if (confirm('警告：這將會刪除所有資料（卡片、便利貼、圖片）且無法復原！\n\n您確定要清空整個專案嗎？')) {
                 if (confirm('再次確認：真的要全部刪除嗎？')) {
@@ -672,15 +721,26 @@
                     date_single: item.querySelector('.single-date').value,
                     date_start: item.querySelector('.date-start').value, date_end: item.querySelector('.date-end').value,
                     content: item.querySelector('.content').innerHTML,
-                    // 🔧 新增：儲存卡片尺寸
+                    // 新增：儲存卡片尺寸
                     card_w: card.style.width,
                     card_h: card.style.minHeight
                 };
             });
         }
-        function gatherNotes() { return Array.from(document.querySelectorAll('.sticky-note')).map(n => ({ id: n.id, x: parseInt(n.style.left), y: parseInt(n.style.top), content: n.querySelector('textarea').value })); }
         
-        // 🔧 加入寬高儲存
+        // 加入便利貼寬高儲存
+        function gatherNotes() { 
+            return Array.from(document.querySelectorAll('.sticky-note')).map(n => ({ 
+                id: n.id, 
+                x: parseInt(n.style.left), 
+                y: parseInt(n.style.top), 
+                w: n.style.width ? parseInt(n.style.width) : null,
+                h: n.style.height ? parseInt(n.style.height) : null,
+                content: n.querySelector('textarea').value 
+            })); 
+        }
+        
+        // 加入寬高儲存
         function gatherStickers() { 
             return Array.from(document.querySelectorAll('.sticker')).map(s => ({ 
                 id: s.id, type: s.dataset.type, x: parseInt(s.style.left), y: parseInt(s.style.top),
@@ -746,7 +806,7 @@
                 </div>`;
             
             const card = div.querySelector('.card');
-            // 🔧 套用儲存的尺寸
+            // 套用儲存的尺寸
             if(item.card_w) card.style.width = item.card_w;
             if(item.card_h) card.style.minHeight = item.card_h;
 
@@ -754,7 +814,7 @@
             return div;
         }
 
-        // 🔧 核心：卡片縮放邏輯
+        // 核心：卡片縮放邏輯
         function resizeCard(e) {
             e.stopPropagation(); 
             const card = e.target.parentElement;
@@ -764,11 +824,8 @@
             const startH = card.offsetHeight;
 
             function doDrag(ev) {
-                // 寬度計算：200px ~ 100% (CSS已經限制 max-width: 100%)
                 const newW = startW + (ev.clientX - startX);
-                // 高度計算：至少 100px
                 const newH = startH + (ev.clientY - startY);
-                
                 if (newW > 200) card.style.width = newW + 'px';
                 if (newH > 100) card.style.minHeight = newH + 'px';
             }
@@ -794,20 +851,52 @@
             if(window.innerWidth < 768) toggleToolbox();
         }
 
+        // 便利貼加入縮放與尺寸還原
         function createStickyElement(data) {
             const div = document.createElement('div');
             div.className = 'sticky-note';
             div.id = data.id;
             div.style.left = data.x + 'px';
             div.style.top = data.y + 'px';
+            
+            if (data.w) div.style.width = data.w + 'px';
+            if (data.h) div.style.height = data.h + 'px';
+
             div.innerHTML = `
                 <div class="note-header">
                     <span class="note-close" onclick="deleteSticky(this)">×</span>
                 </div>
                 <textarea class="note-content" placeholder="輸入記事..." oninput="autoSave()">${data.content || ''}</textarea>
+                <div class="resize-handle" onmousedown="resizeNote(event)">↘</div>
             `;
             document.body.appendChild(div);
             makeDraggable(div, div.querySelector('.note-header'));
+        }
+        
+        // 便利貼縮放邏輯
+        function resizeNote(e) {
+            e.stopPropagation(); 
+            const note = e.target.parentElement;
+            const startX = e.clientX;
+            const startY = e.clientY;
+            const startW = note.offsetWidth;
+            const startH = note.offsetHeight;
+
+            function doDrag(ev) {
+                const newW = startW + (ev.clientX - startX);
+                const newH = startH + (ev.clientY - startY);
+                if (newW > 100) note.style.width = newW + 'px';
+                if (newH > 100) note.style.height = newH + 'px';
+            }
+
+            function stopDrag() {
+                document.documentElement.removeEventListener('mousemove', doDrag);
+                document.documentElement.removeEventListener('mouseup', stopDrag);
+                autoSave();
+            }
+
+            document.documentElement.addEventListener('mousemove', doDrag);
+            document.documentElement.addEventListener('mouseup', stopDrag);
         }
 
         function addSticker(type) {
@@ -822,7 +911,7 @@
             if(window.innerWidth < 768) toggleToolbox();
         }
 
-        // 🔧 貼紙建立邏輯，加入紅藍框的縮放手把
+        // 貼紙建立邏輯，加入紅藍框的縮放手把
         function createStickerElement(data) {
             const div = document.createElement('div');
             div.className = 'sticker';
@@ -854,7 +943,7 @@
             makeDraggable(div);
         }
         
-        // 🔧 貼紙縮放邏輯
+        // 貼紙縮放邏輯
         function resizeSticker(e) {
             e.stopPropagation(); // 阻止拖曳觸發
             const sticker = e.target.parentElement;
