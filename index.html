@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>專案神器 V60 (雙視角終極版)</title>
+    <title>專案神器 V62 (檢索修復+泳道圖優化)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         :root {
@@ -36,6 +36,10 @@
         }
 
         .tool-left { display: flex; align-items: center; gap: 15px; flex-shrink: 0; }
+        
+        /* 獨立的右上角區域 */
+        .tool-right { display: flex; align-items: center; gap: 10px; margin-left: auto; }
+
         .tool-title { font-weight: bold; font-size: 1.1rem; display: flex; align-items: center; gap: 10px; }
         .save-status { font-size: 0.8rem; color: #94a3b8; }
         
@@ -48,7 +52,7 @@
         .search-input:focus { width: 180px; border-color: #3b82f6; }
         .search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); opacity: 0.6; font-size: 12px; }
         
-        .tool-btn-group { display: flex; gap: 8px; overflow-x: auto; padding-right: 10px; align-items: center; height: 100%; }
+        .tool-btn-group { display: flex; gap: 8px; overflow-x: auto; padding-right: 10px; align-items: center; height: 100%; border-right: 1px solid #475569; margin-right: 10px; }
         .tool-btn-group::-webkit-scrollbar { display: none; }
         
         .tool-btn {
@@ -63,6 +67,16 @@
         .tool-btn.ai-btn { border-color: #c084fc; color: #c084fc; }
         .tool-btn.filter-btn { border-color: #d97706; color: #fbbf24; }
         
+        /* 泳道圖按鈕樣式 */
+        .gantt-switch-btn {
+            background: #fbbf24; color: #78350f; border: none;
+            padding: 6px 16px; border-radius: 20px; font-weight: bold;
+            cursor: pointer; box-shadow: 0 0 10px rgba(251, 191, 36, 0.5);
+            transition: 0.2s; display: flex; align-items: center; gap: 5px;
+        }
+        .gantt-switch-btn:hover { background: #f59e0b; transform: scale(1.05); }
+        .gantt-switch-btn.active { background: #fff; color: #d97706; box-shadow: inset 0 2px 4px rgba(0,0,0,0.1); }
+
         /* 視角切換 Select */
         .view-select {
             background: #334155; border: 1px solid #475569; color: white;
@@ -128,7 +142,7 @@
 
         /* 便利貼與貼紙 */
         .sticky-note {
-            position: absolute; width: 160px; height: 160px;
+            position: absolute; width: 180px; min-height: 160px;
             background: #fef3c7; border: 1px solid #d97706;
             box-shadow: 3px 3px 10px rgba(0,0,0,0.2);
             z-index: 1500; display: flex; flex-direction: column;
@@ -158,12 +172,13 @@
             max-width: 100%; height: auto; border-radius: 4px; box-shadow: 0 4px 8px rgba(0,0,0,0.3); 
             pointer-events: none; 
         }
-        .sticker svg { width: 100%; height: 100%; drop-shadow: 2px 2px 2px rgba(0,0,0,0.2); }
+        .sticker svg { width: 100%; height: 100%; drop-shadow: 2px 2px 2px rgba(0,0,0,0.2); pointer-events: none; }
+        
         .sticker-del {
             position: absolute; top: -10px; right: -10px; width: 24px; height: 24px;
             background: #ef4444; color: white; font-size: 14px; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center; cursor: pointer;
-            display: none; box-shadow: 0 2px 4px rgba(0,0,0,0.2); z-index: 1501;
+            display: none; align-items: center; justify-content: center; cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2); z-index: 1501;
             border: 2px solid white;
         }
         .sticker:hover { outline: 2px dashed #3b82f6; }
@@ -178,7 +193,7 @@
         body.has-proj-bar .main-area { margin-top: 140px; }
         
         /* 當在甘特圖模式時，主區域放寬 */
-        body.view-gantt .main-area { max-width: 95%; }
+        body.view-gantt .main-area { max-width: 98%; padding: 20px 5px; }
 
         /* Timeline 列表模式 */
         .timeline { position: relative; padding: 20px 0; }
@@ -327,7 +342,7 @@
         .add-main:hover { border-color: #3b82f6; color: #3b82f6; background: #eff6ff; }
 
         /* ========================================= */
-        /* 視圖容器：控制顯示/隱藏與共同樣式 */
+        /* 視圖容器 */
         /* ========================================= */
         .view-container { display: none; margin-bottom: 40px; }
         
@@ -355,19 +370,29 @@
         .chronicle-title { font-size: 1.1rem; font-weight: 800; color: #1e293b; margin-bottom: 4px; line-height: 1.4; display: flex; align-items: center; flex-wrap: wrap; }
         .chronicle-desc { font-size: 0.95rem; color: #475569; white-space: pre-wrap; line-height: 1.6; }
 
-        /* 2. 極簡甘特圖 (Minimalist Gantt) */
+        /* 2. 泳道圖 (Gantt - 無側欄版) */
         #gantt-view { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); overflow-x: auto; border: 1px solid #e2e8f0; }
         .gantt-container { position: relative; min-width: 100%; padding-bottom: 20px; }
+        
         .gantt-header-row { display: flex; height: 50px; border-bottom: 2px solid #e2e8f0; margin-bottom: 15px; align-items: flex-end; position: sticky; top: 0; background: white; z-index: 40; }
-        .gantt-sidebar { width: 220px; flex-shrink: 0; border-right: 1px solid #cbd5e1; font-weight: bold; color: #1e293b; padding: 0 15px 8px 0; text-align: right; font-size: 0.95rem; background: #f1f5f9; position: sticky; left: 0; z-index: 50; box-shadow: 4px 0 8px rgba(0,0,0,0.05); }
-        .gantt-axis-area { flex-grow: 1; position: relative; height: 100%; background: white; }
+        /* 移除了 .gantt-sidebar */
+        
+        .gantt-axis-area { flex-grow: 1; position: relative; height: 100%; background: white; width: 100%; }
         .gantt-header-mark { position: absolute; bottom: 0; border-left: 2px solid #94a3b8; height: 12px; padding-left: 4px; pointer-events: none; white-space: nowrap; }
         .gantt-header-mark span { position: absolute; top: -24px; left: 0; transform: translateX(-50%); font-size: 0.85rem; color: #1e293b; font-weight: 800; }
         .gantt-grid-line { position: absolute; top: 0; bottom: 0; border-left: 1px dashed #e2e8f0; pointer-events: none; z-index: 0; }
-        .gantt-row { position: relative; display: flex; border-bottom: 1px solid #e2e8f0; min-height: 40px; }
-        .gantt-row-label { width: 220px; flex-shrink: 0; font-size: 0.9rem; font-weight: bold; color: #334155; padding: 10px 15px 10px 10px; text-align: right; border-right: 1px solid #cbd5e1; background: #f8fafc; display: flex; align-items: center; justify-content: flex-end; position: sticky; left: 0; z-index: 45; box-shadow: 4px 0 8px rgba(0,0,0,0.05); }
-        .gantt-bar-clean { position: absolute; height: 20px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); cursor: pointer; transition: opacity 0.2s; z-index: 10; opacity: 0.9; }
-        .gantt-bar-clean:hover { opacity: 1; z-index: 20; transform: scaleY(1.1); }
+        
+        .gantt-row { position: relative; display: flex; border-bottom: 1px solid #f1f5f9; min-height: 40px; }
+        /* 移除了 .gantt-row-label */
+        
+        .gantt-bar-clean { 
+            position: absolute; height: 24px; border-radius: 4px; 
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1); cursor: pointer; transition: all 0.2s; 
+            z-index: 10; opacity: 0.95; 
+            display: flex; align-items: center; padding: 0 8px;
+            white-space: nowrap; overflow: hidden; color: white; font-size: 0.85rem; font-weight: bold; text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        }
+        .gantt-bar-clean:hover { opacity: 1; z-index: 20; transform: scaleY(1.1); box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
         .gantt-bar-clean[data-color="blue"] { background: #4f46e5; } 
         .gantt-bar-clean[data-color="green"] { background: #10b981; } 
         .gantt-bar-clean[data-color="red"] { background: #ef4444; } 
@@ -400,6 +425,7 @@
             .timeline::before { left: 10px; }
             .dot { left: 10px; }
             .mobile-hidden { display: none !important; }
+            .tool-right { display: none; }
             
             .chronicle-line { left: 20px; }
             .chronicle-date-col { display: none; } 
@@ -418,38 +444,44 @@
     <div class="toolbar">
         <div class="tool-left">
             <div class="tool-title">
-                🧠 專案神器 V60
+                🧠 專案神器 V62
                 <span class="save-status" id="saveStatus"></span>
             </div>
             <div class="search-box">
                 <span class="search-icon">🔍</span>
                 <input type="text" class="search-input" placeholder="搜尋..." oninput="filterNodes(this.value)">
             </div>
+            
+            <div class="tool-btn-group" id="normal-toolbar">
+                <button class="tool-btn filter-btn" onclick="toggleProjectBar()" title="過濾">📁 專案</button>
+                <button class="tool-btn view-btn" onclick="toggleChronicleView()" id="chronicleBtn">📜 大事記</button>
+                <button class="tool-btn pres-btn" onclick="togglePresentation()">📽️ 簡報</button>
+                <button class="tool-btn ai-btn" onclick="enterAIMode()">🤖 AI</button>
+                <button class="tool-btn cal-btn" onclick="exportToCSV()">📅 CSV</button>
+                <button class="tool-btn highlight" onclick="sortByDate()">📅 排序</button>
+                <button class="tool-btn danger-btn" onclick="clearAllImages()">🧹 清圖</button>
+                <button class="tool-btn camera-btn" onclick="takeScreenshot()">📸 截圖</button>
+                <button class="tool-btn" onclick="downloadJSON()">📥 備份</button>
+                <button class="tool-btn" onclick="document.getElementById('fileInput').click()">📤 讀取</button>
+                <input type="file" id="fileInput" hidden onchange="loadJSON(this)">
+            </div>
+    
+            <div class="tool-btn-group" id="ai-toolbar">
+                <button class="tool-btn camera-btn" onclick="confirmAIOutput()">✅ 確認</button>
+                <button class="tool-btn highlight" onclick="selectAllAI()">☑ 全選</button>
+                <button class="tool-btn danger-btn" onclick="exitAIMode()">❌ 取消</button>
+            </div>
         </div>
         
-        <div class="tool-btn-group" id="normal-toolbar">
+        <div class="tool-right">
             <select class="view-select" id="scaleSelect" onchange="changeScale(this.value)">
                 <option value="day">📅 刻度: 日</option>
                 <option value="week">🗓️ 刻度: 週</option>
                 <option value="month">🈷️ 刻度: 月</option>
             </select>
-            <button class="tool-btn filter-btn" onclick="toggleProjectBar()" title="過濾">📁 專案</button>
-            <button class="tool-btn view-btn" onclick="toggleView()" id="viewBtn">📜 大事記</button>
-            <button class="tool-btn pres-btn" onclick="togglePresentation()">📽️ 簡報</button>
-            <button class="tool-btn ai-btn" onclick="enterAIMode()">🤖 AI</button>
-            <button class="tool-btn cal-btn" onclick="exportToCSV()">📅 CSV</button>
-            <button class="tool-btn highlight" onclick="sortByDate()">📅 排序</button>
-            <button class="tool-btn danger-btn" onclick="clearAllImages()">🧹 清圖</button>
-            <button class="tool-btn camera-btn" onclick="takeScreenshot()">📸 截圖</button>
-            <button class="tool-btn" onclick="downloadJSON()">📥 備份</button>
-            <button class="tool-btn" onclick="document.getElementById('fileInput').click()">📤 讀取</button>
-            <input type="file" id="fileInput" hidden onchange="loadJSON(this)">
-        </div>
-
-        <div class="tool-btn-group" id="ai-toolbar">
-            <button class="tool-btn camera-btn" onclick="confirmAIOutput()">✅ 確認</button>
-            <button class="tool-btn highlight" onclick="selectAllAI()">☑ 全選</button>
-            <button class="tool-btn danger-btn" onclick="exitAIMode()">❌ 取消</button>
+            <button class="gantt-switch-btn" onclick="toggleGanttView()" id="ganttBtn">
+                📊 泳道圖
+            </button>
         </div>
     </div>
 
@@ -481,7 +513,7 @@
         </div>
 
         <div id="gantt-view" class="view-container">
-            <div style="text-align:center; color:#888; margin-bottom:10px; font-size:0.8rem;">📊 概觀模式：純色塊顯示，滑鼠移入查看詳情 (支援左右滑動)</div>
+            <div style="text-align:center; color:#888; margin-bottom:10px; font-size:0.8rem;">📊 泳道圖模式：專案整合檢視 (支援滾輪左右滑動)</div>
             <div class="gantt-container" id="ganttChart"></div>
         </div>
 
@@ -496,6 +528,7 @@
         const projectBar = document.getElementById('project-bar');
         const tooltip = document.getElementById('custom-tooltip');
         let activeProjectFilters = new Set();
+        let currentSearchKeyword = ''; // 新增：全域搜尋關鍵字
         let currentView = 'timeline'; // timeline, chronicle, gantt
         let currentScale = 'day'; 
 
@@ -520,7 +553,6 @@
                     }
                 } catch (e) {
                     console.error("資料讀取失敗:", e);
-                    alert("⚠️ 警告：讀取舊資料時發生錯誤！");
                 }
             }
             
@@ -528,7 +560,7 @@
                 const defaultItem = {
                     id: Date.now(), pos: 'left', mode: 'normal', color: 'blue', status: 0, isMemo: false,
                     project: '專案神器', label: '系統初始化', date_single: getTodayString(), date_start: '', date_end: '', 
-                    content: '歡迎使用專案神器 V60 (雙視角終極版)。'
+                    content: '歡迎使用專案神器 V62。'
                 };
                 container.appendChild(createNodeElement(defaultItem));
             }
@@ -548,6 +580,18 @@
             };
 
             window.addEventListener('paste', handleGlobalPaste);
+        }
+
+        function autoSave() {
+            const data = gatherData();
+            const notes = gatherNotes();
+            const stickers = gatherStickers();
+            localStorage.setItem('timeline_v47_data', JSON.stringify(data));
+            localStorage.setItem('timeline_v47_notes', JSON.stringify(notes));
+            localStorage.setItem('timeline_v47_stickers', JSON.stringify(stickers));
+            
+            saveStatus.innerText = '已儲存';
+            setTimeout(() => { saveStatus.innerText = ''; }, 2000);
         }
 
         // --- 核心操作 ---
@@ -585,7 +629,7 @@
             items.forEach(item => container.appendChild(item)); autoSave();
         }
 
-        // --- 資料 ---
+        // --- 資料蒐集 ---
         function gatherData() {
             return Array.from(document.querySelectorAll('.timeline-item')).map(item => {
                 const card = item.querySelector('.card');
@@ -667,6 +711,111 @@
             return div;
         }
 
+        // --- 便利貼與貼紙邏輯 ---
+        function addStickyNote() {
+            createStickyElement({
+                id: 'note-' + Date.now(),
+                x: window.scrollX + 100, y: window.scrollY + 100,
+                content: ''
+            });
+            autoSave();
+            if(window.innerWidth < 768) toggleToolbox();
+        }
+
+        function createStickyElement(data) {
+            const div = document.createElement('div');
+            div.className = 'sticky-note';
+            div.id = data.id;
+            div.style.left = data.x + 'px';
+            div.style.top = data.y + 'px';
+            div.innerHTML = `
+                <div class="note-header">
+                    <span class="note-close" onclick="deleteSticky(this)">×</span>
+                </div>
+                <textarea class="note-content" placeholder="輸入記事..." oninput="autoSave()">${data.content || ''}</textarea>
+            `;
+            document.body.appendChild(div);
+            makeDraggable(div, div.querySelector('.note-header'));
+        }
+
+        function addSticker(type) {
+            createStickerElement({
+                id: 'sticker-' + Date.now(),
+                type: type,
+                x: window.scrollX + window.innerWidth/2 - 50,
+                y: window.scrollY + window.innerHeight/2 - 50,
+                content: null
+            });
+            autoSave();
+            if(window.innerWidth < 768) toggleToolbox();
+        }
+
+        function createStickerElement(data) {
+            const div = document.createElement('div');
+            div.className = 'sticker';
+            div.id = data.id;
+            div.dataset.type = data.type;
+            div.style.left = data.x + 'px';
+            div.style.top = data.y + 'px';
+            
+            let content = '';
+            if (data.type === 'arrow-right') content = '<svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>';
+            else if (data.type === 'arrow-down') content = '<svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg>';
+            else if (data.type === 'arrow-left') content = '<svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>';
+            else if (data.type === 'circle-red') content = '<svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="3"><circle cx="12" cy="12" r="10"/></svg>';
+            else if (data.type === 'rect-blue') content = '<svg viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="3"><rect x="2" y="4" width="20" height="16" rx="2"/></svg>';
+            else if (data.type === 'image') content = `<img src="${data.content}">`;
+
+            div.innerHTML = `<div class="sticker-del" onclick="deleteSticky(this)">×</div>${content}`;
+            document.body.appendChild(div);
+            makeDraggable(div);
+        }
+
+        function deleteSticky(btn) {
+            if(confirm('移除此物件？')) {
+                btn.parentElement.remove(); 
+                if(btn.closest('.sticky-note')) btn.closest('.sticky-note').remove(); 
+                autoSave();
+            }
+        }
+
+        function makeDraggable(elmnt, handle) {
+            let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+            const dragHandle = handle || elmnt;
+            
+            dragHandle.onmousedown = dragMouseDown;
+
+            function dragMouseDown(e) {
+                e = e || window.event;
+                e.preventDefault();
+                pos3 = e.clientX;
+                pos4 = e.clientY;
+                document.onmouseup = closeDragElement;
+                document.onmousemove = elementDrag;
+                
+                const allSticky = document.querySelectorAll('.sticky-note, .sticker');
+                allSticky.forEach(el => el.style.zIndex = 1500);
+                elmnt.style.zIndex = 1501;
+            }
+
+            function elementDrag(e) {
+                e = e || window.event;
+                e.preventDefault();
+                pos1 = pos3 - e.clientX;
+                pos2 = pos4 - e.clientY;
+                pos3 = e.clientX;
+                pos4 = e.clientY;
+                elmnt.style.top = (elmnt.offsetTop - pos2) + "px";
+                elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
+            }
+
+            function closeDragElement() {
+                document.onmouseup = null;
+                document.onmousemove = null;
+                autoSave();
+            }
+        }
+
         // --- 輔助功能 ---
         function toggleCardMode(btn) {
             const card = btn.closest('.card');
@@ -704,20 +853,31 @@
 
         function handleGlobalPaste(e) {
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
+            
             const items = (e.clipboardData || e.originalEvent.clipboardData).items;
             for (let i = 0; i < items.length; i++) {
                 if (items[i].type.indexOf("image") === 0) {
-                    e.preventDefault(); const file = items[i].getAsFile(); const reader = new FileReader();
+                    e.preventDefault(); 
+                    const file = items[i].getAsFile(); 
+                    const reader = new FileReader();
                     reader.onload = function(event) {
-                        createStickerElement({ id: 'sticker-' + Date.now(), type: 'image', x: window.scrollX + window.innerWidth / 2 - 100, y: window.scrollY + window.innerHeight / 2 - 100, content: event.target.result });
+                        createStickerElement({ 
+                            id: 'sticker-' + Date.now(), 
+                            type: 'image', 
+                            x: window.scrollX + window.innerWidth / 2 - 100, 
+                            y: window.scrollY + window.innerHeight / 2 - 100, 
+                            content: event.target.result 
+                        });
                         autoSave();
-                    }; reader.readAsDataURL(file); break;
+                    }; 
+                    reader.readAsDataURL(file); 
+                    break;
                 }
             }
         }
 
         function clearAllImages() {
-            if(!confirm('清除圖片？')) return;
+            if(!confirm('清除卡片內的圖片（不含貼紙）？')) return;
             const data = gatherData();
             const newData = data.map(item => ({...item, content: item.content.replace(/<img[^>]*>/g, '[圖]')}));
             renderFromData(newData); autoSave();
@@ -742,39 +902,54 @@
             tooltip.style.top = top + 'px';
         }
 
-        // --- 視圖切換邏輯 (三態) ---
-        function toggleView() {
-            const tl = document.getElementById('container');
-            const chronicle = document.getElementById('chronicle-view');
-            const gantt = document.getElementById('gantt-view');
-            const btn = document.getElementById('viewBtn'); 
-            const add = document.getElementById('mainAddBtn');
-
-            // 循環切換: Timeline -> Chronicle -> Gantt -> Timeline
-            if (currentView === 'timeline') {
-                // To Chronicle
-                tl.style.display = 'none'; chronicle.style.display = 'block'; gantt.style.display = 'none';
-                add.style.display = 'none';
+        // --- 視圖切換邏輯 ---
+        function toggleChronicleView() {
+            if (currentView === 'chronicle') {
+                resetToTimeline();
+            } else {
+                if (currentView === 'gantt') document.getElementById('ganttBtn').classList.remove('active');
+                
+                document.getElementById('container').style.display = 'none';
+                document.getElementById('chronicle-view').style.display = 'block';
+                document.getElementById('gantt-view').style.display = 'none';
+                document.getElementById('mainAddBtn').style.display = 'none';
                 document.body.classList.remove('view-gantt');
+                
                 renderChronicle(); 
                 currentView = 'chronicle';
-                btn.innerText = '📊 概觀圖';
-            } else if (currentView === 'chronicle') {
-                // To Gantt
-                tl.style.display = 'none'; chronicle.style.display = 'none'; gantt.style.display = 'block';
-                add.style.display = 'none';
+                document.getElementById('chronicleBtn').classList.add('highlight');
+            }
+        }
+
+        function toggleGanttView() {
+            const btn = document.getElementById('ganttBtn');
+            if (currentView === 'gantt') {
+                resetToTimeline();
+            } else {
+                if (currentView === 'chronicle') document.getElementById('chronicleBtn').classList.remove('highlight');
+
+                document.getElementById('container').style.display = 'none';
+                document.getElementById('chronicle-view').style.display = 'none';
+                document.getElementById('gantt-view').style.display = 'block';
+                document.getElementById('mainAddBtn').style.display = 'none';
                 document.body.classList.add('view-gantt');
+                
                 renderGantt(); 
                 currentView = 'gantt';
-                btn.innerText = '📝 列表';
-            } else {
-                // To Timeline
-                tl.style.display = 'block'; chronicle.style.display = 'none'; gantt.style.display = 'none';
-                add.style.display = 'block';
-                document.body.classList.remove('view-gantt');
-                currentView = 'timeline';
-                btn.innerText = '📜 大事記';
+                btn.classList.add('active');
             }
+        }
+
+        function resetToTimeline() {
+            document.getElementById('container').style.display = 'block';
+            document.getElementById('chronicle-view').style.display = 'none';
+            document.getElementById('gantt-view').style.display = 'none';
+            document.getElementById('mainAddBtn').style.display = 'block';
+            document.body.classList.remove('view-gantt');
+            
+            document.getElementById('chronicleBtn').classList.remove('highlight');
+            document.getElementById('ganttBtn').classList.remove('active');
+            currentView = 'timeline';
         }
 
         function changeScale(val) {
@@ -788,16 +963,21 @@
             return new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]), 0, 0, 0).getTime();
         }
 
-        // --- 渲染：垂直大事紀 (含衝突偵測) ---
+        // --- 渲染：垂直大事紀 ---
         function renderChronicle() {
             const container = document.getElementById('vTimeline'); 
             container.innerHTML = '';
+            
+            // 資料篩選
             let data = gatherData().filter(i => !i.isMemo && (i.date_single || i.date_start));
             if (activeProjectFilters.size > 0) data = data.filter(i => activeProjectFilters.has(i.project));
+            if (currentSearchKeyword) {
+                const kw = currentSearchKeyword.toLowerCase();
+                data = data.filter(i => (i.content + i.label + i.project).toLowerCase().includes(kw));
+            }
             
             if(data.length === 0) { container.innerHTML='<div style="text-align:center;padding:20px;color:#999">無有效日期資料</div>'; return; }
 
-            // 轉換 & 排序
             const parsed = data.map(item => {
                 let s = getMidnightTime(item.mode==='range'?item.date_start:item.date_single);
                 let e = getMidnightTime(item.mode==='range'?item.date_end:item.date_single);
@@ -805,7 +985,6 @@
                 return { ...item, start: s, end: e };
             }).sort((a,b) => a.start - b.start);
 
-            // 衝突偵測
             const grouped = {};
             const activeRanges = []; 
             parsed.forEach(item => {
@@ -823,7 +1002,6 @@
                 grouped[sDateStr].push({ ...item, conflictMsg });
             });
 
-            // 渲染
             let html = '<div class="chronicle-line"></div>'; 
             Object.keys(grouped).sort().forEach(dateKey => {
                 const items = grouped[dateKey];
@@ -857,11 +1035,18 @@
             container.innerHTML = html;
         }
 
-        // --- 渲染：極簡甘特圖 (純色塊) ---
+        // --- 渲染：優化版泳道圖 (無側欄，標籤內顯) ---
         function renderGantt() {
             const chart = document.getElementById('ganttChart'); chart.innerHTML='';
+            
+            // 資料篩選
             let data = gatherData().filter(i => !i.isMemo && (i.date_single || i.date_start));
             if (activeProjectFilters.size > 0) data = data.filter(i => activeProjectFilters.has(i.project));
+            if (currentSearchKeyword) {
+                const kw = currentSearchKeyword.toLowerCase();
+                data = data.filter(i => (i.content + i.label + i.project).toLowerCase().includes(kw));
+            }
+            
             if(data.length === 0) { chart.innerHTML='<div style="text-align:center;padding:20px;color:#999">無有效日期資料</div>'; return; }
 
             const parsed = data.map(d => {
@@ -882,7 +1067,7 @@
 
             const totalDays = Math.ceil(plotDur / dayMs) + 10;
             const totalWidth = Math.max(800, totalDays * minPxPerDay); 
-            const axisAreaStyle = `width: ${totalWidth}px; min-width: 100%; padding-right: 100px; box-sizing: content-box;`;
+            const axisAreaStyle = `width: ${totalWidth}px; min-width: 100%; box-sizing: content-box;`;
             
             const grouped = {};
             parsed.forEach(item => { const pName = item.project || '未分類'; if(!grouped[pName]) grouped[pName] = []; grouped[pName].push(item); });
@@ -899,7 +1084,8 @@
                 }
             }
 
-            const headerHtml = `<div class="gantt-header-row" style="width: fit-content; min-width: 100%;"><div class="gantt-sidebar">專案名稱</div><div class="gantt-axis-area" style="${axisAreaStyle}">${headerAxisHtml}</div></div>`;
+            // 修改 Header，移除 Sidebar
+            const headerHtml = `<div class="gantt-header-row" style="width: fit-content; min-width: 100%;"><div class="gantt-axis-area" style="${axisAreaStyle}">${headerAxisHtml}</div></div>`;
 
             let rowsHtml = '';
             Object.keys(grouped).sort().forEach(pName => {
@@ -913,34 +1099,139 @@
                     if (!placed) { item.trackIndex = tracks.length; tracks.push(item.end); }
                 });
 
-                const rowHeight = Math.max(50, tracks.length * 25 + 20);
+                const rowHeight = Math.max(50, tracks.length * 30 + 20); // 增加一點高度
                 let barsHtml = '';
                 items.forEach(item => {
                     let sPct = ((item.start - minT) / plotDur) * 100;
                     let ePct = ((item.end + dayMs - minT) / plotDur) * 100;
                     let widthPct = ePct - sPct; if(widthPct < 0.2) widthPct = 0.2;
-                    const topPos = item.trackIndex * 25 + 10;
-                    const label = `${item.label} (${item.date_single || (item.date_start + ' ~ ' + item.date_end)})`;
-                    barsHtml += `<div class="gantt-bar-clean" data-color="${item.color}" onmouseenter="showTooltip(event, '${label}')" onmousemove="updateTooltipPos(event)" onmouseleave="hideTooltip()" style="left:${sPct}%; width:${widthPct}%; top:${topPos}px;"></div>`;
+                    const topPos = item.trackIndex * 30 + 10; // 調整 bar 間距
+                    
+                    // 將專案名稱整合進 Label
+                    const fullLabel = item.project ? `[${item.project}] ${item.label}` : item.label;
+                    
+                    const tooltipText = `${fullLabel} (${item.date_single || (item.date_start + ' ~ ' + item.date_end)})`;
+                    
+                    barsHtml += `<div class="gantt-bar-clean" data-color="${item.color}" onmouseenter="showTooltip(event, '${tooltipText}')" onmousemove="updateTooltipPos(event)" onmouseleave="hideTooltip()" style="left:${sPct}%; width:${widthPct}%; top:${topPos}px;">${fullLabel}</div>`;
                 });
 
-                rowsHtml += `<div class="gantt-row" style="height:${rowHeight}px; width: fit-content; min-width: 100%;"><div class="gantt-row-label">${pName}</div><div class="gantt-axis-area" style="${axisAreaStyle}">${gridHtml}${barsHtml}</div></div>`;
+                // 移除 Gantt Row Label，只保留 Axis Area
+                rowsHtml += `<div class="gantt-row" style="height:${rowHeight}px; width: fit-content; min-width: 100%;"><div class="gantt-axis-area" style="${axisAreaStyle}">${gridHtml}${barsHtml}</div></div>`;
             });
 
             chart.innerHTML = `<div style="display:inline-block; min-width:100%;">${headerHtml}${rowsHtml}</div>`;
         }
 
+        // --- 其他工具 ---
+        function toggleToolbox() {
+            const box = document.getElementById('toolboxContainer');
+            box.classList.toggle('closed');
+            const btn = box.querySelector('.toolbox-toggle-btn');
+            btn.innerText = box.classList.contains('closed') ? '▶' : '◀';
+        }
+        
+        function filterNodes(kw) {
+            currentSearchKeyword = kw; // 儲存全域關鍵字
+            applyFilter();
+        }
+        
+        function toggleProjectBar() {
+            const bar = document.getElementById('project-bar');
+            bar.classList.toggle('show');
+            document.body.classList.toggle('has-proj-bar');
+            refreshProjectBar();
+        }
+
+        function refreshProjectBar() {
+            const data = gatherData();
+            const projects = new Set(data.map(i=>i.project).filter(p=>p));
+            let html = '<div class="proj-badge" onclick="resetFilter()" style="background:#334155;color:white;border:none;">全部顯示</div>';
+            projects.forEach(p => {
+                const active = activeProjectFilters.has(p) ? 'active' : '';
+                html += `<div class="proj-badge ${active}" onclick="toggleFilter('${p}')">${p}</div>`;
+            });
+            projectBar.innerHTML = html;
+        }
+
+        function toggleFilter(p) {
+            if (activeProjectFilters.has(p)) activeProjectFilters.delete(p);
+            else activeProjectFilters.add(p);
+            applyFilter();
+        }
+        function resetFilter() { activeProjectFilters.clear(); currentSearchKeyword = ''; document.querySelector('.search-input').value = ''; applyFilter(); }
+        
+        function applyFilter() {
+            refreshProjectBar();
+            const kw = currentSearchKeyword.toLowerCase();
+            const items = document.querySelectorAll('.timeline-item');
+            
+            items.forEach(item => {
+                const p = item.querySelector('.footer-project-input').value;
+                const text = item.innerText.toLowerCase();
+                const inputContent = item.querySelector('.content').innerHTML.toLowerCase(); // 包含 HTML 內容
+                const label = item.querySelector('.label-input').value.toLowerCase();
+                
+                // 專案過濾 check
+                const matchProject = (activeProjectFilters.size === 0 || activeProjectFilters.has(p));
+                // 關鍵字過濾 check (檢查標題、內容、專案名)
+                const matchKeyword = !kw || text.includes(kw) || inputContent.includes(kw) || label.includes(kw) || p.toLowerCase().includes(kw);
+
+                if(matchProject && matchKeyword) item.classList.remove('hidden-by-filter');
+                else item.classList.add('hidden-by-filter');
+            });
+            
+            // 重新渲染視圖 (確保過濾也應用在圖表上)
+            if(currentView === 'chronicle') renderChronicle();
+            if(currentView === 'gantt') renderGantt();
+        }
+
         function togglePresentation() {
-            if (currentView === 'storyline' || currentView === 'gantt') toggleView();
+            if (currentView !== 'timeline') resetToTimeline();
             const body = document.body;
             body.classList.toggle('presentation-mode');
             if(body.classList.contains('presentation-mode')) alert('進入簡報模式 (ESC 退出)');
         }
-        
         document.addEventListener('keydown', function(event) { if (event.key === "Escape" && document.body.classList.contains('presentation-mode')) togglePresentation(); });
+        
         function renderFromData(data) { container.innerHTML = ''; data.forEach(item => container.appendChild(createNodeElement(item))); }
         function renderNotes(n){document.querySelectorAll('.sticky-note').forEach(e=>e.remove());n.forEach(x=>createStickyElement(x));}
         function renderStickers(s){document.querySelectorAll('.sticker').forEach(e=>e.remove());s.forEach(x=>createStickerElement(x));}
+
+        function downloadJSON() {
+            const data = {
+                items: gatherData(), notes: gatherNotes(), stickers: gatherStickers()
+            };
+            const blob = new Blob([JSON.stringify(data.items)], {type: 'application/json'});
+            const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+            a.download = `project_backup_${getTodayString()}.json`; a.click();
+        }
+        function loadJSON(input) {
+            const file = input.files[0]; if(!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const json = JSON.parse(e.target.result);
+                    if(Array.isArray(json)) renderFromData(json);
+                    else { renderFromData(json.items); renderNotes(json.notes); renderStickers(json.stickers); }
+                    autoSave(); alert('讀取成功');
+                } catch(err){ alert('格式錯誤'); }
+            }; reader.readAsText(file);
+        }
+        function exportToCSV() {
+            let csv = '\uFEFF專案,標題,日期,狀態,內容\n';
+            gatherData().forEach(i => {
+                csv += `"${i.project}","${i.label}","${i.date_single||(i.date_start+'~'+i.date_end)}","${['灰','黃','綠','紅'][i.status]}","${i.content.replace(/"/g, '""')}"\n`;
+            });
+            const blob = new Blob([csv], {type: 'text/csv'});
+            const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+            a.download = `project_export_${getTodayString()}.csv`; a.click();
+        }
+        function takeScreenshot() {
+            html2canvas(document.body).then(canvas => {
+                const a = document.createElement('a'); a.href = canvas.toDataURL("image/png");
+                a.download = `screenshot_${Date.now()}.png`; a.click();
+            });
+        }
 
         init();
     </script>
