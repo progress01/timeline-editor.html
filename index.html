@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>專案神器 V55 (多視角版)</title>
+    <title>專案神器 V59 (衝突偵測版)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         :root {
             --primary: #4f46e5;
-            --bg: #f3f4f6;
+            --bg: #f8fafc;
             --text: #1f2937;
             --font-stack: "Microsoft JhengHei", "Heiti TC", sans-serif; 
         }
@@ -63,13 +63,6 @@
         .tool-btn.ai-btn { border-color: #c084fc; color: #c084fc; }
         .tool-btn.filter-btn { border-color: #d97706; color: #fbbf24; }
         
-        /* 視角切換 Select */
-        .view-select {
-            background: #334155; border: 1px solid #475569; color: white;
-            padding: 6px 10px; border-radius: 4px; font-size: 0.9rem; cursor: pointer; outline: none;
-        }
-        .view-select:hover { border-color: #3b82f6; }
-
         #ai-toolbar { display: none; }
         body.ai-selecting #normal-toolbar { display: none; }
         body.ai-selecting #ai-toolbar { display: flex; }
@@ -176,7 +169,7 @@
         }
         body.has-proj-bar .main-area { margin-top: 140px; }
 
-        /* Timeline 核心佈局 */
+        /* Timeline 列表模式 */
         .timeline { position: relative; padding: 20px 0; }
         .timeline::before {
             content: ''; position: absolute; top: 0; bottom: 0; left: 50%;
@@ -322,141 +315,96 @@
         }
         .add-main:hover { border-color: #3b82f6; color: #3b82f6; background: #eff6ff; }
 
-        /* --- 專案泳道圖 (Swimlane View) --- */
-        #chart-view { display: none; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); overflow-x: auto; margin-bottom: 30px; border: 1px solid #e2e8f0; }
-        .swimlane-container { position: relative; min-width: 100%; padding-bottom: 20px; }
+        /* --- 垂直故事線 (Chronicle View) --- */
+        #chart-view { display: none; background: white; padding: 40px 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05); min-height: 500px; max-width: 900px; margin: 0 auto 40px auto; border: 1px solid #e2e8f0; }
         
-        /* 標題與刻度容器 */
-        .swimlane-header-row { 
-            display: flex; 
-            height: 50px; 
-            border-bottom: 2px solid #e2e8f0; 
-            margin-bottom: 15px; 
-            align-items: flex-end;
-            position: sticky; top: 0; background: white; z-index: 40; 
-        }
-        
-        /* 左側固定側邊欄 (Sticky Sidebar) */
-        .swimlane-title-placeholder {
-            width: 220px; 
-            flex-shrink: 0; 
-            border-right: 1px solid #cbd5e1; 
-            margin-right: 0;
-            font-weight: bold;
-            color: #1e293b;
-            padding: 0 15px 8px 0;
-            text-align: right;
-            font-size: 0.95rem;
-            background: #f1f5f9; 
-            position: sticky; left: 0; z-index: 50; 
-            box-shadow: 4px 0 8px rgba(0,0,0,0.05); 
-        }
-        
-        .swimlane-axis-area {
-            flex-grow: 1;
-            position: relative;
-            height: 100%;
-            background: white;
+        .chronicle-container { position: relative; padding-left: 20px; }
+        .chronicle-line {
+            position: absolute; top: 0; bottom: 0; left: 140px; 
+            width: 3px; background: #e2e8f0; border-radius: 2px;
         }
 
-        /* 表頭的日期刻度 */
-        .swimlane-header-mark { 
-            position: absolute; 
-            bottom: 0; 
-            border-left: 2px solid #94a3b8; 
-            height: 12px;
-            padding-left: 4px; 
-            pointer-events: none; 
-            white-space: nowrap;
-        }
-        .swimlane-header-mark span {
-            position: absolute;
-            top: -24px; 
-            left: 0;
-            transform: translateX(-50%);
-            font-size: 0.85rem;
-            color: #1e293b; 
-            font-weight: 800; 
-        }
-        
-        /* 內容區的網格線 */
-        .swimlane-grid-line {
-            position: absolute;
-            top: 0; bottom: 0;
-            border-left: 1px dashed #e2e8f0;
-            pointer-events: none;
-            z-index: 0;
+        .chronicle-row { display: flex; margin-bottom: 40px; position: relative; }
+
+        /* 左側：日期 */
+        .chronicle-date-col {
+            width: 120px; flex-shrink: 0; text-align: right; padding-right: 20px;
+            display: flex; flex-direction: column; align-items: flex-end;
         }
 
-        /* 專案泳道 (Row) */
-        .swimlane-row { 
-            position: relative; 
-            display: flex; 
-            border-bottom: 1px solid #e2e8f0; 
-            min-height: 60px; 
+        .date-pill {
+            background: #dbeafe; color: #1e40af; padding: 6px 12px;
+            border-radius: 20px; font-weight: bold; font-size: 0.85rem;
+            display: inline-block; box-shadow: 0 2px 4px rgba(0,0,0,0.05); text-align: center;
         }
-        
-        /* 左側固定專案名稱 (Sticky) */
-        .swimlane-project-label { 
-            width: 220px; 
-            flex-shrink: 0; 
-            font-size: 0.9rem; 
-            font-weight: bold; 
-            color: #334155; 
-            padding: 15px 15px 15px 10px; 
-            text-align: right; 
-            border-right: 1px solid #cbd5e1; 
-            background: #f8fafc; 
-            display: flex; align-items: center; justify-content: flex-end;
-            position: sticky; left: 0; z-index: 45; 
-            box-shadow: 4px 0 8px rgba(0,0,0,0.05); 
-        }
-        
-        .swimlane-tracks-area { 
-            flex-grow: 1; 
-            position: relative; 
-            background: white;
-        }
-        
-        .swimlane-bar { 
-            position: absolute; 
-            height: 28px; 
-            border-radius: 4px; 
-            font-size: 0.8rem; 
-            color: white; 
-            white-space: nowrap; 
-            display: flex; 
-            align-items: center; 
-            padding: 0 10px; 
-            overflow: hidden; 
-            text-overflow: ellipsis;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1); 
-            cursor: pointer; 
-            transition: opacity 0.2s;
-            z-index: 10;
-        }
-        .swimlane-bar:hover { opacity: 0.9; }
 
-        .swimlane-bar[data-color="blue"] { background: #4f46e5; } 
-        .swimlane-bar[data-color="green"] { background: #10b981; } 
-        .swimlane-bar[data-color="red"] { background: #ef4444; } 
-        .swimlane-bar[data-color="yellow"] { background: #f59e0b; color: #333; }
+        /* 中間點 */
+        .chronicle-dot-col {
+            width: 40px; flex-shrink: 0; position: relative;
+            display: flex; justify-content: center;
+        }
+        .chronicle-dot {
+            width: 14px; height: 14px; border-radius: 50%; background: white;
+            border: 3px solid #cbd5e1; z-index: 2; margin-top: 10px; box-shadow: 0 0 0 3px white;
+        }
 
-        /* 自定義 Tooltip */
-        #custom-tooltip {
-            position: fixed;
-            background: rgba(0, 0, 0, 0.85);
-            color: white;
-            padding: 8px 12px;
-            border-radius: 6px;
-            font-size: 0.85rem;
-            pointer-events: none;
-            z-index: 9999;
-            display: none;
-            max-width: 250px;
-            white-space: pre-wrap;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-            backdrop-filter: blur(2px);
+        /* 右側內容 */
+        .chronicle-content-col {
+            flex: 1; padding: 0 0 0 10px;
+            display: flex; flex-direction: column; gap: 15px;
+        }
+        
+        .chronicle-item-card {
+            border-left: 4px solid #cbd5e1; padding-left: 12px; position: relative;
+        }
+        .chronicle-item-card[data-color="blue"] { border-left-color: #4f46e5; }
+        .chronicle-item-card[data-color="green"] { border-left-color: #10b981; }
+        .chronicle-item-card[data-color="red"] { border-left-color: #ef4444; }
+        .chronicle-item-card[data-color="yellow"] { border-left-color: #f59e0b; }
+
+        .proj-tag-clean {
+            font-size: 0.75rem; color: #64748b; background: #f1f5f9;
+            padding: 2px 6px; border-radius: 4px; display: inline-block;
+            margin-bottom: 4px; margin-right: 5px;
+        }
+        
+        .range-end-badge {
+            display: inline-block; background: #fce7f3; color: #9d174d;
+            font-size: 0.75rem; padding: 2px 8px; border-radius: 12px;
+            font-weight: bold; vertical-align: middle; margin-left: 5px;
+        }
+
+        /* V59: 衝突警示標籤 */
+        .overlap-badge {
+            display: inline-block; background: #fee2e2; color: #ef4444;
+            font-size: 0.75rem; padding: 2px 8px; border-radius: 12px;
+            font-weight: bold; vertical-align: middle; margin-left: 5px;
+            border: 1px solid #fecaca;
+        }
+
+        /* V59: 時長視覺條 */
+        .duration-bar-container {
+            height: 6px; width: 100%; background: #f1f5f9;
+            margin-top: 8px; border-radius: 3px; overflow: hidden;
+            display: flex;
+        }
+        .duration-bar-fill {
+            height: 100%; border-radius: 3px;
+            opacity: 0.7;
+        }
+        .duration-text {
+            font-size: 0.7rem; color: #94a3b8; margin-top: 2px;
+        }
+
+        .chronicle-title {
+            font-size: 1.1rem; font-weight: 800; color: #1e293b;
+            margin-bottom: 4px; line-height: 1.4;
+            display: flex; align-items: center; flex-wrap: wrap;
+        }
+        
+        .chronicle-desc {
+            font-size: 0.95rem; color: #475569;
+            white-space: pre-wrap; line-height: 1.6;
         }
 
         #exit-pres-btn {
@@ -485,6 +433,11 @@
             .timeline::before { left: 10px; }
             .dot { left: 10px; }
             .mobile-hidden { display: none !important; }
+            
+            .chronicle-line { left: 20px; }
+            .chronicle-date-col { display: none; } 
+            .chronicle-content-col { margin-left: 30px; border-left: 2px solid #e2e8f0; padding-left: 15px; }
+            .chronicle-dot-col { display: none; }
         }
 
         @media print { 
@@ -498,7 +451,7 @@
     <div class="toolbar">
         <div class="tool-left">
             <div class="tool-title">
-                🧠 專案神器 V55
+                🧠 專案神器 V59
                 <span class="save-status" id="saveStatus"></span>
             </div>
             <div class="search-box">
@@ -508,13 +461,8 @@
         </div>
         
         <div class="tool-btn-group" id="normal-toolbar">
-            <select class="view-select" id="scaleSelect" onchange="changeScale(this.value)">
-                <option value="day">📅 刻度: 日</option>
-                <option value="week">🗓️ 刻度: 週</option>
-                <option value="month">🈷️ 刻度: 月</option>
-            </select>
             <button class="tool-btn filter-btn" onclick="toggleProjectBar()" title="過濾">📁 專案</button>
-            <button class="tool-btn view-btn" onclick="toggleView()" id="viewBtn">🗺️ 專案圖</button>
+            <button class="tool-btn view-btn" onclick="toggleView()" id="viewBtn">📜 大事記</button>
             <button class="tool-btn pres-btn" onclick="togglePresentation()">📽️ 簡報</button>
             <button class="tool-btn ai-btn" onclick="enterAIMode()">🤖 AI</button>
             <button class="tool-btn cal-btn" onclick="exportToCSV()">📅 CSV</button>
@@ -555,22 +503,18 @@
     <div class="main-area" id="captureArea">
         <div class="timeline" id="container"></div>
         <div id="chart-view">
-            <div style="text-align:center; color:#888; margin-bottom:10px; font-size:0.8rem;">💡 專案泳道圖：自動堆疊不重疊 (支援左右滑動)</div>
-            <div class="swimlane-container" id="swimlaneChart"></div>
+            <div style="text-align:center; color:#888; margin-bottom:30px; font-size:0.8rem;">💡 大事記模式：包含衝突偵測 (⚡) 與時長視覺條</div>
+            <div class="chronicle-container" id="vTimeline"></div>
         </div>
         <button class="add-main" id="mainAddBtn">＋ 新增節點</button>
     </div>
-
-    <div id="custom-tooltip"></div>
 
     <script>
         const container = document.getElementById('container');
         const saveStatus = document.getElementById('saveStatus');
         const projectBar = document.getElementById('project-bar');
-        const tooltip = document.getElementById('custom-tooltip');
         let activeProjectFilters = new Set();
         let currentView = 'timeline';
-        let currentScale = 'day'; // 'day', 'week', 'month'
 
         function getTodayString() {
             const d = new Date();
@@ -601,7 +545,7 @@
                 const defaultItem = {
                     id: Date.now(), pos: 'left', mode: 'normal', color: 'blue', status: 0, isMemo: false,
                     project: '專案神器', label: '系統初始化', date_single: getTodayString(), date_start: '', date_end: '', 
-                    content: '歡迎使用專案神器 V55。'
+                    content: '歡迎使用專案神器 V59 (衝突偵測版)。'
                 };
                 container.appendChild(createNodeElement(defaultItem));
             }
@@ -796,32 +740,10 @@
             renderFromData(newData); autoSave();
         }
 
-        // --- Tooltip Logic ---
-        function showTooltip(e, text) {
-            tooltip.innerText = text;
-            tooltip.style.display = 'block';
-            updateTooltipPos(e);
-        }
-        function hideTooltip() {
-            tooltip.style.display = 'none';
-        }
-        function updateTooltipPos(e) {
-            const offset = 15;
-            let left = e.clientX + offset;
-            let top = e.clientY + offset;
-            
-            if (left + tooltip.offsetWidth > window.innerWidth) left = e.clientX - tooltip.offsetWidth - offset;
-            if (top + tooltip.offsetHeight > window.innerHeight) top = e.clientY - tooltip.offsetHeight - offset;
-            
-            tooltip.style.left = left + 'px';
-            tooltip.style.top = top + 'px';
-        }
-
-        // --- Swimlane Logic (Multi-Scale) ---
+        // --- 垂直故事線 (Vertical Timeline - 衝突偵測版) ---
         function getMidnightTime(dateStr) {
             if(!dateStr) return null;
             const parts = dateStr.split('-');
-            if(parts.length < 3) return null;
             return new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]), 0, 0, 0).getTime();
         }
 
@@ -831,21 +753,16 @@
             if (currentView === 'timeline') {
                 tl.style.display = 'none'; gt.style.display = 'block'; add.style.display = 'none';
                 btn.innerText = '📝 列表'; btn.classList.remove('view-btn'); btn.classList.add('highlight');
-                renderSwimlane(); currentView = 'swimlane';
+                renderVerticalTimeline(); currentView = 'storyline';
             } else {
                 tl.style.display = 'block'; gt.style.display = 'none'; add.style.display = 'block';
-                btn.innerText = '🗺️ 專案圖'; btn.classList.add('view-btn'); btn.classList.remove('highlight');
+                btn.innerText = '📜 大事記'; btn.classList.add('view-btn'); btn.classList.remove('highlight');
                 currentView = 'timeline';
             }
         }
 
-        function changeScale(val) {
-            currentScale = val;
-            if (currentView === 'swimlane') renderSwimlane();
-        }
-
         function togglePresentation() {
-            if (currentView === 'swimlane') toggleView();
+            if (currentView === 'storyline') toggleView();
             const body = document.body;
             body.classList.toggle('presentation-mode');
             if(body.classList.contains('presentation-mode')) {
@@ -857,160 +774,123 @@
             if (event.key === "Escape" && document.body.classList.contains('presentation-mode')) togglePresentation();
         });
 
-        function renderSwimlane() {
-            const chart = document.getElementById('swimlaneChart'); 
-            chart.innerHTML='';
+        function renderVerticalTimeline() {
+            const container = document.getElementById('vTimeline'); 
+            container.innerHTML = '';
             
+            // 1. 準備資料
             let data = gatherData().filter(i => !i.isMemo && (i.date_single || i.date_start));
             if (activeProjectFilters.size > 0) data = data.filter(i => activeProjectFilters.has(i.project));
             
             if(data.length === 0) { 
-                chart.innerHTML='<div style="text-align:center;padding:20px;color:#999">無有效日期資料</div>'; 
+                container.innerHTML='<div style="text-align:center;padding:20px;color:#999">無有效日期資料</div>'; 
                 return; 
             }
 
-            const parsed = data.map(d => {
-                let s = getMidnightTime(d.mode==='range' ? d.date_start : d.date_single);
-                let e = getMidnightTime(d.mode==='range' ? d.date_end : d.date_single);
-                if(!s && e) s = e; if(s && !e) e = s;
-                if(!s && !e) return null;
-                if(e < s) e = s;
-                return { ...d, start: s, end: e };
-            }).filter(d => d !== null);
+            // 2. 轉換與排序
+            const parsed = data.map(item => {
+                let s = getMidnightTime(item.mode==='range'?item.date_start:item.date_single);
+                let e = getMidnightTime(item.mode==='range'?item.date_end:item.date_single);
+                if(!s && e) s=e; if(s && !e) e=s; 
+                if(e<s) e=s;
+                return { ...item, start: s, end: e };
+            }).sort((a,b) => a.start - b.start);
 
-            if (parsed.length === 0) return;
-
-            const dayMs = 86400000;
-            let minT = Math.min(...parsed.map(p=>p.start)) - dayMs;
-            let maxT = Math.max(...parsed.map(p=>p.end)) + dayMs;
-            const plotDur = maxT - minT;
-            
-            // --- 刻度設定 ---
-            let minPxPerDay = 50; // default day
-            let stepDays = 1;
-            
-            if (currentScale === 'week') {
-                minPxPerDay = 15; // 壓縮
-                stepDays = 7;
-                // 校正起始時間到週一
-                const d = new Date(minT);
-                const day = d.getDay();
-                const diff = d.getDate() - day + (day == 0 ? -6:1); 
-                d.setDate(diff);
-                minT = d.getTime();
-            } else if (currentScale === 'month') {
-                minPxPerDay = 5; // 極度壓縮
-                stepDays = 30; // 僅供參考，實際用月邏輯
-                // 校正起始時間到1號
-                const d = new Date(minT);
-                d.setDate(1);
-                minT = d.getTime();
-            }
-
-            const totalDays = Math.ceil(plotDur / dayMs) + 10; // 多加一點buffer
-            const totalWidth = Math.max(800, totalDays * minPxPerDay); 
-            
-            const axisAreaStyle = `width: ${totalWidth}px; min-width: 100%; padding-right: 100px; box-sizing: content-box;`;
-            
+            // 3. 衝突偵測與分組
             const grouped = {};
+            const activeRanges = []; // { end: number, label: string }
+
             parsed.forEach(item => {
-                const pName = item.project || '未分類';
-                if(!grouped[pName]) grouped[pName] = [];
-                grouped[pName].push(item);
+                // 檢查衝突
+                let conflictMsg = '';
+                for(let r of activeRanges) {
+                    if(item.start < r.end) {
+                        conflictMsg = `⚡ 與 [${r.label}] 重疊`;
+                        break; // 抓到一個就停
+                    }
+                }
+                
+                // 更新 activeRanges (移除已過期的)
+                for(let i=activeRanges.length-1; i>=0; i--) {
+                    if(activeRanges[i].end <= item.start) activeRanges.splice(i, 1);
+                }
+                // 加入自己
+                activeRanges.push({ end: item.end, label: item.label });
+
+                // 加入分組
+                const sDateStr = item.date_start || item.date_single;
+                if(!grouped[sDateStr]) grouped[sDateStr] = [];
+                grouped[sDateStr].push({ ...item, conflictMsg });
             });
 
-            // 4. 繪製刻度
-            let headerAxisHtml = '';
-            let gridHtml = '';
-            
-            if (currentScale === 'month') {
-                // 月刻度邏輯
-                let t = new Date(minT);
-                while(t.getTime() <= maxT) {
-                    const pct = ((t.getTime() - minT) / plotDur) * 100;
-                    if(pct >= 0 && pct <= 100) {
-                        const label = `${t.getMonth()+1}月`;
-                        headerAxisHtml += `<div class="swimlane-header-mark" style="left:${pct}%;"><span>${label}</span></div>`;
-                        gridHtml += `<div class="swimlane-grid-line" style="left:${pct}%;"></div>`;
-                    }
-                    t.setMonth(t.getMonth() + 1);
-                }
-            } else {
-                // 日與週刻度邏輯
-                for (let t = minT; t <= maxT; t += (dayMs * stepDays)) {
-                    const d = new Date(t);
-                    d.setHours(0,0,0,0);
-                    const pct = ((d.getTime() - minT) / plotDur) * 100;
-                    if(pct >= 0 && pct <= 100) {
-                        let label = `${d.getMonth()+1}/${d.getDate()}`;
-                        if(currentScale === 'week') label += ' (週)';
-                        headerAxisHtml += `<div class="swimlane-header-mark" style="left:${pct}%;"><span>${label}</span></div>`;
-                        gridHtml += `<div class="swimlane-grid-line" style="left:${pct}%;"></div>`;
-                    }
-                }
-            }
+            // 4. 渲染
+            let html = '<div class="chronicle-line"></div>'; 
+            const sortedDates = Object.keys(grouped).sort();
+            const dayMs = 86400000;
 
-            const headerHtml = `
-                <div class="swimlane-header-row" style="width: fit-content; min-width: 100%;">
-                    <div class="swimlane-title-placeholder">專案名稱</div>
-                    <div class="swimlane-axis-area" style="${axisAreaStyle}">${headerAxisHtml}</div>
-                </div>`;
-
-            let rowsHtml = '';
-            
-            Object.keys(grouped).sort().forEach(pName => {
-                const items = grouped[pName].sort((a,b) => a.start - b.start);
+            sortedDates.forEach(dateKey => {
+                const items = grouped[dateKey];
                 
-                const tracks = [];
+                // 日期膠囊
+                const d = new Date(dateKey);
+                const dateStr = `${d.getFullYear()}年<br>${d.getMonth()+1}月${d.getDate()}日`;
+                const dateHtml = `<div class="date-pill">${dateStr}</div>`;
+
+                let contentHtml = '';
                 items.forEach(item => {
-                    let placed = false;
-                    for(let i=0; i<tracks.length; i++) {
-                        if (tracks[i] + dayMs <= item.start) {
-                            item.trackIndex = i;
-                            tracks[i] = item.end;
-                            placed = true;
-                            break;
-                        }
+                    const projTag = item.project ? `<span class="proj-tag-clean">#${item.project}</span>` : '';
+                    
+                    // 區間結束日期
+                    let rangeBadge = '';
+                    let days = 1;
+                    if (item.mode === 'range' && item.date_end) {
+                        const ed = new Date(item.date_end);
+                        rangeBadge = `<span class="range-end-badge">➡ ${ed.getMonth()+1}/${ed.getDate()} 結束</span>`;
+                        days = Math.ceil((item.end - item.start) / dayMs) + 1;
                     }
-                    if (!placed) {
-                        item.trackIndex = tracks.length;
-                        tracks.push(item.end);
-                    }
-                });
 
-                const rowHeight = Math.max(60, tracks.length * 36 + 20);
-                
-                let barsHtml = '';
-                items.forEach(item => {
-                    let sPct = ((item.start - minT) / plotDur) * 100;
-                    let ePct = ((item.end + dayMs - minT) / plotDur) * 100;
-                    let widthPct = ePct - sPct;
-                    if(widthPct < 0.2) widthPct = 0.2; 
+                    // 衝突標籤
+                    let conflictBadge = item.conflictMsg ? `<span class="overlap-badge">${item.conflictMsg}</span>` : '';
 
-                    const topPos = item.trackIndex * 36 + 10;
-                    barsHtml += `<div class="swimlane-bar" data-color="${item.color}" 
-                        onmouseenter="showTooltip(event, '${item.label} (${item.date_single || (item.date_start + ' ~ ' + item.date_end)})')" 
-                        onmousemove="updateTooltipPos(event)"
-                        onmouseleave="hideTooltip()"
-                        style="left:${sPct}%; width:${widthPct}%; top:${topPos}px;">${item.label}</div>`;
-                });
-
-                rowsHtml += `
-                    <div class="swimlane-row" style="height:${rowHeight}px; width: fit-content; min-width: 100%;">
-                        <div class="swimlane-project-label">${pName}</div>
-                        <div class="swimlane-tracks-area" style="${axisAreaStyle}">
-                            ${gridHtml} 
-                            ${barsHtml}
+                    // 時長視覺條 (Width based on days, max 30 days = 100%)
+                    let barWidthPct = Math.min(100, days * 3); // 1天=3%寬度
+                    const colorMap = { blue:'#4f46e5', green:'#10b981', red:'#ef4444', yellow:'#f59e0b' };
+                    let barColor = colorMap[item.color] || '#4f46e5';
+                    
+                    let durationBar = `
+                        <div class="duration-bar-container">
+                            <div class="duration-bar-fill" style="width:${barWidthPct}%; background:${barColor}"></div>
                         </div>
+                        <div class="duration-text">工期: ${days} 天</div>
+                    `;
+
+                    contentHtml += `
+                        <div class="chronicle-item-card" data-color="${item.color}">
+                            <div>
+                                ${projTag}
+                                <span class="chronicle-title" style="display:inline;">${item.label}${rangeBadge}${conflictBadge}</span>
+                            </div>
+                            <div class="chronicle-desc">${item.content}</div>
+                            ${durationBar}
+                        </div>`;
+                });
+
+                html += `
+                    <div class="chronicle-row">
+                        <div class="chronicle-date-col">${dateHtml}</div>
+                        <div class="chronicle-dot-col">
+                            <div class="chronicle-dot" data-color="blue" style="border-color:#94a3b8"></div>
+                        </div>
+                        <div class="chronicle-content-col">${contentHtml}</div>
                     </div>`;
             });
 
-            chart.innerHTML = `<div style="display:inline-block; min-width:100%;">${headerHtml}${rowsHtml}</div>`;
+            container.innerHTML = html;
         }
 
         // --- 截圖 ---
         function takeScreenshot() {
-            if(currentView === 'swimlane') { alert('請切換回列表模式再截圖'); return; }
+            if(currentView === 'storyline') { alert('請切換回列表模式再截圖'); return; }
             document.body.classList.add('screenshot-mode');
             saveStatus.innerText = '截圖中...';
             window.scrollTo(0,0);
@@ -1023,7 +903,7 @@
                     scrollY: -window.scrollY
                 }).then(canvas => {
                     const link = document.createElement('a');
-                    link.download = `project_artifact_${getTodayString()}.png`;
+                    link.download = `chronicle_${getTodayString()}.png`;
                     link.href = canvas.toDataURL();
                     link.click();
                     document.body.classList.remove('screenshot-mode');
