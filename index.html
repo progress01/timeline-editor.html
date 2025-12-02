@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>專案神器 </title>
+    <title>專案神器 V72 (完整修復版)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         :root {
@@ -222,7 +222,7 @@
         .card:hover .resize-handle { display: block; }
         .card .resize-handle { bottom: 2px; right: 2px; z-index: 50; }
 
-        /* 📸 截圖專用樣式：強制平面化 */
+        /* 📸 截圖專用樣式 */
         body.taking-screenshot .card, 
         body.taking-screenshot .sticky-note, 
         body.taking-screenshot .sticker {
@@ -510,7 +510,7 @@
     <div class="toolbar">
         <div class="tool-left">
             <div class="tool-title">
-                🧠 專案神器 
+                🧠 專案神器 V72
             </div>
             <div class="search-box">
                 <span class="search-icon">🔍</span>
@@ -628,7 +628,7 @@
                 const defaultItem = {
                     id: Date.now(), pos: 'left', mode: 'normal', color: 'blue', status: 0, isMemo: false,
                     project: '專案神器', label: '系統初始化', date_single: getTodayString(), date_start: '', date_end: '', 
-                    content: '歡迎使用專案神器 。'
+                    content: '歡迎使用專案神器 V72。'
                 };
                 container.appendChild(createNodeElement(defaultItem));
             }
@@ -638,14 +638,18 @@
             
             refreshProjectBar();
 
-            document.getElementById('mainAddBtn').onclick = function() {
-                const newItem = {
-                    id: Date.now(), pos: 'auto', mode: 'normal', color: 'blue', status: 0, isMemo: false,
-                    project: '', label: '', date_single: getTodayString(), date_start: '', date_end: '', content: ''
+            // 確保新增按鈕綁定
+            const addBtn = document.getElementById('mainAddBtn');
+            if (addBtn) {
+                addBtn.onclick = function() {
+                    const newItem = {
+                        id: Date.now(), pos: 'auto', mode: 'normal', color: 'blue', status: 0, isMemo: false,
+                        project: '', label: '', date_single: getTodayString(), date_start: '', date_end: '', content: ''
+                    };
+                    container.appendChild(createNodeElement(newItem));
+                    autoSave();
                 };
-                container.appendChild(createNodeElement(newItem));
-                autoSave();
-            };
+            }
 
             window.addEventListener('paste', handleGlobalPaste);
         }
@@ -680,7 +684,7 @@
             
             // 變回綠燈 (移除紅燈 class)
             const light = document.getElementById('save-light');
-            light.classList.remove('unsaved');
+            if(light) light.classList.remove('unsaved');
         }
 
         // --- 核心操作 ---
