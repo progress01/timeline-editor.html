@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>專案神器 V64 (紅藍框可調大小版)</title>
+    <title>專案神器 </title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         :root {
@@ -179,8 +179,8 @@
             border: 2px solid white;
         }
         
-        /* 🔧 縮放手把樣式 (只有紅藍框會有) */
-        .sticker-resize {
+        /* 🔧 通用縮放手把樣式 (貼紙與卡片共用) */
+        .resize-handle {
             position: absolute; bottom: -5px; right: -5px;
             width: 16px; height: 16px; background: white;
             border: 1px solid #64748b; border-radius: 50%;
@@ -190,7 +190,12 @@
 
         .sticker:hover { outline: 2px dashed #3b82f6; }
         .sticker:hover .sticker-del { display: flex; }
-        .sticker:hover .sticker-resize { display: block; }
+        .sticker:hover .resize-handle { display: block; }
+        
+        /* 卡片縮放手把特別處理 */
+        .card:hover .resize-handle { display: block; }
+        /* 避免與貼紙重疊 */
+        .card .resize-handle { bottom: 2px; right: 2px; z-index: 50; }
 
         /* 主區域 */
         .main-area {
@@ -217,7 +222,13 @@
         .timeline-item:nth-child(even) { justify-content: flex-end; padding-left: 50%; }
         .timeline-item.force-left { justify-content: flex-start !important; padding-right: 50% !important; padding-left: 0 !important; }
         .timeline-item.force-right { justify-content: flex-end !important; padding-left: 50% !important; padding-right: 0 !important; }
-        .timeline-item .card { width: 90%; margin: 0 auto; }
+        
+        /* 🔧 卡片置中與寬度限制 */
+        .timeline-item .card { 
+            width: 90%; /* 預設寬度 */
+            margin: 0 auto; 
+            max-width: 100%; /* 防止爆版：這是核心限制 */
+        }
 
         /* Card 內部佈局 */
         .card {
@@ -441,6 +452,7 @@
         @media print { 
             .toolbar, .toolbox-container, .card-top-right, .card-side-tools, .add-main, .note-header, .sticker-del, .today-btn, #exit-pres-btn, .select-chk, #project-bar, .mode-toggle-btn { display: none !important; } 
             .sticky-note, .sticker { border: none; box-shadow: none; }
+            .resize-handle { display: none !important; }
         }
     </style>
 </head>
@@ -449,7 +461,7 @@
     <div class="toolbar">
         <div class="tool-left">
             <div class="tool-title">
-                🧠 專案神器 V64
+                🧠 專案神器 
                 <span class="save-status" id="saveStatus"></span>
             </div>
             <div class="search-box">
@@ -565,7 +577,7 @@
                 const defaultItem = {
                     id: Date.now(), pos: 'left', mode: 'normal', color: 'blue', status: 0, isMemo: false,
                     project: '專案神器', label: '系統初始化', date_single: getTodayString(), date_start: '', date_end: '', 
-                    content: '歡迎使用專案神器 V64。'
+                    content: '歡迎使用專案神器 。'
                 };
                 container.appendChild(createNodeElement(defaultItem));
             }
@@ -649,13 +661,16 @@
                     label: item.querySelector('.label-input').value,
                     date_single: item.querySelector('.single-date').value,
                     date_start: item.querySelector('.date-start').value, date_end: item.querySelector('.date-end').value,
-                    content: item.querySelector('.content').innerHTML
+                    content: item.querySelector('.content').innerHTML,
+                    // 🔧 新增：儲存卡片尺寸
+                    card_w: card.style.width,
+                    card_h: card.style.minHeight
                 };
             });
         }
         function gatherNotes() { return Array.from(document.querySelectorAll('.sticky-note')).map(n => ({ id: n.id, x: parseInt(n.style.left), y: parseInt(n.style.top), content: n.querySelector('textarea').value })); }
         
-        // 🔧 [修改] 加入寬高儲存
+        // 🔧 加入寬高儲存
         function gatherStickers() { 
             return Array.from(document.querySelectorAll('.sticker')).map(s => ({ 
                 id: s.id, type: s.dataset.type, x: parseInt(s.style.left), y: parseInt(s.style.top),
@@ -670,9 +685,12 @@
             const div = document.createElement('div');
             div.className = `timeline-item ${item.pos==='left'?'force-left':item.pos==='right'?'force-right':''} ${item.mode==='range'?'range-mode':''}`;
             const isMemo = item.isMemo ? 'memo-mode' : '';
+            
             div.innerHTML = `
                 <div class="dot"></div>
                 <div class="card ${isMemo}" data-color="${item.color}">
+                    <div class="resize-handle" onmousedown="resizeCard(event)">↘</div>
+
                     <div class="card-side-tools">
                         <button class="btn-icon side-btn" onclick="changeColor(this)" title="換色">🎨</button>
                         <button class="btn-icon side-btn mobile-hidden" onclick="moveNode(this,'up')">⬆️</button>
@@ -716,8 +734,43 @@
                         <input type="text" class="footer-project-input" autocomplete="off" value="${item.project || ''}" placeholder="🏷️ 專案名稱..." oninput="autoSave(); refreshProjectBar();">
                     </div>
                 </div>`;
+            
+            const card = div.querySelector('.card');
+            // 🔧 套用儲存的尺寸
+            if(item.card_w) card.style.width = item.card_w;
+            if(item.card_h) card.style.minHeight = item.card_h;
+
             div.querySelector('.content').addEventListener('paste', function(e) { e.stopPropagation(); handleCardPaste(e); });
             return div;
+        }
+
+        // 🔧 核心：卡片縮放邏輯
+        function resizeCard(e) {
+            e.stopPropagation(); 
+            const card = e.target.parentElement;
+            const startX = e.clientX;
+            const startY = e.clientY;
+            const startW = card.offsetWidth;
+            const startH = card.offsetHeight;
+
+            function doDrag(ev) {
+                // 寬度計算：200px ~ 100% (CSS已經限制 max-width: 100%)
+                const newW = startW + (ev.clientX - startX);
+                // 高度計算：至少 100px
+                const newH = startH + (ev.clientY - startY);
+                
+                if (newW > 200) card.style.width = newW + 'px';
+                if (newH > 100) card.style.minHeight = newH + 'px';
+            }
+
+            function stopDrag() {
+                document.documentElement.removeEventListener('mousemove', doDrag);
+                document.documentElement.removeEventListener('mouseup', stopDrag);
+                autoSave();
+            }
+
+            document.documentElement.addEventListener('mousemove', doDrag);
+            document.documentElement.addEventListener('mouseup', stopDrag);
         }
 
         // --- 便利貼與貼紙邏輯 ---
@@ -759,7 +812,7 @@
             if(window.innerWidth < 768) toggleToolbox();
         }
 
-        // 🔧 [修改] 貼紙建立邏輯，加入紅藍框的縮放手把
+        // 🔧 貼紙建立邏輯，加入紅藍框的縮放手把
         function createStickerElement(data) {
             const div = document.createElement('div');
             div.className = 'sticker';
@@ -783,7 +836,7 @@
             let resizeHandle = '';
             // 只有紅圈跟藍框加入縮放控制點
             if (data.type === 'circle-red' || data.type === 'rect-blue') {
-                resizeHandle = '<div class="sticker-resize" onmousedown="resizeSticker(event)">↘</div>';
+                resizeHandle = '<div class="resize-handle" onmousedown="resizeSticker(event)">↘</div>';
             }
 
             div.innerHTML = `<div class="sticker-del" onclick="deleteSticky(this)">×</div>${content}${resizeHandle}`;
@@ -791,7 +844,7 @@
             makeDraggable(div);
         }
         
-        // 🔧 [新增] 縮放邏輯
+        // 🔧 貼紙縮放邏輯
         function resizeSticker(e) {
             e.stopPropagation(); // 阻止拖曳觸發
             const sticker = e.target.parentElement;
@@ -836,7 +889,7 @@
             function dragMouseDown(e) {
                 e = e || window.event;
                 // 如果點到的是刪除鈕或縮放鈕，不觸發拖曳
-                if (e.target.classList.contains('sticker-resize') || e.target.classList.contains('sticker-del')) return;
+                if (e.target.classList.contains('resize-handle') || e.target.classList.contains('sticker-del')) return;
 
                 e.preventDefault();
                 pos3 = e.clientX;
