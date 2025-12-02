@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>專案神器</title>
+    <title>專案神器 V64 (紅藍框可調大小版)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         :root {
@@ -178,8 +178,19 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.2); z-index: 1501;
             border: 2px solid white;
         }
+        
+        /* 🔧 縮放手把樣式 (只有紅藍框會有) */
+        .sticker-resize {
+            position: absolute; bottom: -5px; right: -5px;
+            width: 16px; height: 16px; background: white;
+            border: 1px solid #64748b; border-radius: 50%;
+            cursor: se-resize; z-index: 1502; display: none;
+            color: #64748b; font-size: 10px; line-height: 14px; text-align: center;
+        }
+
         .sticker:hover { outline: 2px dashed #3b82f6; }
         .sticker:hover .sticker-del { display: flex; }
+        .sticker:hover .sticker-resize { display: block; }
 
         /* 主區域 */
         .main-area {
@@ -438,7 +449,7 @@
     <div class="toolbar">
         <div class="tool-left">
             <div class="tool-title">
-                🧠 專案神器 V63
+                🧠 專案神器 V64
                 <span class="save-status" id="saveStatus"></span>
             </div>
             <div class="search-box">
@@ -554,7 +565,7 @@
                 const defaultItem = {
                     id: Date.now(), pos: 'left', mode: 'normal', color: 'blue', status: 0, isMemo: false,
                     project: '專案神器', label: '系統初始化', date_single: getTodayString(), date_start: '', date_end: '', 
-                    content: '歡迎使用專案神器 V63。'
+                    content: '歡迎使用專案神器 V64。'
                 };
                 container.appendChild(createNodeElement(defaultItem));
             }
@@ -643,9 +654,13 @@
             });
         }
         function gatherNotes() { return Array.from(document.querySelectorAll('.sticky-note')).map(n => ({ id: n.id, x: parseInt(n.style.left), y: parseInt(n.style.top), content: n.querySelector('textarea').value })); }
+        
+        // 🔧 [修改] 加入寬高儲存
         function gatherStickers() { 
             return Array.from(document.querySelectorAll('.sticker')).map(s => ({ 
                 id: s.id, type: s.dataset.type, x: parseInt(s.style.left), y: parseInt(s.style.top),
+                w: s.style.width ? parseInt(s.style.width) : null,
+                h: s.style.height ? parseInt(s.style.height) : null,
                 content: s.dataset.type === 'image' ? s.querySelector('img').src : null
             })); 
         }
@@ -705,7 +720,7 @@
             return div;
         }
 
-        // --- 便利貼與貼紙邏輯 (修正刪除功能) ---
+        // --- 便利貼與貼紙邏輯 ---
         function addStickyNote() {
             createStickyElement({
                 id: 'note-' + Date.now(),
@@ -744,6 +759,7 @@
             if(window.innerWidth < 768) toggleToolbox();
         }
 
+        // 🔧 [修改] 貼紙建立邏輯，加入紅藍框的縮放手把
         function createStickerElement(data) {
             const div = document.createElement('div');
             div.className = 'sticker';
@@ -752,6 +768,10 @@
             div.style.left = data.x + 'px';
             div.style.top = data.y + 'px';
             
+            // 套用已儲存的尺寸
+            if (data.w) div.style.width = data.w + 'px';
+            if (data.h) div.style.height = data.h + 'px';
+
             let content = '';
             if (data.type === 'arrow-right') content = '<svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>';
             else if (data.type === 'arrow-down') content = '<svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg>';
@@ -760,20 +780,49 @@
             else if (data.type === 'rect-blue') content = '<svg viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="3"><rect x="2" y="4" width="20" height="16" rx="2"/></svg>';
             else if (data.type === 'image') content = `<img src="${data.content}">`;
 
-            div.innerHTML = `<div class="sticker-del" onclick="deleteSticky(this)">×</div>${content}`;
+            let resizeHandle = '';
+            // 只有紅圈跟藍框加入縮放控制點
+            if (data.type === 'circle-red' || data.type === 'rect-blue') {
+                resizeHandle = '<div class="sticker-resize" onmousedown="resizeSticker(event)">↘</div>';
+            }
+
+            div.innerHTML = `<div class="sticker-del" onclick="deleteSticky(this)">×</div>${content}${resizeHandle}`;
             document.body.appendChild(div);
             makeDraggable(div);
+        }
+        
+        // 🔧 [新增] 縮放邏輯
+        function resizeSticker(e) {
+            e.stopPropagation(); // 阻止拖曳觸發
+            const sticker = e.target.parentElement;
+            const startX = e.clientX;
+            const startY = e.clientY;
+            const startW = sticker.offsetWidth;
+            const startH = sticker.offsetHeight;
+
+            function doDrag(ev) {
+                const newW = startW + (ev.clientX - startX);
+                const newH = startH + (ev.clientY - startY);
+                if (newW > 20) sticker.style.width = newW + 'px';
+                if (newH > 20) sticker.style.height = newH + 'px';
+            }
+
+            function stopDrag() {
+                document.documentElement.removeEventListener('mousemove', doDrag);
+                document.documentElement.removeEventListener('mouseup', stopDrag);
+                autoSave();
+            }
+
+            document.documentElement.addEventListener('mousemove', doDrag);
+            document.documentElement.addEventListener('mouseup', stopDrag);
         }
 
         function deleteSticky(btn) {
             if(confirm('移除此物件？')) {
-                // 修復：正確查找父元素並移除
                 const note = btn.closest('.sticky-note');
                 const sticker = btn.closest('.sticker');
-                
                 if(note) note.remove();
                 else if(sticker) sticker.remove();
-                
                 autoSave();
             }
         }
@@ -786,6 +835,9 @@
 
             function dragMouseDown(e) {
                 e = e || window.event;
+                // 如果點到的是刪除鈕或縮放鈕，不觸發拖曳
+                if (e.target.classList.contains('sticker-resize') || e.target.classList.contains('sticker-del')) return;
+
                 e.preventDefault();
                 pos3 = e.clientX;
                 pos4 = e.clientY;
@@ -956,18 +1008,14 @@
             if (currentView === 'gantt') renderGantt();
         }
 
-        // 🛠️ 修復後的安全日期解析函式
         function getMidnightTime(dateStr) {
             if(!dateStr) return null;
             const parts = dateStr.split('-');
             if (parts.length < 3) return null; 
-            
             const y = parseInt(parts[0]);
             const m = parseInt(parts[1]);
             const d = parseInt(parts[2]);
-            
             if (isNaN(y) || isNaN(m) || isNaN(d)) return null;
-
             return new Date(y, m-1, d, 0, 0, 0).getTime();
         }
 
@@ -976,7 +1024,6 @@
             const container = document.getElementById('vTimeline'); 
             container.innerHTML = '';
             
-            // 資料篩選
             let data = gatherData().filter(i => !i.isMemo && (i.date_single || i.date_start));
             if (activeProjectFilters.size > 0) data = data.filter(i => activeProjectFilters.has(i.project));
             if (currentSearchKeyword) {
@@ -1259,7 +1306,7 @@
             });
         }
 
-        // 🛠️ 補上的 AI 工具列功能
+        // 補上的 AI 工具列功能
         function enterAIMode() {
             document.body.classList.add('ai-selecting');
             document.getElementById('normal-toolbar').style.display = 'none';
