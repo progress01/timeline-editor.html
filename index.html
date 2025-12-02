@@ -179,7 +179,7 @@
             border: 2px solid white;
         }
         
-        /* 🔧 通用縮放手把樣式 (貼紙與卡片共用) */
+        /* 🔧 通用縮放手把樣式 */
         .resize-handle {
             position: absolute; bottom: -5px; right: -5px;
             width: 16px; height: 16px; background: white;
@@ -192,9 +192,7 @@
         .sticker:hover .sticker-del { display: flex; }
         .sticker:hover .resize-handle { display: block; }
         
-        /* 卡片縮放手把特別處理 */
         .card:hover .resize-handle { display: block; }
-        /* 避免與貼紙重疊 */
         .card .resize-handle { bottom: 2px; right: 2px; z-index: 50; }
 
         /* 主區域 */
@@ -223,11 +221,10 @@
         .timeline-item.force-left { justify-content: flex-start !important; padding-right: 50% !important; padding-left: 0 !important; }
         .timeline-item.force-right { justify-content: flex-end !important; padding-left: 50% !important; padding-right: 0 !important; }
         
-        /* 🔧 卡片置中與寬度限制 */
         .timeline-item .card { 
-            width: 90%; /* 預設寬度 */
+            width: 90%; 
             margin: 0 auto; 
-            max-width: 100%; /* 防止爆版：這是核心限制 */
+            max-width: 100%; 
         }
 
         /* Card 內部佈局 */
@@ -480,6 +477,7 @@
                 <button class="tool-btn camera-btn" onclick="takeScreenshot()">📸 截圖</button>
                 <button class="tool-btn" onclick="downloadJSON()">📥 備份</button>
                 <button class="tool-btn" onclick="document.getElementById('fileInput').click()">📤 讀取</button>
+                <button class="tool-btn danger-btn" onclick="resetAllData()">💥 重置</button>
                 <input type="file" id="fileInput" hidden onchange="loadJSON(this)">
             </div>
     
@@ -644,6 +642,18 @@
             const items = Array.from(document.querySelectorAll('.timeline-item'));
             items.sort((a, b) => (a.querySelector('.single-date').value || '9999').localeCompare(b.querySelector('.single-date').value || '9999'));
             items.forEach(item => container.appendChild(item)); autoSave();
+        }
+
+        // 🔧 新增：一鍵重置資料
+        function resetAllData() {
+            if (confirm('警告：這將會刪除所有資料（卡片、便利貼、圖片）且無法復原！\n\n您確定要清空整個專案嗎？')) {
+                if (confirm('再次確認：真的要全部刪除嗎？')) {
+                    localStorage.removeItem('timeline_v47_data');
+                    localStorage.removeItem('timeline_v47_notes');
+                    localStorage.removeItem('timeline_v47_stickers');
+                    location.reload(); 
+                }
+            }
         }
 
         // --- 資料蒐集 ---
