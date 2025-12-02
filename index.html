@@ -41,7 +41,6 @@
             cursor: help;
         }
 
-        /* 紅燈閃爍狀態 */
         #save-light.unsaved {
             background-color: #ef4444; /* 紅燈 */
             box-shadow: 0 0 8px #ef4444;
@@ -206,7 +205,7 @@
             border: 2px solid white;
         }
         
-        /* 🔧 通用縮放手把樣式 */
+        /* 通用縮放手把樣式 */
         .resize-handle {
             position: absolute; bottom: -5px; right: -5px;
             width: 16px; height: 16px; background: white;
@@ -222,6 +221,27 @@
         
         .card:hover .resize-handle { display: block; }
         .card .resize-handle { bottom: 2px; right: 2px; z-index: 50; }
+
+        /* 📸 截圖專用樣式：強制平面化 */
+        body.taking-screenshot .card, 
+        body.taking-screenshot .sticky-note, 
+        body.taking-screenshot .sticker {
+            box-shadow: none !important; 
+            transform: none !important; 
+            border: 1px solid #cbd5e1 !important;
+        }
+        body.taking-screenshot .resize-handle,
+        body.taking-screenshot .sticker-del,
+        body.taking-screenshot .note-header {
+            display: none !important;
+        }
+        /* 截圖時使用的替身文字框 */
+        .screenshot-clone-div {
+            white-space: pre-wrap;
+            word-break: break-word;
+            overflow: visible;
+            display: block;
+        }
 
         /* 主區域 */
         .main-area {
@@ -485,6 +505,8 @@
 
     <div id="save-light" title="綠燈:已儲存 / 紅燈:編輯中"></div>
 
+    <input type="file" id="sticker-upload" hidden accept="image/*" onchange="handleImageUpload(this)">
+
     <div class="toolbar">
         <div class="tool-left">
             <div class="tool-title">
@@ -537,7 +559,10 @@
         <div class="toolbox">
             <div class="toolbox-header">便利貼</div>
             <div class="tool-item" onclick="addStickyNote()"><span class="tool-icon">📝</span><span class="tool-text">新增</span></div>
+            <div class="toolbox-header">圖片</div>
+            <div class="tool-item" onclick="triggerImageUpload()"><span class="tool-icon">🖼️</span><span class="tool-text">圖片</span></div>
             <div class="toolbox-header">箭頭</div>
+            <div class="tool-item" onclick="addSticker('arrow-up')"><span class="tool-icon">⬆️</span><span class="tool-text">向上</span></div>
             <div class="tool-item" onclick="addSticker('arrow-right')"><span class="tool-icon">➡️</span><span class="tool-text">向右</span></div>
             <div class="tool-item" onclick="addSticker('arrow-down')"><span class="tool-icon">⬇️</span><span class="tool-text">向下</span></div>
             <div class="tool-item" onclick="addSticker('arrow-left')"><span class="tool-icon">⬅️</span><span class="tool-text">向左</span></div>
@@ -899,6 +924,36 @@
             document.documentElement.addEventListener('mouseup', stopDrag);
         }
 
+        // 🔧 新增：圖片按鈕觸發
+        function triggerImageUpload() {
+            // 1. 強制讓目前焦點 (可能在卡片內) 失焦
+            if (document.activeElement) {
+                document.activeElement.blur();
+            }
+            // 2. 觸發檔案選擇
+            document.getElementById('sticker-upload').click();
+        }
+
+        // 處理圖片上傳
+        function handleImageUpload(input) {
+            const file = input.files[0];
+            if (!file) return; // 使用者按取消，什麼都不做
+            
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                createStickerElement({ 
+                    id: 'sticker-' + Date.now(), 
+                    type: 'image', 
+                    x: window.scrollX + window.innerWidth / 2 - 100, 
+                    y: window.scrollY + window.innerHeight / 2 - 100, 
+                    content: event.target.result 
+                });
+                autoSave();
+            }; 
+            reader.readAsDataURL(file);
+            input.value = ''; // 重置 input 以便下次選同一張圖
+        }
+
         function addSticker(type) {
             createStickerElement({
                 id: 'sticker-' + Date.now(),
@@ -925,7 +980,8 @@
             if (data.h) div.style.height = data.h + 'px';
 
             let content = '';
-            if (data.type === 'arrow-right') content = '<svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>';
+            if (data.type === 'arrow-up') content = '<svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><path d="M12 19V5M5 12l7-7 7 7"/></svg>';
+            else if (data.type === 'arrow-right') content = '<svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>';
             else if (data.type === 'arrow-down') content = '<svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg>';
             else if (data.type === 'arrow-left') content = '<svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>';
             else if (data.type === 'circle-red') content = '<svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="3"><circle cx="12" cy="12" r="10"/></svg>';
@@ -1086,59 +1142,113 @@
             renderFromData(newData); autoSave();
         }
 
-        // --- Tooltip Logic ---
-        function showTooltip(e, text) {
-            tooltip.innerText = text;
-            tooltip.style.display = 'block';
-            updateTooltipPos(e);
-        }
-        function hideTooltip() {
-            tooltip.style.display = 'none';
-        }
-        function updateTooltipPos(e) {
-            const offset = 15;
-            let left = e.clientX + offset;
-            let top = e.clientY + offset;
-            if (left + tooltip.offsetWidth > window.innerWidth) left = e.clientX - tooltip.offsetWidth - offset;
-            if (top + tooltip.offsetHeight > window.innerHeight) top = e.clientY - tooltip.offsetHeight - offset;
-            tooltip.style.left = left + 'px';
-            tooltip.style.top = top + 'px';
+        // --- 🔧 升級版截圖功能：使用「替身術」解決文字截斷 ---
+        function takeScreenshot() {
+            if (typeof html2canvas === 'undefined') {
+                alert('截圖功能需要網路載入元件，請檢查您的網路連線。');
+                return;
+            }
+            
+            // 1. 加上截圖專用 class (移除陰影和裝飾)
+            document.body.classList.add('taking-screenshot');
+
+            // 2. [替身術開始] 找出所有便利貼的 textarea
+            const textareas = document.querySelectorAll('.sticky-note textarea');
+            const clones = []; // 存儲替身元素以便稍後移除
+
+            textareas.forEach(textarea => {
+                // 創建替身 div
+                const div = document.createElement('div');
+                div.className = 'screenshot-clone-div';
+                
+                // 複製文字內容
+                div.innerText = textarea.value;
+
+                // 複製關鍵樣式，確保外觀一致
+                const style = window.getComputedStyle(textarea);
+                div.style.width = style.width;
+                div.style.minHeight = style.height; // 用 min-height 確保字多時自動撐開
+                div.style.padding = style.padding;
+                div.style.fontSize = style.fontSize;
+                div.style.fontFamily = style.fontFamily;
+                div.style.lineHeight = style.lineHeight;
+                div.style.color = style.color;
+                div.style.background = 'transparent'; // 背景由父層決定
+                
+                // 隱藏原本的 textarea
+                textarea.style.display = 'none';
+                
+                // 插入替身
+                textarea.parentNode.insertBefore(div, textarea);
+                clones.push({ div, textarea });
+            });
+            
+            // 3. 截圖
+            html2canvas(document.body, {
+                scale: 2, 
+                useCORS: true, 
+                backgroundColor: '#f8fafc'
+            }).then(canvas => {
+                const a = document.createElement('a'); a.href = canvas.toDataURL("image/png");
+                a.download = `screenshot_${Date.now()}.png`; a.click();
+                
+                // 4. [復原] 移除替身，顯示原本的 textarea
+                clones.forEach(item => {
+                    item.div.remove();
+                    item.textarea.style.display = '';
+                });
+                document.body.classList.remove('taking-screenshot');
+
+            }).catch(err => {
+                console.error(err);
+                alert('截圖失敗，請重試');
+                
+                // 發生錯誤也要復原
+                clones.forEach(item => {
+                    item.div.remove();
+                    item.textarea.style.display = '';
+                });
+                document.body.classList.remove('taking-screenshot');
+            });
         }
 
-        // --- 視圖切換邏輯 ---
+        // --- Tooltip & 視圖切換 & AI ---
+        function showTooltip(e, text) {
+            tooltip.innerText = text; tooltip.style.display = 'block'; updateTooltipPos(e);
+        }
+        function hideTooltip() { tooltip.style.display = 'none'; }
+        function updateTooltipPos(e) {
+            const offset = 15; let left = e.clientX + offset; let top = e.clientY + offset;
+            if (left + tooltip.offsetWidth > window.innerWidth) left = e.clientX - tooltip.offsetWidth - offset;
+            if (top + tooltip.offsetHeight > window.innerHeight) top = e.clientY - tooltip.offsetHeight - offset;
+            tooltip.style.left = left + 'px'; tooltip.style.top = top + 'px';
+        }
+
         function toggleChronicleView() {
-            if (currentView === 'chronicle') {
-                resetToTimeline();
-            } else {
+            if (currentView === 'chronicle') resetToTimeline();
+            else {
                 if (currentView === 'gantt') document.getElementById('ganttBtn').classList.remove('active');
-                
                 document.getElementById('container').style.display = 'none';
                 document.getElementById('chronicle-view').style.display = 'block';
                 document.getElementById('gantt-view').style.display = 'none';
                 document.getElementById('mainAddBtn').style.display = 'none';
                 document.body.classList.remove('view-gantt');
-                
-                renderChronicle(); 
-                currentView = 'chronicle';
+                renderChronicle(); currentView = 'chronicle';
                 document.getElementById('chronicleBtn').classList.add('highlight');
             }
         }
 
         function toggleGanttView() {
             const btn = document.getElementById('ganttBtn');
-            if (currentView === 'gantt') {
-                resetToTimeline();
-            } else {
+            if (currentView === 'gantt') resetToTimeline();
+            else {
                 if (currentView === 'chronicle') document.getElementById('chronicleBtn').classList.remove('highlight');
-
                 document.getElementById('container').style.display = 'none';
                 document.getElementById('chronicle-view').style.display = 'none';
                 document.getElementById('gantt-view').style.display = 'block';
                 document.getElementById('mainAddBtn').style.display = 'none';
                 document.body.classList.add('view-gantt');
-                
-                renderGantt(); 
-                currentView = 'gantt';
+                renderGantt(); currentView = 'gantt';
                 btn.classList.add('active');
             }
         }
@@ -1149,77 +1259,51 @@
             document.getElementById('gantt-view').style.display = 'none';
             document.getElementById('mainAddBtn').style.display = 'block';
             document.body.classList.remove('view-gantt');
-            
             document.getElementById('chronicleBtn').classList.remove('highlight');
             document.getElementById('ganttBtn').classList.remove('active');
             currentView = 'timeline';
         }
 
-        function changeScale(val) {
-            currentScale = val;
-            if (currentView === 'gantt') renderGantt();
-        }
+        function changeScale(val) { currentScale = val; if (currentView === 'gantt') renderGantt(); }
 
         function getMidnightTime(dateStr) {
-            if(!dateStr) return null;
-            const parts = dateStr.split('-');
-            if (parts.length < 3) return null; 
-            const y = parseInt(parts[0]);
-            const m = parseInt(parts[1]);
-            const d = parseInt(parts[2]);
-            if (isNaN(y) || isNaN(m) || isNaN(d)) return null;
-            return new Date(y, m-1, d, 0, 0, 0).getTime();
+            if(!dateStr) return null; const parts = dateStr.split('-'); if (parts.length < 3) return null; 
+            const y = parseInt(parts[0]); const m = parseInt(parts[1]); const d = parseInt(parts[2]);
+            if (isNaN(y) || isNaN(m) || isNaN(d)) return null; return new Date(y, m-1, d, 0, 0, 0).getTime();
         }
 
-        // --- 渲染：垂直大事紀 ---
         function renderChronicle() {
-            const container = document.getElementById('vTimeline'); 
-            container.innerHTML = '';
-            
+            const container = document.getElementById('vTimeline'); container.innerHTML = '';
             let data = gatherData().filter(i => !i.isMemo && (i.date_single || i.date_start));
             if (activeProjectFilters.size > 0) data = data.filter(i => activeProjectFilters.has(i.project));
             if (currentSearchKeyword) {
                 const kw = currentSearchKeyword.toLowerCase();
                 data = data.filter(i => (i.content + i.label + i.project).toLowerCase().includes(kw));
             }
-            
             if(data.length === 0) { container.innerHTML='<div style="text-align:center;padding:20px;color:#999">無有效日期資料</div>'; return; }
-
             const parsed = data.map(item => {
                 let s = getMidnightTime(item.mode==='range'?item.date_start:item.date_single);
                 let e = getMidnightTime(item.mode==='range'?item.date_end:item.date_single);
                 if(!s && e) s=e; if(s && !e) e=s; if(e<s) e=s;
                 return { ...item, start: s, end: e };
             }).filter(item => item.start !== null).sort((a,b) => a.start - b.start);
-
-            const grouped = {};
-            const activeRanges = []; 
+            const grouped = {}; const activeRanges = []; 
             parsed.forEach(item => {
                 let conflictMsg = '';
-                for(let r of activeRanges) {
-                    if(item.start < r.end) { conflictMsg = `⚡ 與 [${r.label}] 重疊`; break; }
-                }
-                for(let i=activeRanges.length-1; i>=0; i--) {
-                    if(activeRanges[i].end <= item.start) activeRanges.splice(i, 1);
-                }
+                for(let r of activeRanges) { if(item.start < r.end) { conflictMsg = `⚡ 與 [${r.label}] 重疊`; break; } }
+                for(let i=activeRanges.length-1; i>=0; i--) { if(activeRanges[i].end <= item.start) activeRanges.splice(i, 1); }
                 activeRanges.push({ end: item.end, label: item.label });
-
                 const sDateStr = item.date_start || item.date_single;
-                if(!grouped[sDateStr]) grouped[sDateStr] = [];
-                grouped[sDateStr].push({ ...item, conflictMsg });
+                if(!grouped[sDateStr]) grouped[sDateStr] = []; grouped[sDateStr].push({ ...item, conflictMsg });
             });
-
             let html = '<div class="chronicle-line"></div>'; 
             Object.keys(grouped).sort().forEach(dateKey => {
-                const items = grouped[dateKey];
-                const d = new Date(dateKey);
+                const items = grouped[dateKey]; const d = new Date(dateKey);
                 const dateHtml = `<div class="date-pill">${d.getFullYear()}年<br>${d.getMonth()+1}月${d.getDate()}日</div>`;
-                
                 let contentHtml = '';
                 items.forEach(item => {
                     const projTag = item.project ? `<span class="proj-tag-clean">#${item.project}</span>` : '';
-                    let rangeBadge = '';
-                    let days = 1;
+                    let rangeBadge = ''; let days = 1;
                     if (item.mode === 'range' && item.date_end) {
                         const ed = new Date(item.date_end);
                         rangeBadge = `<span class="range-end-badge">➡ ${ed.getMonth()+1}/${ed.getDate()} 結束</span>`;
@@ -1228,256 +1312,76 @@
                     const conflictBadge = item.conflictMsg ? `<span class="overlap-badge">${item.conflictMsg}</span>` : '';
                     const barWidthPct = Math.min(100, days * 3);
                     const colorMap = { blue:'#4f46e5', green:'#10b981', red:'#ef4444', yellow:'#f59e0b' };
-                    
-                    contentHtml += `
-                        <div class="chronicle-item-card" data-color="${item.color}">
-                            <div>${projTag}<span class="chronicle-title" style="display:inline;">${item.label}${rangeBadge}${conflictBadge}</span></div>
-                            <div class="chronicle-desc">${item.content}</div>
-                            <div class="duration-bar-container"><div class="duration-bar-fill" style="width:${barWidthPct}%; background:${colorMap[item.color]||'#4f46e5'}"></div></div>
-                            <div class="duration-text">工期: ${days} 天</div>
-                        </div>`;
+                    contentHtml += `<div class="chronicle-item-card" data-color="${item.color}"><div>${projTag}<span class="chronicle-title" style="display:inline;">${item.label}${rangeBadge}${conflictBadge}</span></div><div class="chronicle-desc">${item.content}</div><div class="duration-bar-container"><div class="duration-bar-fill" style="width:${barWidthPct}%; background:${colorMap[item.color]||'#4f46e5'}"></div></div><div class="duration-text">工期: ${days} 天</div></div>`;
                 });
                 html += `<div class="chronicle-row"><div class="chronicle-date-col">${dateHtml}</div><div class="chronicle-dot-col"><div class="chronicle-dot" data-color="blue" style="border-color:#94a3b8"></div></div><div class="chronicle-content-col">${contentHtml}</div></div>`;
             });
             container.innerHTML = html;
         }
 
-        // --- 渲染：動態修正版甘特圖 ---
         function renderGantt() {
             const chart = document.getElementById('ganttChart'); chart.innerHTML='';
-            
             let data = gatherData().filter(i => !i.isMemo && (i.date_single || i.date_start));
             if (activeProjectFilters.size > 0) data = data.filter(i => activeProjectFilters.has(i.project));
             if (currentSearchKeyword) {
                 const kw = currentSearchKeyword.toLowerCase();
                 data = data.filter(i => (i.content + i.label + i.project).toLowerCase().includes(kw));
             }
-            
             if(data.length === 0) { chart.innerHTML='<div style="text-align:center;padding:20px;color:#999">無有效日期資料</div>'; return; }
-
             const parsed = data.map(d => {
                 let s = getMidnightTime(d.mode==='range' ? d.date_start : d.date_single);
                 let e = getMidnightTime(d.mode==='range' ? d.date_end : d.date_single);
                 if(!s && e) s=e; if(s && !e) e=s; if(e<s) e=s;
                 return { ...d, start: s, end: e };
             }).filter(d => d.start !== null);
-
             const dayMs = 86400000;
             let minT = Math.min(...parsed.map(p=>p.start)) - (dayMs * 2);
             let maxT = Math.max(...parsed.map(p=>p.end)) + (dayMs * 2);
             const plotDur = maxT - minT;
-            
             let minPxPerDay = 50;
-            if (currentScale === 'week') minPxPerDay = 20; 
-            else if (currentScale === 'month') minPxPerDay = 10; 
-
-            const totalDays = Math.ceil(plotDur / dayMs);
-            const totalWidth = Math.max(800, totalDays * minPxPerDay); 
+            if (currentScale === 'week') minPxPerDay = 20; else if (currentScale === 'month') minPxPerDay = 10; 
+            const totalDays = Math.ceil(plotDur / dayMs); const totalWidth = Math.max(800, totalDays * minPxPerDay); 
             const axisAreaStyle = `width: ${totalWidth}px; min-width: 100%; box-sizing: content-box;`;
-            
             const grouped = {};
             parsed.forEach(item => { const pName = item.project || '未分類'; if(!grouped[pName]) grouped[pName] = []; grouped[pName].push(item); });
-
             let headerAxisHtml = ''; let gridHtml = '';
-            
             for (let t = minT; t <= maxT; t += dayMs) {
-                const d = new Date(t); d.setHours(0,0,0,0);
-                const pct = ((d.getTime() - minT) / plotDur) * 100;
-                
-                let showLabel = false;
-                let showLine = false;
-                let labelText = '';
-
-                if (currentScale === 'day') {
-                    showLine = true;
-                    showLabel = true;
-                    labelText = `${d.getMonth()+1}/${d.getDate()}`;
-                } else if (currentScale === 'week') {
-                    if (d.getDay() === 1) { 
-                        showLine = true; 
-                        showLabel = true;
-                        labelText = `${d.getMonth()+1}/${d.getDate()}`;
-                    }
-                } else if (currentScale === 'month') {
-                    if (d.getDate() === 1) { 
-                        showLine = true; 
-                        showLabel = true;
-                        labelText = `${d.getMonth()+1}月`;
-                    }
-                }
-
+                const d = new Date(t); d.setHours(0,0,0,0); const pct = ((d.getTime() - minT) / plotDur) * 100;
+                let showLabel = false; let showLine = false; let labelText = '';
+                if (currentScale === 'day') { showLine = true; showLabel = true; labelText = `${d.getMonth()+1}/${d.getDate()}`; }
+                else if (currentScale === 'week') { if (d.getDay() === 1) { showLine = true; showLabel = true; labelText = `${d.getMonth()+1}/${d.getDate()}`; } }
+                else if (currentScale === 'month') { if (d.getDate() === 1) { showLine = true; showLabel = true; labelText = `${d.getMonth()+1}月`; } }
                 if(pct >= 0 && pct <= 100) {
                     if (showLabel) headerAxisHtml += `<div class="gantt-header-mark" style="left:${pct}%;"><span>${labelText}</span></div>`;
                     if (showLine) gridHtml += `<div class="gantt-grid-line" style="left:${pct}%;"></div>`;
                 }
             }
-
             const headerHtml = `<div class="gantt-header-row" style="width: fit-content; min-width: 100%;"><div class="gantt-axis-area" style="${axisAreaStyle}">${headerAxisHtml}</div></div>`;
-
             let rowsHtml = '';
             Object.keys(grouped).sort().forEach(pName => {
-                const items = grouped[pName].sort((a,b) => a.start - b.start);
-                const tracks = [];
+                const items = grouped[pName].sort((a,b) => a.start - b.start); const tracks = [];
                 items.forEach(item => {
                     let placed = false;
-                    for(let i=0; i<tracks.length; i++) {
-                        if (tracks[i] + dayMs <= item.start) { item.trackIndex = i; tracks[i] = item.end; placed = true; break; }
-                    }
+                    for(let i=0; i<tracks.length; i++) { if (tracks[i] + dayMs <= item.start) { item.trackIndex = i; tracks[i] = item.end; placed = true; break; } }
                     if (!placed) { item.trackIndex = tracks.length; tracks.push(item.end); }
                 });
-
-                const rowHeight = Math.max(50, tracks.length * 30 + 20); 
-                let barsHtml = '';
+                const rowHeight = Math.max(50, tracks.length * 30 + 20); let barsHtml = '';
                 items.forEach(item => {
-                    let sPct = ((item.start - minT) / plotDur) * 100;
-                    let ePct = ((item.end + dayMs - minT) / plotDur) * 100;
+                    let sPct = ((item.start - minT) / plotDur) * 100; let ePct = ((item.end + dayMs - minT) / plotDur) * 100;
                     let widthPct = ePct - sPct; if(widthPct < 0.2) widthPct = 0.2;
                     const topPos = item.trackIndex * 30 + 10; 
-                    
                     const fullLabel = item.project ? `[${item.project}] ${item.label}` : item.label;
                     const tooltipText = `${fullLabel} (${item.date_single || (item.date_start + ' ~ ' + item.date_end)})`;
-                    
                     barsHtml += `<div class="gantt-bar-clean" data-color="${item.color}" onmouseenter="showTooltip(event, '${tooltipText}')" onmousemove="updateTooltipPos(event)" onmouseleave="hideTooltip()" style="left:${sPct}%; width:${widthPct}%; top:${topPos}px;">${fullLabel}</div>`;
                 });
-
                 rowsHtml += `<div class="gantt-row" style="height:${rowHeight}px; width: fit-content; min-width: 100%;"><div class="gantt-axis-area" style="${axisAreaStyle}">${gridHtml}${barsHtml}</div></div>`;
             });
-
             chart.innerHTML = `<div style="display:inline-block; min-width:100%;">${headerHtml}${rowsHtml}</div>`;
         }
 
-        // --- 其他工具 ---
-        function toggleToolbox() {
-            const box = document.getElementById('toolboxContainer');
-            box.classList.toggle('closed');
-            const btn = box.querySelector('.toolbox-toggle-btn');
-            btn.innerText = box.classList.contains('closed') ? '▶' : '◀';
-        }
-        
-        function filterNodes(kw) {
-            currentSearchKeyword = kw;
-            applyFilter();
-        }
-        
-        function toggleProjectBar() {
-            const bar = document.getElementById('project-bar');
-            bar.classList.toggle('show');
-            document.body.classList.toggle('has-proj-bar');
-            refreshProjectBar();
-        }
-
-        function refreshProjectBar() {
-            const data = gatherData();
-            const projects = new Set(data.map(i=>i.project).filter(p=>p));
-            let html = '<div class="proj-badge" onclick="resetFilter()" style="background:#334155;color:white;border:none;">全部顯示</div>';
-            projects.forEach(p => {
-                const active = activeProjectFilters.has(p) ? 'active' : '';
-                html += `<div class="proj-badge ${active}" onclick="toggleFilter('${p}')">${p}</div>`;
-            });
-            projectBar.innerHTML = html;
-        }
-
-        function toggleFilter(p) {
-            if (activeProjectFilters.has(p)) activeProjectFilters.delete(p);
-            else activeProjectFilters.add(p);
-            applyFilter();
-        }
-        function resetFilter() { activeProjectFilters.clear(); currentSearchKeyword = ''; document.querySelector('.search-input').value = ''; applyFilter(); }
-        
-        function applyFilter() {
-            refreshProjectBar();
-            const kw = currentSearchKeyword.toLowerCase();
-            const items = document.querySelectorAll('.timeline-item');
-            
-            items.forEach(item => {
-                const p = item.querySelector('.footer-project-input').value;
-                const text = item.innerText.toLowerCase();
-                const inputContent = item.querySelector('.content').innerHTML.toLowerCase(); 
-                const label = item.querySelector('.label-input').value.toLowerCase();
-                
-                const matchProject = (activeProjectFilters.size === 0 || activeProjectFilters.has(p));
-                const matchKeyword = !kw || text.includes(kw) || inputContent.includes(kw) || label.includes(kw) || p.toLowerCase().includes(kw);
-
-                if(matchProject && matchKeyword) item.classList.remove('hidden-by-filter');
-                else item.classList.add('hidden-by-filter');
-            });
-            
-            if(currentView === 'chronicle') renderChronicle();
-            if(currentView === 'gantt') renderGantt();
-        }
-
-        function togglePresentation() {
-            if (currentView !== 'timeline') resetToTimeline();
-            const body = document.body;
-            body.classList.toggle('presentation-mode');
-            if(body.classList.contains('presentation-mode')) alert('進入簡報模式 (ESC 退出)');
-        }
-        document.addEventListener('keydown', function(event) { if (event.key === "Escape" && document.body.classList.contains('presentation-mode')) togglePresentation(); });
-        
-        function renderFromData(data) { container.innerHTML = ''; data.forEach(item => container.appendChild(createNodeElement(item))); }
-        function renderNotes(n){document.querySelectorAll('.sticky-note').forEach(e=>e.remove());n.forEach(x=>createStickyElement(x));}
-        function renderStickers(s){document.querySelectorAll('.sticker').forEach(e=>e.remove());s.forEach(x=>createStickerElement(x));}
-
-        function downloadJSON() {
-            const data = {
-                items: gatherData(), notes: gatherNotes(), stickers: gatherStickers()
-            };
-            const blob = new Blob([JSON.stringify(data.items)], {type: 'application/json'});
-            const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-            a.download = `project_backup_${getTodayString()}.json`; a.click();
-        }
-        function loadJSON(input) {
-            const file = input.files[0]; if(!file) return;
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const json = JSON.parse(e.target.result);
-                    if(Array.isArray(json)) renderFromData(json);
-                    else { renderFromData(json.items); renderNotes(json.notes); renderStickers(json.stickers); }
-                    autoSave(); alert('讀取成功');
-                } catch(err){ alert('格式錯誤'); }
-            }; reader.readAsText(file);
-        }
-        function exportToCSV() {
-            let csv = '\uFEFF專案,標題,日期,狀態,內容\n';
-            gatherData().forEach(i => {
-                csv += `"${i.project}","${i.label}","${i.date_single||(i.date_start+'~'+i.date_end)}","${['灰','黃','綠','紅'][i.status]}","${i.content.replace(/"/g, '""')}"\n`;
-            });
-            const blob = new Blob([csv], {type: 'text/csv'});
-            const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-            a.download = `project_export_${getTodayString()}.csv`; a.click();
-        }
-        function takeScreenshot() {
-            if (typeof html2canvas === 'undefined') {
-                alert('截圖功能需要網路載入元件，請檢查您的網路連線。');
-                return;
-            }
-            html2canvas(document.body).then(canvas => {
-                const a = document.createElement('a'); a.href = canvas.toDataURL("image/png");
-                a.download = `screenshot_${Date.now()}.png`; a.click();
-            });
-        }
-
-        // 補上的 AI 工具列功能
-        function enterAIMode() {
-            document.body.classList.add('ai-selecting');
-            document.getElementById('normal-toolbar').style.display = 'none';
-            document.getElementById('ai-toolbar').style.display = 'flex';
-        }
-
-        function exitAIMode() {
-            document.body.classList.remove('ai-selecting');
-            document.getElementById('normal-toolbar').style.display = 'flex';
-            document.getElementById('ai-toolbar').style.display = 'none';
-            document.querySelectorAll('.select-chk').forEach(chk => chk.checked = false);
-        }
-
-        function selectAllAI() {
-            const chks = document.querySelectorAll('.select-chk');
-            const allChecked = Array.from(chks).every(c => c.checked);
-            chks.forEach(chk => chk.checked = !allChecked);
-        }
-
+        function enterAIMode() { document.body.classList.add('ai-selecting'); document.getElementById('normal-toolbar').style.display = 'none'; document.getElementById('ai-toolbar').style.display = 'flex'; }
+        function exitAIMode() { document.body.classList.remove('ai-selecting'); document.getElementById('normal-toolbar').style.display = 'flex'; document.getElementById('ai-toolbar').style.display = 'none'; document.querySelectorAll('.select-chk').forEach(chk => chk.checked = false); }
+        function selectAllAI() { const chks = document.querySelectorAll('.select-chk'); const allChecked = Array.from(chks).every(c => c.checked); chks.forEach(chk => chk.checked = !allChecked); }
         function confirmAIOutput() {
             const selectedItems = [];
             document.querySelectorAll('.timeline-item').forEach(item => {
@@ -1487,20 +1391,9 @@
                     selectedItems.push(`【${label}】\n${content}`);
                 }
             });
-
-            if(selectedItems.length === 0) {
-                alert('未選擇任何項目');
-                return;
-            }
-
+            if(selectedItems.length === 0) { alert('未選擇任何項目'); return; }
             const textToProcess = selectedItems.join('\n\n----------------\n\n');
-            navigator.clipboard.writeText(textToProcess).then(() => {
-                alert(`已將 ${selectedItems.length} 個項目的內容複製到剪貼簿！\n您可以貼給 AI 進行分析。`);
-                exitAIMode();
-            }).catch(err => {
-                console.error('複製失敗:', err);
-                alert('複製失敗，請查看控制台');
-            });
+            navigator.clipboard.writeText(textToProcess).then(() => { alert(`已將 ${selectedItems.length} 個項目的內容複製到剪貼簿！`); exitAIMode(); }).catch(err => { console.error('複製失敗:', err); });
         }
 
         init();
