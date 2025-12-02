@@ -3,413 +3,184 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>專案神器 V72 (完整修復版)</title>
+    <title>報告整理工具</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
-        :root {
-            --primary: #4f46e5;
-            --bg: #f8fafc;
-            --text: #1f2937;
-            --font-stack: "Microsoft JhengHei", "Heiti TC", sans-serif; 
-        }
-
+        :root { --primary: #4f46e5; --bg: #f8fafc; --text: #1f2937; --font-stack: "Microsoft JhengHei", "Heiti TC", sans-serif; }
         * { box-sizing: border-box; }
+        body { font-family: var(--font-stack); background-color: var(--bg); color: var(--text); margin: 0; padding: 0; min-height: 100vh; overflow-x: hidden; }
 
-        body {
-            font-family: var(--font-stack);
-            background-color: var(--bg);
-            color: var(--text);
-            margin: 0;
-            padding: 0;
-            position: relative; 
-            min-height: 100vh;
-            overflow-x: hidden;
+        /* --- 🚦 紅綠燈存檔指示 --- */
+        #save-light { position: fixed; bottom: 20px; left: 20px; width: 14px; height: 14px; border-radius: 50%; background-color: #22c55e; box-shadow: 0 0 8px #22c55e; z-index: 9999; transition: all 0.3s ease; cursor: help; }
+        #save-light.unsaved { background-color: #ef4444; box-shadow: 0 0 8px #ef4444; animation: pulse-red 1s infinite; }
+        @keyframes pulse-red { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.9); } 100% { opacity: 1; transform: scale(1); } }
+
+        /* --- 📋 貼上選擇對話框 (New) --- */
+        #paste-dialog {
+            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5); z-index: 5000; align-items: center; justify-content: center;
+            backdrop-filter: blur(3px);
         }
-
-        /* --- 🚦 左下角紅綠燈號 --- */
-        #save-light {
-            position: fixed;
-            bottom: 20px;
-            left: 20px;
-            width: 14px;
-            height: 14px;
-            border-radius: 50%;
-            background-color: #22c55e; /* 預設綠燈 */
-            box-shadow: 0 0 8px #22c55e;
-            z-index: 9999;
-            transition: all 0.3s ease;
-            cursor: help;
+        .paste-modal {
+            background: white; padding: 25px; border-radius: 12px; width: 340px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2); text-align: center;
+            border: 1px solid #e2e8f0; animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
-
-        #save-light.unsaved {
-            background-color: #ef4444; /* 紅燈 */
-            box-shadow: 0 0 8px #ef4444;
-            animation: pulse-red 1s infinite;
+        @keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .paste-title { font-size: 1.1rem; font-weight: bold; margin-bottom: 5px; color: #1e293b; }
+        .paste-desc { font-size: 0.9rem; color: #64748b; margin-bottom: 20px; }
+        .paste-btn-group { display: flex; flex-direction: column; gap: 10px; }
+        .paste-btn {
+            padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; background: white;
+            cursor: pointer; font-weight: bold; color: #475569; display: flex; align-items: center; justify-content: center; gap: 10px; transition: 0.2s;
         }
+        .paste-btn:hover { border-color: #3b82f6; color: #3b82f6; background: #eff6ff; }
+        .paste-btn.disabled { opacity: 0.5; cursor: not-allowed; background: #f1f5f9; border-color: #e2e8f0; color: #94a3b8; }
+        .paste-cancel { margin-top: 15px; font-size: 0.9rem; color: #94a3b8; cursor: pointer; text-decoration: underline; background: none; border: none; }
 
-        @keyframes pulse-red {
-            0% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.4; transform: scale(0.9); }
-            100% { opacity: 1; transform: scale(1); }
-        }
-
-        /* --- 頂部工具列 --- */
-        .toolbar {
-            position: fixed; top: 0; left: 0; right: 0;
-            background: #1e293b; color: white; padding: 10px 20px;
-            display: flex; justify-content: space-between; align-items: center;
-            z-index: 2000; box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-            height: 60px;
-        }
-
+        /* --- 工具列 --- */
+        .toolbar { position: fixed; top: 0; left: 0; right: 0; background: #1e293b; color: white; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; z-index: 2000; height: 60px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
         .tool-left { display: flex; align-items: center; gap: 15px; flex-shrink: 0; }
         .tool-right { display: flex; align-items: center; gap: 10px; margin-left: auto; }
-
         .tool-title { font-weight: bold; font-size: 1.1rem; display: flex; align-items: center; gap: 10px; }
         
         .search-box { position: relative; display: flex; align-items: center; gap: 10px; }
-        .search-input {
-            background: #334155; border: 1px solid #475569; color: white;
-            padding: 6px 10px 6px 30px; border-radius: 20px; font-size: 0.9rem;
-            width: 120px; transition: width 0.3s; outline: none;
-        }
+        .search-input { background: #334155; border: 1px solid #475569; color: white; padding: 6px 10px 6px 30px; border-radius: 20px; font-size: 0.9rem; width: 120px; transition: width 0.3s; outline: none; }
         .search-input:focus { width: 180px; border-color: #3b82f6; }
         .search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); opacity: 0.6; font-size: 12px; }
         
         .tool-btn-group { display: flex; gap: 8px; overflow-x: auto; padding-right: 10px; align-items: center; height: 100%; border-right: 1px solid #475569; margin-right: 10px; }
         .tool-btn-group::-webkit-scrollbar { display: none; }
-        
-        .tool-btn {
-            background: transparent; border: 1px solid #475569; color: #e2e8f0; 
-            padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.9rem;
-            display: flex; align-items: center; gap: 6px; transition: 0.2s; white-space: nowrap; flex-shrink: 0;
-        }
+        .tool-btn { background: transparent; border: 1px solid #475569; color: #e2e8f0; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; gap: 6px; transition: 0.2s; white-space: nowrap; flex-shrink: 0; }
         .tool-btn:hover { background: rgba(255,255,255,0.1); border-color: white; color: white; }
         .tool-btn.highlight { border-color: #a78bfa; color: #a78bfa; }
         .tool-btn.camera-btn { border-color: #34d399; color: #34d399; }
         .tool-btn.danger-btn { border-color: #f87171; color: #f87171; }
         .tool-btn.ai-btn { border-color: #c084fc; color: #c084fc; }
         .tool-btn.filter-btn { border-color: #d97706; color: #fbbf24; }
-        
-        /* 甘特圖按鈕樣式 */
-        .gantt-switch-btn {
-            background: #fbbf24; color: #78350f; border: none;
-            padding: 6px 16px; border-radius: 20px; font-weight: bold;
-            cursor: pointer; box-shadow: 0 0 10px rgba(251, 191, 36, 0.5);
-            transition: 0.2s; display: flex; align-items: center; gap: 5px;
-        }
+
+        .gantt-switch-btn { background: #fbbf24; color: #78350f; border: none; padding: 6px 16px; border-radius: 20px; font-weight: bold; cursor: pointer; box-shadow: 0 0 10px rgba(251, 191, 36, 0.5); transition: 0.2s; display: flex; align-items: center; gap: 5px; }
         .gantt-switch-btn:hover { background: #f59e0b; transform: scale(1.05); }
         .gantt-switch-btn.active { background: #fff; color: #d97706; box-shadow: inset 0 2px 4px rgba(0,0,0,0.1); }
-
-        .view-select {
-            background: #334155; border: 1px solid #475569; color: white;
-            padding: 6px 10px; border-radius: 4px; font-size: 0.9rem; cursor: pointer; outline: none;
-            display: none; 
-        }
+        .view-select { background: #334155; border: 1px solid #475569; color: white; padding: 6px 10px; border-radius: 4px; font-size: 0.9rem; cursor: pointer; outline: none; display: none; }
         body.view-gantt .view-select { display: inline-block; }
 
         #ai-toolbar { display: none; }
         body.ai-selecting #normal-toolbar { display: none; }
         body.ai-selecting #ai-toolbar { display: flex; }
-        
-        /* 專案過濾列 */
-        #project-bar {
-            position: fixed; top: 60px; left: 0; right: 0;
-            background: #f8fafc; border-bottom: 1px solid #e2e8f0;
-            padding: 10px 20px; z-index: 1950;
-            display: none; flex-wrap: wrap; gap: 10px; 
-            max-height: 120px; overflow-y: auto;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); align-items: center;
-        }
+
+        /* 專案過濾與工具箱 */
+        #project-bar { position: fixed; top: 60px; left: 0; right: 0; background: #f8fafc; border-bottom: 1px solid #e2e8f0; padding: 10px 20px; z-index: 1950; display: none; flex-wrap: wrap; gap: 10px; max-height: 120px; overflow-y: auto; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); align-items: center; }
         #project-bar.show { display: flex; }
-        
-        .proj-badge {
-            font-size: 0.85rem; padding: 4px 12px; border-radius: 20px; cursor: pointer;
-            background: white; border: 1px solid #cbd5e1; color: #64748b; transition: 0.2s;
-            display: flex; align-items: center; gap: 5px; user-select: none;
-        }
+        .proj-badge { font-size: 0.85rem; padding: 4px 12px; border-radius: 20px; cursor: pointer; background: white; border: 1px solid #cbd5e1; color: #64748b; transition: 0.2s; display: flex; align-items: center; gap: 5px; user-select: none; }
         .proj-badge:hover { background: #f1f5f9; border-color: #94a3b8; }
         .proj-badge.active { background: #dbeafe; border-color: #3b82f6; color: #2563eb; font-weight: bold; }
 
-        /* 左側圖形工具箱 */
-        .toolbox-container {
-            position: fixed; top: 200px; left: 20px; z-index: 1800;
-            transition: transform 0.3s ease;
-        }
+        .toolbox-container { position: fixed; top: 200px; left: 20px; z-index: 1800; transition: transform 0.3s ease; }
         .toolbox-container.closed { transform: translateX(-140%); }
-
-        .toolbox {
-            width: 70px; background: white; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            display: flex; flex-direction: column; gap: 5px; padding: 10px 5px;
-            align-items: center; position: relative; border: 1px solid #e2e8f0;
-        }
-
-        .toolbox-toggle-btn {
-            position: absolute; top: 0; right: -24px;
-            width: 24px; height: 40px;
-            background: #3b82f6; color: white;
-            border-top-right-radius: 8px; border-bottom-right-radius: 8px;
-            display: flex; align-items: center; justify-content: center;
-            cursor: pointer; box-shadow: 2px 2px 5px rgba(0,0,0,0.1); font-size: 14px;
-        }
-
+        .toolbox { width: 70px; background: white; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); display: flex; flex-direction: column; gap: 5px; padding: 10px 5px; align-items: center; position: relative; border: 1px solid #e2e8f0; }
+        .toolbox-toggle-btn { position: absolute; top: 0; right: -24px; width: 24px; height: 40px; background: #3b82f6; color: white; border-top-right-radius: 8px; border-bottom-right-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 2px 2px 5px rgba(0,0,0,0.1); font-size: 14px; }
         .toolbox-header { font-size: 0.75rem; color: #64748b; font-weight:bold; margin: 5px 0 2px 0; border-bottom: 1px solid #eee; width: 100%; text-align: center; }
-        .tool-item {
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            width: 50px; padding: 5px 0; cursor: pointer; border-radius: 6px; transition: 0.2s;
-            border: 1px solid transparent;
-        }
+        .tool-item { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 50px; padding: 5px 0; cursor: pointer; border-radius: 6px; transition: 0.2s; border: 1px solid transparent; }
         .tool-item:hover { background: #f1f5f9; border-color: #cbd5e1; }
         .tool-icon { font-size: 1.2rem; line-height: 1; margin-bottom: 2px; }
         .tool-text { font-size: 0.7rem; color: #475569; }
 
-        /* 便利貼與貼紙 */
-        .sticky-note {
-            position: absolute; width: 180px; min-height: 160px;
-            background: #fef3c7; border: 1px solid #d97706;
-            box-shadow: 3px 3px 10px rgba(0,0,0,0.2);
-            z-index: 1500; display: flex; flex-direction: column;
-            transform: rotate(-1deg); border-radius: 2px;
-        }
-        .note-header {
-            height: 24px; background: rgba(0,0,0,0.05); cursor: move;
-            display: flex; justify-content: flex-end; align-items: center; padding: 0 5px;
-        }
+        /* 物件樣式 */
+        .sticky-note { position: absolute; width: 180px; min-height: 160px; background: #fef3c7; border: 1px solid #d97706; box-shadow: 3px 3px 10px rgba(0,0,0,0.2); z-index: 1500; display: flex; flex-direction: column; transform: rotate(-1deg); border-radius: 2px; }
+        .note-header { height: 24px; background: rgba(0,0,0,0.05); cursor: move; display: flex; justify-content: flex-end; align-items: center; padding: 0 5px; }
         .note-close { cursor: pointer; color: #78350f; font-weight: bold; font-size: 16px; padding: 0 5px; }
-        .note-content {
-            flex: 1; background: transparent; border: none; resize: none;
-            padding: 10px; font-family: inherit; outline: none; font-size: 1rem; color: #451a03;
-        }
+        .note-content { flex: 1; background: transparent; border: none; resize: none; padding: 10px; font-family: inherit; outline: none; font-size: 1rem; color: #451a03; }
         
-        .sticker {
-            position: absolute; z-index: 1500; cursor: move;
-            display: inline-block;
-        }
-        .sticker[data-type^="arrow"], .sticker[data-type^="circle"], .sticker[data-type^="rect"] {
-            width: 80px; height: 80px;
-        }
-        .sticker[data-type="image"] {
-            width: auto; height: auto; max-width: 400px;
-        }
-        .sticker img { 
-            max-width: 100%; height: auto; border-radius: 4px; box-shadow: 0 4px 8px rgba(0,0,0,0.3); 
-            pointer-events: none; 
-        }
+        .sticker { position: absolute; z-index: 1500; cursor: move; display: inline-block; }
+        .sticker[data-type^="arrow"], .sticker[data-type^="circle"], .sticker[data-type^="rect"] { width: 80px; height: 80px; }
+        .sticker[data-type="image"] { width: auto; height: auto; max-width: 400px; }
+        .sticker img { max-width: 100%; height: auto; border-radius: 4px; box-shadow: 0 4px 8px rgba(0,0,0,0.3); pointer-events: none; }
         .sticker svg { width: 100%; height: 100%; drop-shadow: 2px 2px 2px rgba(0,0,0,0.2); pointer-events: none; }
-        
-        .sticker-del {
-            position: absolute; top: -10px; right: -10px; width: 24px; height: 24px;
-            background: #ef4444; color: white; font-size: 14px; border-radius: 50%;
-            display: none; align-items: center; justify-content: center; cursor: pointer;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2); z-index: 1501;
-            border: 2px solid white;
-        }
-        
-        /* 通用縮放手把樣式 */
-        .resize-handle {
-            position: absolute; bottom: -5px; right: -5px;
-            width: 16px; height: 16px; background: white;
-            border: 1px solid #64748b; border-radius: 50%;
-            cursor: se-resize; z-index: 1502; display: none;
-            color: #64748b; font-size: 10px; line-height: 14px; text-align: center;
-        }
+        .sticker-del { position: absolute; top: -10px; right: -10px; width: 24px; height: 24px; background: #ef4444; color: white; font-size: 14px; border-radius: 50%; display: none; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.2); z-index: 1501; border: 2px solid white; }
+        .resize-handle { position: absolute; bottom: -5px; right: -5px; width: 16px; height: 16px; background: white; border: 1px solid #64748b; border-radius: 50%; cursor: se-resize; z-index: 1502; display: none; color: #64748b; font-size: 10px; line-height: 14px; text-align: center; }
 
         .sticker:hover { outline: 2px dashed #3b82f6; }
         .sticker:hover .sticker-del { display: flex; }
         .sticker:hover .resize-handle { display: block; }
         .sticky-note:hover .resize-handle { display: block; }
-        
         .card:hover .resize-handle { display: block; }
         .card .resize-handle { bottom: 2px; right: 2px; z-index: 50; }
 
-        /* 📸 截圖專用樣式 */
-        body.taking-screenshot .card, 
-        body.taking-screenshot .sticky-note, 
-        body.taking-screenshot .sticker {
-            box-shadow: none !important; 
-            transform: none !important; 
-            border: 1px solid #cbd5e1 !important;
-        }
-        body.taking-screenshot .resize-handle,
-        body.taking-screenshot .sticker-del,
-        body.taking-screenshot .note-header {
-            display: none !important;
-        }
-        /* 截圖時使用的替身文字框 */
-        .screenshot-clone-div {
-            white-space: pre-wrap;
-            word-break: break-word;
-            overflow: visible;
-            display: block;
-        }
+        /* 截圖模式 */
+        body.taking-screenshot .card, body.taking-screenshot .sticky-note, body.taking-screenshot .sticker { box-shadow: none !important; transform: none !important; border: 1px solid #cbd5e1 !important; }
+        body.taking-screenshot .resize-handle, body.taking-screenshot .sticker-del, body.taking-screenshot .note-header { display: none !important; }
+        .screenshot-clone-div { white-space: pre-wrap; word-break: break-word; overflow: visible; display: block; }
 
-        /* 主區域 */
-        .main-area {
-            max-width: 900px; margin: 80px auto 0 auto; padding: 40px 20px;
-            min-height: calc(100vh - 100px); background: var(--bg);
-            transition: margin-top 0.3s;
-        }
+        /* 主區域佈局 */
+        .main-area { max-width: 900px; margin: 80px auto 0 auto; padding: 40px 20px; min-height: calc(100vh - 100px); background: var(--bg); transition: margin-top 0.3s; }
         body.has-proj-bar .main-area { margin-top: 140px; }
-        
         body.view-gantt .main-area { max-width: 98%; padding: 20px 5px; }
 
-        /* Timeline 列表模式 */
         .timeline { position: relative; padding: 20px 0; }
-        .timeline::before {
-            content: ''; position: absolute; top: 0; bottom: 0; left: 50%;
-            width: 4px; background: #e5e7eb; transform: translateX(-50%);
-            border-radius: 2px; z-index: 0;
-        }
-
+        .timeline::before { content: ''; position: absolute; top: 0; bottom: 0; left: 50%; width: 4px; background: #e5e7eb; transform: translateX(-50%); border-radius: 2px; z-index: 0; }
         .timeline-item { position: relative; margin-bottom: 40px; width: 100%; display: flex; }
         .timeline-item.hidden-by-filter { display: none !important; } 
-
         .timeline-item:nth-child(odd) { justify-content: flex-start; padding-right: 50%; }
         .timeline-item:nth-child(even) { justify-content: flex-end; padding-left: 50%; }
         .timeline-item.force-left { justify-content: flex-start !important; padding-right: 50% !important; padding-left: 0 !important; }
         .timeline-item.force-right { justify-content: flex-end !important; padding-left: 50% !important; padding-right: 0 !important; }
-        
-        .timeline-item .card { 
-            width: 90%; 
-            margin: 0 auto; 
-            max-width: 100%; 
-        }
+        .timeline-item .card { width: 90%; margin: 0 auto; max-width: 100%; }
 
-        /* Card 內部佈局 */
-        .card {
-            display: flex; flex-direction: column; 
-            background: white; border-radius: 12px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            position: relative; z-index: 10; 
-            overflow: visible; 
-            border-top: 5px solid var(--primary);
-            min-height: 200px;
-        }
-        
+        /* 卡片設計 */
+        .card { display: flex; flex-direction: column; background: white; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); position: relative; z-index: 10; overflow: visible; border-top: 5px solid var(--primary); min-height: 200px; }
         .card.memo-mode { border-top-style: dashed; background-color: #fcfcfc; }
         .card[data-color="blue"] { border-top-color: #4f46e5; }
         .card[data-color="green"] { border-top-color: #10b981; background: #f0fdf4; }
         .card[data-color="red"] { border-top-color: #ef4444; background: #fef2f2; }
         .card[data-color="yellow"] { border-top-color: #f59e0b; background: #fffbeb; }
-        
         .card.memo-mode[data-color="green"] { background: #f7fee7; }
         .card.memo-mode[data-color="red"] { background: #fff1f2; }
         .card.memo-mode[data-color="yellow"] { background: #fffbeb; }
 
-        .card-top-area {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 10px 15px; border-bottom: 1px dashed #e2e8f0; flex-shrink: 0; 
-            background: rgba(255,255,255,0.5);
-        }
+        .card-top-area { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; border-bottom: 1px dashed #e2e8f0; flex-shrink: 0; background: rgba(255,255,255,0.5); }
         .card-top-left { display: flex; align-items: center; gap: 8px; flex: 1; }
         .card-top-right { display: flex; gap: 4px; flex-shrink: 0; }
+        .card-body { padding: 12px 40px 15px 20px; flex: 1; display: flex; flex-direction: column; }
+        .header-row { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+        .header-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 
-        .card-body {
-            padding: 12px 40px 15px 20px; 
-            flex: 1; display: flex; flex-direction: column;
-        }
-        
-        .header-row {
-            display: flex; flex-direction: column;
-            gap: 8px; margin-bottom: 12px;
-        }
-        
-        .header-meta {
-            display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
-        }
-
-        .project-footer {
-            width: 100%; height: 36px; 
-            display: flex; align-items: center; justify-content: flex-end;
-            padding: 0 15px; background: #cbd5e1;
-            margin-top: auto; flex-shrink: 0;
-        }
+        .project-footer { width: 100%; height: 36px; display: flex; align-items: center; justify-content: flex-end; padding: 0 15px; background: #cbd5e1; margin-top: auto; flex-shrink: 0; }
         .card[data-color="blue"] .project-footer { background: #4f46e5; }
         .card[data-color="green"] .project-footer { background: #10b981; }
         .card[data-color="red"] .project-footer { background: #ef4444; }
         .card[data-color="yellow"] .project-footer { background: #f59e0b; }
-
-        .footer-project-input {
-            background: transparent; border: none; color: white; font-weight: bold; font-size: 0.95rem;
-            text-align: right; width: 100%; outline: none; text-shadow: 0 1px 1px rgba(0,0,0,0.1);
-        }
+        .footer-project-input { background: transparent; border: none; color: white; font-weight: bold; font-size: 0.95rem; text-align: right; width: 100%; outline: none; text-shadow: 0 1px 1px rgba(0,0,0,0.1); }
         .footer-project-input::placeholder { color: rgba(255,255,255,0.7); }
 
-        .card-side-tools {
-            position: absolute; right: 6px; top: 60px; bottom: 40px; 
-            display: flex; flex-direction: column; gap: 6px; align-items: center;
-            width: 32px; border-left: 1px dashed #e2e8f0; z-index: 20; padding-top: 5px;
-        }
-
+        .card-side-tools { position: absolute; right: 6px; top: 60px; bottom: 40px; display: flex; flex-direction: column; gap: 6px; align-items: center; width: 32px; border-left: 1px dashed #e2e8f0; z-index: 20; padding-top: 5px; }
         .status-dot { width: 14px; height: 14px; border-radius: 50%; cursor: pointer; border: 2px solid rgba(0,0,0,0.1); }
         .status-0 { background: #9ca3af; } .status-1 { background: #f59e0b; } .status-2 { background: #10b981; } .status-3 { background: #ef4444; }
-
-        .btn-icon { 
-            border: 1px solid #cbd5e1; background: white; color: #64748b; 
-            cursor: pointer; width: 26px; height: 26px; border-radius: 4px; 
-            display: flex; align-items: center; justify-content: center; font-size: 14px; transition: 0.2s;
-        }
+        .btn-icon { border: 1px solid #cbd5e1; background: white; color: #64748b; cursor: pointer; width: 26px; height: 26px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 14px; transition: 0.2s; }
         .btn-icon:hover { background: #f1f5f9; color: #1e293b; border-color: #94a3b8; }
         .side-btn { width: 24px; height: 24px; font-size: 12px; background: #f8fafc; }
-
+        
         .select-chk { width: 18px; height: 18px; margin-right: 8px; cursor: pointer; display: none; }
         body.ai-selecting .select-chk { display: inline-block; }
-
-        .mode-toggle-btn {
-            font-size: 12px; border: 1px solid #94a3b8; border-radius: 4px; 
-            padding: 4px 8px; cursor: pointer; background: #f1f5f9; color: #64748b; margin-right: 5px;
-            height: 28px; white-space: nowrap;
-        }
-
-        .date-input {
-            border: 1px solid #cbd5e1; background: #f8fafc; padding: 4px 6px; border-radius: 4px;
-            font-family: inherit; font-size: 0.9rem; color: #334155; outline: none; cursor: pointer; 
-            width: 125px; height: 28px;
-        }
+        .mode-toggle-btn { font-size: 12px; border: 1px solid #94a3b8; border-radius: 4px; padding: 4px 8px; cursor: pointer; background: #f1f5f9; color: #64748b; margin-right: 5px; height: 28px; white-space: nowrap; }
+        .date-input { border: 1px solid #cbd5e1; background: #f8fafc; padding: 4px 6px; border-radius: 4px; font-family: inherit; font-size: 0.9rem; color: #334155; outline: none; cursor: pointer; width: 125px; height: 28px; }
         .card.memo-mode .date-input, .card.memo-mode .today-btn, .card.memo-mode .range-container { display: none !important; }
-
-        .today-btn {
-            background: #e0e7ff; color: #4338ca; border: none; border-radius: 4px;
-            padding: 0 8px; font-size: 0.8rem; cursor: pointer; font-weight: bold; margin-left: 3px; height: 28px;
-        }
-
-        .label-input {
-            border: none; border-bottom: 1px dashed #cbd5e1; padding: 5px 0; font-weight: bold;
-            color: var(--primary); font-size: 1.25rem; outline: none; width: 100%; display: block;
-            margin-top: 5px; background: transparent;
-        }
+        .today-btn { background: #e0e7ff; color: #4338ca; border: none; border-radius: 4px; padding: 0 8px; font-size: 0.8rem; cursor: pointer; font-weight: bold; margin-left: 3px; height: 28px; }
+        .label-input { border: none; border-bottom: 1px dashed #cbd5e1; padding: 5px 0; font-weight: bold; color: var(--primary); font-size: 1.25rem; outline: none; width: 100%; display: block; margin-top: 5px; background: transparent; }
         .label-input:focus { border-bottom-color: var(--primary); }
-
         .range-container { display: none; align-items: center; gap: 5px; font-size: 0.85rem; color: #555; flex-wrap: wrap;}
         .timeline-item.range-mode .single-date { display: none; }
         .timeline-item.range-mode .range-container { display: flex; }
-
-        .content { 
-            line-height: 1.6; color: #4b5563; outline: none; min-height: 60px; font-size: 1rem; 
-            white-space: pre-wrap; margin-top: 10px;
-        }
+        .content { line-height: 1.6; color: #4b5563; outline: none; min-height: 60px; font-size: 1rem; white-space: pre-wrap; margin-top: 10px; }
         .content img { max-width: 100%; height: auto; border-radius: 4px; margin: 5px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: block; }
         .todo-box { display: inline-block; width: 1.2em; text-align: center; cursor: pointer; color: #4f46e5; }
+        .dot { position: absolute; left: 50%; top: 30px; width: 16px; height: 16px; background: white; border: 4px solid #cbd5e1; border-radius: 50%; transform: translateX(-50%); z-index: 20; }
 
-        .dot {
-            position: absolute; left: 50%; top: 30px; width: 16px; height: 16px; background: white;
-            border: 4px solid #cbd5e1; border-radius: 50%; transform: translateX(-50%); z-index: 20; 
-        }
-
-        .add-main {
-            display: block; margin: 30px auto 60px auto; padding: 12px 30px;
-            background: white; color: #64748b; border: 2px dashed #cbd5e1;
-            border-radius: 12px; font-size: 1rem; font-weight: bold; cursor: pointer;
-            transition: 0.2s; width: 100%; max-width: 300px;
-        }
+        .add-main { display: block; margin: 30px auto 60px auto; padding: 12px 30px; background: white; color: #64748b; border: 2px dashed #cbd5e1; border-radius: 12px; font-size: 1rem; font-weight: bold; cursor: pointer; transition: 0.2s; width: 100%; max-width: 300px; }
         .add-main:hover { border-color: #3b82f6; color: #3b82f6; background: #eff6ff; }
 
-        /* ========================================= */
-        /* 視圖容器 */
-        /* ========================================= */
+        /* 視圖 & 其他 */
         .view-container { display: none; margin-bottom: 40px; }
-        
-        /* 1. 垂直故事線 (Chronicle) */
         #chronicle-view { background: white; padding: 40px 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05); min-height: 500px; max-width: 900px; margin: 0 auto; border: 1px solid #e2e8f0; }
         .chronicle-container { position: relative; padding-left: 20px; }
         .chronicle-line { position: absolute; top: 0; bottom: 0; left: 140px; width: 3px; background: #e2e8f0; border-radius: 2px; }
@@ -433,40 +204,20 @@
         .chronicle-title { font-size: 1.1rem; font-weight: 800; color: #1e293b; margin-bottom: 4px; line-height: 1.4; display: flex; align-items: center; flex-wrap: wrap; }
         .chronicle-desc { font-size: 0.95rem; color: #475569; white-space: pre-wrap; line-height: 1.6; }
 
-        /* 2. 甘特圖 (Gantt) */
         #gantt-view { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); overflow-x: auto; border: 1px solid #e2e8f0; }
         .gantt-container { position: relative; min-width: 100%; padding-bottom: 20px; }
-        
         .gantt-header-row { display: flex; height: 50px; border-bottom: 2px solid #e2e8f0; margin-bottom: 15px; align-items: flex-end; position: sticky; top: 0; background: white; z-index: 40; }
-        
         .gantt-axis-area { flex-grow: 1; position: relative; height: 100%; background: white; width: 100%; }
         .gantt-header-mark { position: absolute; bottom: 0; border-left: 2px solid #94a3b8; height: 12px; padding-left: 4px; pointer-events: none; white-space: nowrap; }
         .gantt-header-mark span { position: absolute; top: -24px; left: 0; transform: translateX(-50%); font-size: 0.85rem; color: #1e293b; font-weight: 800; }
         .gantt-grid-line { position: absolute; top: 0; bottom: 0; border-left: 1px dashed #e2e8f0; pointer-events: none; z-index: 0; }
-        
         .gantt-row { position: relative; display: flex; border-bottom: 1px solid #f1f5f9; min-height: 40px; }
-        
-        .gantt-bar-clean { 
-            position: absolute; height: 24px; border-radius: 4px; 
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1); cursor: pointer; transition: all 0.2s; 
-            z-index: 10; opacity: 0.95; 
-            display: flex; align-items: center; padding: 0 8px;
-            white-space: nowrap; overflow: hidden; color: white; font-size: 0.85rem; font-weight: bold; text-shadow: 0 1px 2px rgba(0,0,0,0.2);
-        }
+        .gantt-bar-clean { position: absolute; height: 24px; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); cursor: pointer; transition: all 0.2s; z-index: 10; opacity: 0.95; display: flex; align-items: center; padding: 0 8px; white-space: nowrap; overflow: hidden; color: white; font-size: 0.85rem; font-weight: bold; text-shadow: 0 1px 2px rgba(0,0,0,0.2); }
         .gantt-bar-clean:hover { opacity: 1; z-index: 20; transform: scaleY(1.1); box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
-        .gantt-bar-clean[data-color="blue"] { background: #4f46e5; } 
-        .gantt-bar-clean[data-color="green"] { background: #10b981; } 
-        .gantt-bar-clean[data-color="red"] { background: #ef4444; } 
-        .gantt-bar-clean[data-color="yellow"] { background: #f59e0b; }
+        .gantt-bar-clean[data-color="blue"] { background: #4f46e5; } .gantt-bar-clean[data-color="green"] { background: #10b981; } 
+        .gantt-bar-clean[data-color="red"] { background: #ef4444; } .gantt-bar-clean[data-color="yellow"] { background: #f59e0b; }
 
-        /* 自定義 Tooltip */
-        #custom-tooltip {
-            position: fixed; background: rgba(0, 0, 0, 0.85); color: white; padding: 10px 14px;
-            border-radius: 6px; font-size: 0.9rem; pointer-events: none; z-index: 9999;
-            display: none; max-width: 300px; white-space: pre-wrap; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-            backdrop-filter: blur(2px); line-height: 1.5;
-        }
-
+        #custom-tooltip { position: fixed; background: rgba(0, 0, 0, 0.85); color: white; padding: 10px 14px; border-radius: 6px; font-size: 0.9rem; pointer-events: none; z-index: 9999; display: none; max-width: 300px; white-space: pre-wrap; box-shadow: 0 4px 10px rgba(0,0,0,0.3); backdrop-filter: blur(2px); line-height: 1.5; }
         #exit-pres-btn { display: none; position: fixed; top: 20px; right: 20px; z-index: 3000; padding: 10px 20px; background: #ef4444; color: white; border: none; border-radius: 30px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.3); font-weight: bold; }
         body.presentation-mode { background-color: #ffffff; padding: 20px; }
         body.presentation-mode #exit-pres-btn { display: block; }
@@ -478,45 +229,46 @@
         body.presentation-mode .content { font-size: 1.2rem; }
         
         @media screen and (max-width: 768px) {
-            .main-area { margin-top: 60px; padding: 10px; }
-            body.has-proj-bar .main-area { margin-top: 150px; }
-            .toolbox-container { display: none !important; }
-            .timeline-item { flex-direction: column; width: 100%; padding: 0 !important; }
-            .timeline-item .card { width: 100% !important; margin: 0 0 20px 0 !important; }
-            .timeline::before { left: 10px; }
-            .dot { left: 10px; }
-            .mobile-hidden { display: none !important; }
-            .tool-right { display: none; }
-            
-            .chronicle-line { left: 20px; }
-            .chronicle-date-col { display: none; } 
-            .chronicle-content-col { margin-left: 30px; border-left: 2px solid #e2e8f0; padding-left: 15px; }
-            .chronicle-dot-col { display: none; }
+            .main-area { margin-top: 60px; padding: 10px; } body.has-proj-bar .main-area { margin-top: 150px; }
+            .toolbox-container { display: none !important; } .timeline-item { flex-direction: column; width: 100%; padding: 0 !important; }
+            .timeline-item .card { width: 100% !important; margin: 0 0 20px 0 !important; } .timeline::before { left: 10px; } .dot { left: 10px; }
+            .mobile-hidden { display: none !important; } .tool-right { display: none; }
+            .chronicle-line { left: 20px; } .chronicle-date-col { display: none; } .chronicle-content-col { margin-left: 30px; border-left: 2px solid #e2e8f0; padding-left: 15px; } .chronicle-dot-col { display: none; }
         }
-
         @media print { 
             .toolbar, .toolbox-container, .card-top-right, .card-side-tools, .add-main, .note-header, .sticker-del, .today-btn, #exit-pres-btn, .select-chk, #project-bar, .mode-toggle-btn, #save-light { display: none !important; } 
-            .sticky-note, .sticker { border: none; box-shadow: none; }
-            .resize-handle { display: none !important; }
+            .sticky-note, .sticker { border: none; box-shadow: none; } .resize-handle { display: none !important; }
         }
     </style>
 </head>
 <body>
 
     <div id="save-light" title="綠燈:已儲存 / 紅燈:編輯中"></div>
-
     <input type="file" id="sticker-upload" hidden accept="image/*" onchange="handleImageUpload(this)">
+
+    <div id="paste-dialog">
+        <div class="paste-modal">
+            <div class="paste-title">🖼️ 偵測到圖片貼上</div>
+            <div class="paste-desc">請問您希望將此圖片貼到哪裡？</div>
+            <div class="paste-btn-group">
+                <button class="paste-btn" id="btn-paste-card" onclick="processPaste('card')">
+                    📄 貼入卡片文字框中
+                </button>
+                <button class="paste-btn" id="btn-paste-sticker" onclick="processPaste('sticker')">
+                    🖼️ 貼成背景移動貼紙
+                </button>
+            </div>
+            <button class="paste-cancel" onclick="closePasteDialog()">取消</button>
+        </div>
+    </div>
 
     <div class="toolbar">
         <div class="tool-left">
-            <div class="tool-title">
-                🧠 專案神器 V72
-            </div>
+            <div class="tool-title">🧠 報告整理工具</div>
             <div class="search-box">
                 <span class="search-icon">🔍</span>
                 <input type="text" class="search-input" placeholder="搜尋..." oninput="filterNodes(this.value)">
             </div>
-            
             <div class="tool-btn-group" id="normal-toolbar">
                 <button class="tool-btn filter-btn" onclick="toggleProjectBar()" title="過濾">📁 專案</button>
                 <button class="tool-btn view-btn" onclick="toggleChronicleView()" id="chronicleBtn">📜 大事記</button>
@@ -531,28 +283,23 @@
                 <button class="tool-btn danger-btn" onclick="resetAllData()">💥 重置</button>
                 <input type="file" id="fileInput" hidden onchange="loadJSON(this)">
             </div>
-    
             <div class="tool-btn-group" id="ai-toolbar">
                 <button class="tool-btn camera-btn" onclick="confirmAIOutput()">✅ 確認</button>
                 <button class="tool-btn highlight" onclick="selectAllAI()">☑ 全選</button>
                 <button class="tool-btn danger-btn" onclick="exitAIMode()">❌ 取消</button>
             </div>
         </div>
-        
         <div class="tool-right">
             <select class="view-select" id="scaleSelect" onchange="changeScale(this.value)">
                 <option value="day">📅 刻度: 日</option>
                 <option value="week">🗓️ 刻度: 週</option>
                 <option value="month">🈷️ 刻度: 月</option>
             </select>
-            <button class="gantt-switch-btn" onclick="toggleGanttView()" id="ganttBtn">
-                📊 甘特圖
-            </button>
+            <button class="gantt-switch-btn" onclick="toggleGanttView()" id="ganttBtn">📊 甘特圖</button>
         </div>
     </div>
 
     <div id="project-bar"></div>
-
     <button id="exit-pres-btn" onclick="togglePresentation()">❌ 退出簡報模式 (ESC)</button>
 
     <div class="toolbox-container" id="toolboxContainer">
@@ -575,18 +322,15 @@
 
     <div class="main-area" id="captureArea">
         <div class="timeline" id="container"></div>
-        
         <div id="chronicle-view" class="view-container">
             <div style="text-align:center; color:#888; margin-bottom:30px; font-size:0.8rem;">💡 大事記模式：包含衝突偵測 (⚡) 與時長視覺條</div>
             <div class="chronicle-container" id="vTimeline"></div>
         </div>
-
         <div id="gantt-view" class="view-container">
             <div style="text-align:center; color:#888; margin-bottom:10px; font-size:0.8rem;">📊 甘特圖模式：專案整合檢視 (支援滾輪左右滑動)</div>
             <div class="gantt-container" id="ganttChart"></div>
         </div>
-
-        <button class="add-main" id="mainAddBtn">＋ 新增節點</button>
+        <button class="add-main" id="mainAddBtn" onclick="addNewNode()">＋ 新增節點</button>
     </div>
 
     <div id="custom-tooltip"></div>
@@ -597,8 +341,115 @@
         const tooltip = document.getElementById('custom-tooltip');
         let activeProjectFilters = new Set();
         let currentSearchKeyword = '';
-        let currentView = 'timeline'; // timeline, chronicle, gantt
+        let currentView = 'timeline';
         let currentScale = 'day'; 
+        
+        // 🚀 關鍵修復：將新增節點函式移至最上方，避免截斷風險，並設為全域
+        window.addNewNode = function() {
+            const newItem = {
+                id: Date.now(), pos: 'auto', mode: 'normal', color: 'blue', status: 0, isMemo: false,
+                project: '', label: '', date_single: getTodayString(), date_start: '', date_end: '', content: ''
+            };
+            const el = createNodeElement(newItem);
+            container.appendChild(el);
+            autoSave();
+            
+            // 平滑捲動
+            setTimeout(() => {
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 100);
+        };
+
+        // --- 📋 貼上選擇邏輯 (Unified Paste Logic) ---
+        let pendingPasteBlob = null;
+        let pendingPasteTarget = null; // 記錄當時 focus 的元素
+
+        document.addEventListener('paste', function(e) {
+            // 1. 檢查是否有圖片資料
+            const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+            let hasImage = false;
+            let blob = null;
+
+            for (let i = 0; i < items.length; i++) {
+                if (items[i].type.indexOf("image") === 0) {
+                    blob = items[i].getAsFile();
+                    hasImage = true;
+                    break;
+                }
+            }
+
+            // 2. 如果是圖片，攔截預設行為並顯示選單
+            if (hasImage && blob) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                pendingPasteBlob = blob;
+                pendingPasteTarget = document.activeElement;
+                
+                // 判斷是否正在編輯卡片文字
+                const isEditingCard = pendingPasteTarget && pendingPasteTarget.classList.contains('content');
+                
+                const btnCard = document.getElementById('btn-paste-card');
+                if (isEditingCard) {
+                    btnCard.classList.remove('disabled');
+                    btnCard.innerHTML = '📄 貼入卡片文字框中';
+                    btnCard.disabled = false;
+                } else {
+                    btnCard.classList.add('disabled');
+                    btnCard.innerHTML = '📄 貼入卡片 (請先點選文字框)';
+                    btnCard.disabled = true;
+                }
+
+                document.getElementById('paste-dialog').style.display = 'flex';
+            }
+        });
+
+        function closePasteDialog() {
+            document.getElementById('paste-dialog').style.display = 'none';
+            pendingPasteBlob = null;
+            pendingPasteTarget = null;
+        }
+
+        function processPaste(type) {
+            if (!pendingPasteBlob) return;
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const imgData = event.target.result;
+
+                if (type === 'card' && pendingPasteTarget) {
+                    // 貼入卡片
+                    const img = document.createElement("img");
+                    img.src = imgData;
+                    
+                    // 恢復焦點並插入
+                    pendingPasteTarget.focus();
+                    
+                    // 嘗試插入游標位置
+                    const selection = window.getSelection();
+                    if (selection.rangeCount > 0) {
+                        const range = selection.getRangeAt(0);
+                        range.deleteContents();
+                        range.insertNode(img);
+                        range.collapse(false);
+                    } else {
+                        pendingPasteTarget.appendChild(img);
+                    }
+                } else {
+                    // 貼成背景貼紙
+                    createStickerElement({
+                        id: 'sticker-' + Date.now(),
+                        type: 'image',
+                        x: window.scrollX + window.innerWidth / 2 - 150,
+                        y: window.scrollY + window.innerHeight / 2 - 150,
+                        content: imgData
+                    });
+                }
+                autoSave();
+                closePasteDialog();
+            };
+            reader.readAsDataURL(pendingPasteBlob);
+        }
 
         function getTodayString() {
             const d = new Date();
@@ -627,8 +478,8 @@
             if (!hasData) {
                 const defaultItem = {
                     id: Date.now(), pos: 'left', mode: 'normal', color: 'blue', status: 0, isMemo: false,
-                    project: '專案神器', label: '系統初始化', date_single: getTodayString(), date_start: '', date_end: '', 
-                    content: '歡迎使用專案神器 V72。'
+                    project: '報告神氣', label: '系統初始化', date_single: getTodayString(), date_start: '', date_end: '', 
+                    content: '歡迎使用報告整理工具。'
                 };
                 container.appendChild(createNodeElement(defaultItem));
             }
@@ -637,52 +488,23 @@
             if (savedStickers) { try { renderStickers(JSON.parse(savedStickers)); } catch(e){} }
             
             refreshProjectBar();
-
-            // 確保新增按鈕綁定
-            const addBtn = document.getElementById('mainAddBtn');
-            if (addBtn) {
-                addBtn.onclick = function() {
-                    const newItem = {
-                        id: Date.now(), pos: 'auto', mode: 'normal', color: 'blue', status: 0, isMemo: false,
-                        project: '', label: '', date_single: getTodayString(), date_start: '', date_end: '', content: ''
-                    };
-                    container.appendChild(createNodeElement(newItem));
-                    autoSave();
-                };
-            }
-
-            window.addEventListener('paste', handleGlobalPaste);
         }
 
-        // 🚦 新的防抖存檔機制 (紅綠燈版)
+        // 🚦 防抖存檔
         let saveTimer = null;
-
         function autoSave() {
             const light = document.getElementById('save-light');
-            
-            // 1. 變紅燈 (閃爍)，代表有更動未儲存
             light.classList.add('unsaved');
-
-            // 2. 清除上一次的計時器
             if (saveTimer) clearTimeout(saveTimer);
-
-            // 3. 延遲 1 秒後執行存檔
-            saveTimer = setTimeout(() => {
-                performActualSave();
-            }, 1000);
+            saveTimer = setTimeout(() => { performActualSave(); }, 1000);
         }
-
-        // 真正執行寫入硬碟的動作
         function performActualSave() {
             const data = gatherData();
             const notes = gatherNotes();
             const stickers = gatherStickers();
-            
             localStorage.setItem('timeline_v47_data', JSON.stringify(data));
             localStorage.setItem('timeline_v47_notes', JSON.stringify(notes));
             localStorage.setItem('timeline_v47_stickers', JSON.stringify(stickers));
-            
-            // 變回綠燈 (移除紅燈 class)
             const light = document.getElementById('save-light');
             if(light) light.classList.remove('unsaved');
         }
@@ -721,14 +543,10 @@
             items.sort((a, b) => (a.querySelector('.single-date').value || '9999').localeCompare(b.querySelector('.single-date').value || '9999'));
             items.forEach(item => container.appendChild(item)); autoSave();
         }
-
-        // 一鍵重置資料
         function resetAllData() {
             if (confirm('警告：這將會刪除所有資料（卡片、便利貼、圖片）且無法復原！\n\n您確定要清空整個專案嗎？')) {
                 if (confirm('再次確認：真的要全部刪除嗎？')) {
-                    localStorage.removeItem('timeline_v47_data');
-                    localStorage.removeItem('timeline_v47_notes');
-                    localStorage.removeItem('timeline_v47_stickers');
+                    localStorage.removeItem('timeline_v47_data'); localStorage.removeItem('timeline_v47_notes'); localStorage.removeItem('timeline_v47_stickers');
                     location.reload(); 
                 }
             }
@@ -750,31 +568,22 @@
                     date_single: item.querySelector('.single-date').value,
                     date_start: item.querySelector('.date-start').value, date_end: item.querySelector('.date-end').value,
                     content: item.querySelector('.content').innerHTML,
-                    // 新增：儲存卡片尺寸
                     card_w: card.style.width,
                     card_h: card.style.minHeight
                 };
             });
         }
-        
-        // 加入便利貼寬高儲存
         function gatherNotes() { 
             return Array.from(document.querySelectorAll('.sticky-note')).map(n => ({ 
-                id: n.id, 
-                x: parseInt(n.style.left), 
-                y: parseInt(n.style.top), 
-                w: n.style.width ? parseInt(n.style.width) : null,
-                h: n.style.height ? parseInt(n.style.height) : null,
+                id: n.id, x: parseInt(n.style.left), y: parseInt(n.style.top), 
+                w: n.style.width ? parseInt(n.style.width) : null, h: n.style.height ? parseInt(n.style.height) : null,
                 content: n.querySelector('textarea').value 
             })); 
         }
-        
-        // 加入寬高儲存
         function gatherStickers() { 
             return Array.from(document.querySelectorAll('.sticker')).map(s => ({ 
                 id: s.id, type: s.dataset.type, x: parseInt(s.style.left), y: parseInt(s.style.top),
-                w: s.style.width ? parseInt(s.style.width) : null,
-                h: s.style.height ? parseInt(s.style.height) : null,
+                w: s.style.width ? parseInt(s.style.width) : null, h: s.style.height ? parseInt(s.style.height) : null,
                 content: s.dataset.type === 'image' ? s.querySelector('img').src : null
             })); 
         }
@@ -784,12 +593,10 @@
             const div = document.createElement('div');
             div.className = `timeline-item ${item.pos==='left'?'force-left':item.pos==='right'?'force-right':''} ${item.mode==='range'?'range-mode':''}`;
             const isMemo = item.isMemo ? 'memo-mode' : '';
-            
             div.innerHTML = `
                 <div class="dot"></div>
                 <div class="card ${isMemo}" data-color="${item.color}">
                     <div class="resize-handle" onmousedown="resizeCard(event)">↘</div>
-
                     <div class="card-side-tools">
                         <button class="btn-icon side-btn" onclick="changeColor(this)" title="換色">🎨</button>
                         <button class="btn-icon side-btn mobile-hidden" onclick="moveNode(this,'up')">⬆️</button>
@@ -833,156 +640,74 @@
                         <input type="text" class="footer-project-input" autocomplete="off" value="${item.project || ''}" placeholder="🏷️ 專案名稱..." oninput="autoSave(); refreshProjectBar();">
                     </div>
                 </div>`;
-            
             const card = div.querySelector('.card');
-            // 套用儲存的尺寸
             if(item.card_w) card.style.width = item.card_w;
             if(item.card_h) card.style.minHeight = item.card_h;
-
-            div.querySelector('.content').addEventListener('paste', function(e) { e.stopPropagation(); handleCardPaste(e); });
             return div;
         }
 
-        // 核心：卡片縮放邏輯
+        // --- 功能函式 ---
         function resizeCard(e) {
-            e.stopPropagation(); 
-            const card = e.target.parentElement;
-            const startX = e.clientX;
-            const startY = e.clientY;
-            const startW = card.offsetWidth;
-            const startH = card.offsetHeight;
-
+            e.stopPropagation(); const card = e.target.parentElement;
+            const startX = e.clientX, startY = e.clientY, startW = card.offsetWidth, startH = card.offsetHeight;
             function doDrag(ev) {
-                const newW = startW + (ev.clientX - startX);
-                const newH = startH + (ev.clientY - startY);
+                const newW = startW + (ev.clientX - startX), newH = startH + (ev.clientY - startY);
                 if (newW > 200) card.style.width = newW + 'px';
                 if (newH > 100) card.style.minHeight = newH + 'px';
             }
-
             function stopDrag() {
                 document.documentElement.removeEventListener('mousemove', doDrag);
                 document.documentElement.removeEventListener('mouseup', stopDrag);
                 autoSave();
             }
-
             document.documentElement.addEventListener('mousemove', doDrag);
             document.documentElement.addEventListener('mouseup', stopDrag);
         }
 
-        // --- 便利貼與貼紙邏輯 ---
         function addStickyNote() {
-            createStickyElement({
-                id: 'note-' + Date.now(),
-                x: window.scrollX + 100, y: window.scrollY + 100,
-                content: ''
-            });
-            autoSave();
-            if(window.innerWidth < 768) toggleToolbox();
+            createStickyElement({ id: 'note-' + Date.now(), x: window.scrollX + 100, y: window.scrollY + 100, content: '' });
+            autoSave(); if(window.innerWidth < 768) toggleToolbox();
         }
-
-        // 便利貼加入縮放與尺寸還原
         function createStickyElement(data) {
-            const div = document.createElement('div');
-            div.className = 'sticky-note';
-            div.id = data.id;
-            div.style.left = data.x + 'px';
-            div.style.top = data.y + 'px';
-            
-            if (data.w) div.style.width = data.w + 'px';
-            if (data.h) div.style.height = data.h + 'px';
-
-            div.innerHTML = `
-                <div class="note-header">
-                    <span class="note-close" onclick="deleteSticky(this)">×</span>
-                </div>
-                <textarea class="note-content" placeholder="輸入記事..." oninput="autoSave()">${data.content || ''}</textarea>
-                <div class="resize-handle" onmousedown="resizeNote(event)">↘</div>
-            `;
-            document.body.appendChild(div);
-            makeDraggable(div, div.querySelector('.note-header'));
+            const div = document.createElement('div'); div.className = 'sticky-note'; div.id = data.id;
+            div.style.left = data.x + 'px'; div.style.top = data.y + 'px';
+            if (data.w) div.style.width = data.w + 'px'; if (data.h) div.style.height = data.h + 'px';
+            div.innerHTML = `<div class="note-header"><span class="note-close" onclick="deleteSticky(this)">×</span></div><textarea class="note-content" placeholder="輸入記事..." oninput="autoSave()">${data.content || ''}</textarea><div class="resize-handle" onmousedown="resizeNote(event)">↘</div>`;
+            document.body.appendChild(div); makeDraggable(div, div.querySelector('.note-header'));
         }
-        
-        // 便利貼縮放邏輯
         function resizeNote(e) {
-            e.stopPropagation(); 
-            const note = e.target.parentElement;
-            const startX = e.clientX;
-            const startY = e.clientY;
-            const startW = note.offsetWidth;
-            const startH = note.offsetHeight;
-
+            e.stopPropagation(); const note = e.target.parentElement;
+            const startX = e.clientX, startY = e.clientY, startW = note.offsetWidth, startH = note.offsetHeight;
             function doDrag(ev) {
-                const newW = startW + (ev.clientX - startX);
-                const newH = startH + (ev.clientY - startY);
-                if (newW > 100) note.style.width = newW + 'px';
-                if (newH > 100) note.style.height = newH + 'px';
+                const newW = startW + (ev.clientX - startX), newH = startH + (ev.clientY - startY);
+                if (newW > 100) note.style.width = newW + 'px'; if (newH > 100) note.style.height = newH + 'px';
             }
-
             function stopDrag() {
                 document.documentElement.removeEventListener('mousemove', doDrag);
                 document.documentElement.removeEventListener('mouseup', stopDrag);
                 autoSave();
             }
-
             document.documentElement.addEventListener('mousemove', doDrag);
             document.documentElement.addEventListener('mouseup', stopDrag);
         }
 
-        // 🔧 新增：圖片按鈕觸發
-        function triggerImageUpload() {
-            // 1. 強制讓目前焦點 (可能在卡片內) 失焦
-            if (document.activeElement) {
-                document.activeElement.blur();
-            }
-            // 2. 觸發檔案選擇
-            document.getElementById('sticker-upload').click();
-        }
-
-        // 處理圖片上傳
+        function triggerImageUpload() { if (document.activeElement) document.activeElement.blur(); document.getElementById('sticker-upload').click(); }
         function handleImageUpload(input) {
-            const file = input.files[0];
-            if (!file) return; // 使用者按取消，什麼都不做
-            
+            const file = input.files[0]; if (!file) return;
             const reader = new FileReader();
             reader.onload = function(event) {
-                createStickerElement({ 
-                    id: 'sticker-' + Date.now(), 
-                    type: 'image', 
-                    x: window.scrollX + window.innerWidth / 2 - 100, 
-                    y: window.scrollY + window.innerHeight / 2 - 100, 
-                    content: event.target.result 
-                });
+                createStickerElement({ id: 'sticker-' + Date.now(), type: 'image', x: window.scrollX + window.innerWidth / 2 - 100, y: window.scrollY + window.innerHeight / 2 - 100, content: event.target.result });
                 autoSave();
-            }; 
-            reader.readAsDataURL(file);
-            input.value = ''; // 重置 input 以便下次選同一張圖
+            }; reader.readAsDataURL(file); input.value = '';
         }
-
         function addSticker(type) {
-            createStickerElement({
-                id: 'sticker-' + Date.now(),
-                type: type,
-                x: window.scrollX + window.innerWidth/2 - 50,
-                y: window.scrollY + window.innerHeight/2 - 50,
-                content: null
-            });
-            autoSave();
-            if(window.innerWidth < 768) toggleToolbox();
+            createStickerElement({ id: 'sticker-' + Date.now(), type: type, x: window.scrollX + window.innerWidth/2 - 50, y: window.scrollY + window.innerHeight/2 - 50, content: null });
+            autoSave(); if(window.innerWidth < 768) toggleToolbox();
         }
-
-        // 貼紙建立邏輯，加入紅藍框的縮放手把
         function createStickerElement(data) {
-            const div = document.createElement('div');
-            div.className = 'sticker';
-            div.id = data.id;
-            div.dataset.type = data.type;
-            div.style.left = data.x + 'px';
-            div.style.top = data.y + 'px';
-            
-            // 套用已儲存的尺寸
-            if (data.w) div.style.width = data.w + 'px';
-            if (data.h) div.style.height = data.h + 'px';
-
+            const div = document.createElement('div'); div.className = 'sticker'; div.id = data.id; div.dataset.type = data.type;
+            div.style.left = data.x + 'px'; div.style.top = data.y + 'px';
+            if (data.w) div.style.width = data.w + 'px'; if (data.h) div.style.height = data.h + 'px';
             let content = '';
             if (data.type === 'arrow-up') content = '<svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><path d="M12 19V5M5 12l7-7 7 7"/></svg>';
             else if (data.type === 'arrow-right') content = '<svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>';
@@ -991,100 +716,44 @@
             else if (data.type === 'circle-red') content = '<svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="3"><circle cx="12" cy="12" r="10"/></svg>';
             else if (data.type === 'rect-blue') content = '<svg viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="3"><rect x="2" y="4" width="20" height="16" rx="2"/></svg>';
             else if (data.type === 'image') content = `<img src="${data.content}">`;
-
-            let resizeHandle = '';
-            // 只有紅圈跟藍框加入縮放控制點
-            if (data.type === 'circle-red' || data.type === 'rect-blue') {
-                resizeHandle = '<div class="resize-handle" onmousedown="resizeSticker(event)">↘</div>';
-            }
-
+            let resizeHandle = (data.type === 'circle-red' || data.type === 'rect-blue') ? '<div class="resize-handle" onmousedown="resizeSticker(event)">↘</div>' : '';
             div.innerHTML = `<div class="sticker-del" onclick="deleteSticky(this)">×</div>${content}${resizeHandle}`;
-            document.body.appendChild(div);
-            makeDraggable(div);
+            document.body.appendChild(div); makeDraggable(div);
         }
-        
-        // 貼紙縮放邏輯
         function resizeSticker(e) {
-            e.stopPropagation(); // 阻止拖曳觸發
-            const sticker = e.target.parentElement;
-            const startX = e.clientX;
-            const startY = e.clientY;
-            const startW = sticker.offsetWidth;
-            const startH = sticker.offsetHeight;
-
-            function doDrag(ev) {
-                const newW = startW + (ev.clientX - startX);
-                const newH = startH + (ev.clientY - startY);
-                if (newW > 20) sticker.style.width = newW + 'px';
-                if (newH > 20) sticker.style.height = newH + 'px';
-            }
-
-            function stopDrag() {
-                document.documentElement.removeEventListener('mousemove', doDrag);
-                document.documentElement.removeEventListener('mouseup', stopDrag);
-                autoSave();
-            }
-
-            document.documentElement.addEventListener('mousemove', doDrag);
-            document.documentElement.addEventListener('mouseup', stopDrag);
+            e.stopPropagation(); const sticker = e.target.parentElement;
+            const startX = e.clientX, startY = e.clientY, startW = sticker.offsetWidth, startH = sticker.offsetHeight;
+            function doDrag(ev) { const newW = startW + (ev.clientX - startX), newH = startH + (ev.clientY - startY); if (newW > 20) sticker.style.width = newW + 'px'; if (newH > 20) sticker.style.height = newH + 'px'; }
+            function stopDrag() { document.documentElement.removeEventListener('mousemove', doDrag); document.documentElement.removeEventListener('mouseup', stopDrag); autoSave(); }
+            document.documentElement.addEventListener('mousemove', doDrag); document.documentElement.addEventListener('mouseup', stopDrag);
         }
-
         function deleteSticky(btn) {
             if(confirm('移除此物件？')) {
-                const note = btn.closest('.sticky-note');
-                const sticker = btn.closest('.sticker');
-                if(note) note.remove();
-                else if(sticker) sticker.remove();
+                const note = btn.closest('.sticky-note'); const sticker = btn.closest('.sticker');
+                if(note) note.remove(); else if(sticker) sticker.remove();
                 autoSave();
             }
         }
-
         function makeDraggable(elmnt, handle) {
             let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
             const dragHandle = handle || elmnt;
-            
             dragHandle.onmousedown = dragMouseDown;
-
             function dragMouseDown(e) {
                 e = e || window.event;
-                // 如果點到的是刪除鈕或縮放鈕，不觸發拖曳
                 if (e.target.classList.contains('resize-handle') || e.target.classList.contains('sticker-del')) return;
-
-                e.preventDefault();
-                pos3 = e.clientX;
-                pos4 = e.clientY;
-                document.onmouseup = closeDragElement;
-                document.onmousemove = elementDrag;
-                
-                const allSticky = document.querySelectorAll('.sticky-note, .sticker');
-                allSticky.forEach(el => el.style.zIndex = 1500);
-                elmnt.style.zIndex = 1501;
+                e.preventDefault(); pos3 = e.clientX; pos4 = e.clientY;
+                document.onmouseup = closeDragElement; document.onmousemove = elementDrag;
+                document.querySelectorAll('.sticky-note, .sticker').forEach(el => el.style.zIndex = 1500); elmnt.style.zIndex = 1501;
             }
-
             function elementDrag(e) {
-                e = e || window.event;
-                e.preventDefault();
-                pos1 = pos3 - e.clientX;
-                pos2 = pos4 - e.clientY;
-                pos3 = e.clientX;
-                pos4 = e.clientY;
-                elmnt.style.top = (elmnt.offsetTop - pos2) + "px";
-                elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
+                e = e || window.event; e.preventDefault();
+                pos1 = pos3 - e.clientX; pos2 = pos4 - e.clientY; pos3 = e.clientX; pos4 = e.clientY;
+                elmnt.style.top = (elmnt.offsetTop - pos2) + "px"; elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
             }
-
-            function closeDragElement() {
-                document.onmouseup = null;
-                document.onmousemove = null;
-                autoSave();
-            }
+            function closeDragElement() { document.onmouseup = null; document.onmousemove = null; autoSave(); }
         }
 
-        // --- 輔助功能 ---
-        function toggleCardMode(btn) {
-            const card = btn.closest('.card');
-            const isMemo = card.classList.toggle('memo-mode');
-            btn.innerText = isMemo ? '♾️' : '📅'; autoSave();
-        }
+        function toggleCardMode(btn) { const card = btn.closest('.card'); const isMemo = card.classList.toggle('memo-mode'); btn.innerText = isMemo ? '♾️' : '📅'; autoSave(); }
         function setToday(btn) { btn.previousElementSibling.value = getTodayString(); autoSave(); }
         function insertBullet(btn) { btn.closest('.timeline-item').querySelector('.content').innerHTML += '<div>&nbsp;•&nbsp;內容</div>'; autoSave(); }
         function addHighlight(btn) { document.execCommand('styleWithCSS', false, true); document.execCommand('hiliteColor', false, '#fef08a'); autoSave(); }
@@ -1094,51 +763,9 @@
             const text = `【${item.querySelector('.footer-project-input').value}】${item.querySelector('.label-input').value}\n${item.querySelector('.content').innerText}`;
             navigator.clipboard.writeText(text).then(()=>alert('已複製'));
         }
-        function insertTodoLine(btn) {
-            btn.closest('.timeline-item').querySelector('.content').innerHTML += '<div><span class="todo-box" onclick="toggleTodo(this)">☐</span>&nbsp;新項目</div>'; autoSave();
-        }
+        function insertTodoLine(btn) { btn.closest('.timeline-item').querySelector('.content').innerHTML += '<div><span class="todo-box" onclick="toggleTodo(this)">☐</span>&nbsp;新項目</div>'; autoSave(); }
         window.toggleTodo = function(span) { span.innerText = span.innerText==='☐'?'☑':'☐'; autoSave(); event.stopPropagation(); }
         function handleCardInput(e) { autoSave(); }
-
-        function handleCardPaste(e) {
-            const items = (e.clipboardData || e.originalEvent.clipboardData).items;
-            for (let i = 0; i < items.length; i++) {
-                if (items[i].type.indexOf("image") === 0) {
-                    e.preventDefault(); const file = items[i].getAsFile(); const reader = new FileReader();
-                    reader.onload = function(event) {
-                        const img = document.createElement("img"); img.src = event.target.result;
-                        const selection = window.getSelection(); if (!selection.rangeCount) return;
-                        selection.deleteFromDocument(); selection.getRangeAt(0).insertNode(img); selection.collapseToEnd(); autoSave();
-                    }; reader.readAsDataURL(file); break;
-                }
-            }
-        }
-
-        function handleGlobalPaste(e) {
-            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
-            
-            const items = (e.clipboardData || e.originalEvent.clipboardData).items;
-            for (let i = 0; i < items.length; i++) {
-                if (items[i].type.indexOf("image") === 0) {
-                    e.preventDefault(); 
-                    const file = items[i].getAsFile(); 
-                    const reader = new FileReader();
-                    reader.onload = function(event) {
-                        createStickerElement({ 
-                            id: 'sticker-' + Date.now(), 
-                            type: 'image', 
-                            x: window.scrollX + window.innerWidth / 2 - 100, 
-                            y: window.scrollY + window.innerHeight / 2 - 100, 
-                            content: event.target.result 
-                        });
-                        autoSave();
-                    }; 
-                    reader.readAsDataURL(file); 
-                    break;
-                }
-            }
-        }
-
         function clearAllImages() {
             if(!confirm('清除卡片內的圖片（不含貼紙）？')) return;
             const data = gatherData();
@@ -1146,80 +773,31 @@
             renderFromData(newData); autoSave();
         }
 
-        // --- 🔧 升級版截圖功能：使用「替身術」解決文字截斷 ---
+        // 截圖邏輯
         function takeScreenshot() {
-            if (typeof html2canvas === 'undefined') {
-                alert('截圖功能需要網路載入元件，請檢查您的網路連線。');
-                return;
-            }
-            
-            // 1. 加上截圖專用 class (移除陰影和裝飾)
+            if (typeof html2canvas === 'undefined') { alert('截圖功能需要網路載入元件，請檢查您的網路連線。'); return; }
             document.body.classList.add('taking-screenshot');
-
-            // 2. [替身術開始] 找出所有便利貼的 textarea
             const textareas = document.querySelectorAll('.sticky-note textarea');
-            const clones = []; // 存儲替身元素以便稍後移除
-
+            const clones = [];
             textareas.forEach(textarea => {
-                // 創建替身 div
-                const div = document.createElement('div');
-                div.className = 'screenshot-clone-div';
-                
-                // 複製文字內容
-                div.innerText = textarea.value;
-
-                // 複製關鍵樣式，確保外觀一致
+                const div = document.createElement('div'); div.className = 'screenshot-clone-div'; div.innerText = textarea.value;
                 const style = window.getComputedStyle(textarea);
-                div.style.width = style.width;
-                div.style.minHeight = style.height; // 用 min-height 確保字多時自動撐開
-                div.style.padding = style.padding;
-                div.style.fontSize = style.fontSize;
-                div.style.fontFamily = style.fontFamily;
-                div.style.lineHeight = style.lineHeight;
-                div.style.color = style.color;
-                div.style.background = 'transparent'; // 背景由父層決定
-                
-                // 隱藏原本的 textarea
-                textarea.style.display = 'none';
-                
-                // 插入替身
-                textarea.parentNode.insertBefore(div, textarea);
-                clones.push({ div, textarea });
+                div.style.width = style.width; div.style.minHeight = style.height; div.style.padding = style.padding; div.style.fontSize = style.fontSize; div.style.fontFamily = style.fontFamily; div.style.lineHeight = style.lineHeight; div.style.color = style.color; div.style.background = 'transparent';
+                textarea.style.display = 'none'; textarea.parentNode.insertBefore(div, textarea); clones.push({ div, textarea });
             });
-            
-            // 3. 截圖
-            html2canvas(document.body, {
-                scale: 2, 
-                useCORS: true, 
-                backgroundColor: '#f8fafc'
-            }).then(canvas => {
-                const a = document.createElement('a'); a.href = canvas.toDataURL("image/png");
-                a.download = `screenshot_${Date.now()}.png`; a.click();
-                
-                // 4. [復原] 移除替身，顯示原本的 textarea
-                clones.forEach(item => {
-                    item.div.remove();
-                    item.textarea.style.display = '';
-                });
+            html2canvas(document.body, { scale: 2, useCORS: true, backgroundColor: '#f8fafc' }).then(canvas => {
+                const a = document.createElement('a'); a.href = canvas.toDataURL("image/png"); a.download = `screenshot_${Date.now()}.png`; a.click();
+                clones.forEach(item => { item.div.remove(); item.textarea.style.display = ''; });
                 document.body.classList.remove('taking-screenshot');
-
             }).catch(err => {
-                console.error(err);
-                alert('截圖失敗，請重試');
-                
-                // 發生錯誤也要復原
-                clones.forEach(item => {
-                    item.div.remove();
-                    item.textarea.style.display = '';
-                });
+                console.error(err); alert('截圖失敗，請重試');
+                clones.forEach(item => { item.div.remove(); item.textarea.style.display = ''; });
                 document.body.classList.remove('taking-screenshot');
             });
         }
 
-        // --- Tooltip & 視圖切換 & AI ---
-        function showTooltip(e, text) {
-            tooltip.innerText = text; tooltip.style.display = 'block'; updateTooltipPos(e);
-        }
+        // Tooltip & 視圖 & AI
+        function showTooltip(e, text) { tooltip.innerText = text; tooltip.style.display = 'block'; updateTooltipPos(e); }
         function hideTooltip() { tooltip.style.display = 'none'; }
         function updateTooltipPos(e) {
             const offset = 15; let left = e.clientX + offset; let top = e.clientY + offset;
@@ -1227,69 +805,44 @@
             if (top + tooltip.offsetHeight > window.innerHeight) top = e.clientY - tooltip.offsetHeight - offset;
             tooltip.style.left = left + 'px'; tooltip.style.top = top + 'px';
         }
-
         function toggleChronicleView() {
             if (currentView === 'chronicle') resetToTimeline();
             else {
                 if (currentView === 'gantt') document.getElementById('ganttBtn').classList.remove('active');
-                document.getElementById('container').style.display = 'none';
-                document.getElementById('chronicle-view').style.display = 'block';
-                document.getElementById('gantt-view').style.display = 'none';
-                document.getElementById('mainAddBtn').style.display = 'none';
-                document.body.classList.remove('view-gantt');
-                renderChronicle(); currentView = 'chronicle';
-                document.getElementById('chronicleBtn').classList.add('highlight');
+                document.getElementById('container').style.display = 'none'; document.getElementById('chronicle-view').style.display = 'block'; document.getElementById('gantt-view').style.display = 'none'; document.getElementById('mainAddBtn').style.display = 'none'; document.body.classList.remove('view-gantt');
+                renderChronicle(); currentView = 'chronicle'; document.getElementById('chronicleBtn').classList.add('highlight');
             }
         }
-
         function toggleGanttView() {
             const btn = document.getElementById('ganttBtn');
             if (currentView === 'gantt') resetToTimeline();
             else {
                 if (currentView === 'chronicle') document.getElementById('chronicleBtn').classList.remove('highlight');
-                document.getElementById('container').style.display = 'none';
-                document.getElementById('chronicle-view').style.display = 'none';
-                document.getElementById('gantt-view').style.display = 'block';
-                document.getElementById('mainAddBtn').style.display = 'none';
-                document.body.classList.add('view-gantt');
-                renderGantt(); currentView = 'gantt';
-                btn.classList.add('active');
+                document.getElementById('container').style.display = 'none'; document.getElementById('chronicle-view').style.display = 'none'; document.getElementById('gantt-view').style.display = 'block'; document.getElementById('mainAddBtn').style.display = 'none'; document.body.classList.add('view-gantt');
+                renderGantt(); currentView = 'gantt'; btn.classList.add('active');
             }
         }
-
         function resetToTimeline() {
-            document.getElementById('container').style.display = 'block';
-            document.getElementById('chronicle-view').style.display = 'none';
-            document.getElementById('gantt-view').style.display = 'none';
-            document.getElementById('mainAddBtn').style.display = 'block';
-            document.body.classList.remove('view-gantt');
-            document.getElementById('chronicleBtn').classList.remove('highlight');
-            document.getElementById('ganttBtn').classList.remove('active');
-            currentView = 'timeline';
+            document.getElementById('container').style.display = 'block'; document.getElementById('chronicle-view').style.display = 'none'; document.getElementById('gantt-view').style.display = 'none'; document.getElementById('mainAddBtn').style.display = 'block'; document.body.classList.remove('view-gantt');
+            document.getElementById('chronicleBtn').classList.remove('highlight'); document.getElementById('ganttBtn').classList.remove('active'); currentView = 'timeline';
         }
-
         function changeScale(val) { currentScale = val; if (currentView === 'gantt') renderGantt(); }
-
         function getMidnightTime(dateStr) {
             if(!dateStr) return null; const parts = dateStr.split('-'); if (parts.length < 3) return null; 
             const y = parseInt(parts[0]); const m = parseInt(parts[1]); const d = parseInt(parts[2]);
             if (isNaN(y) || isNaN(m) || isNaN(d)) return null; return new Date(y, m-1, d, 0, 0, 0).getTime();
         }
-
+        
         function renderChronicle() {
             const container = document.getElementById('vTimeline'); container.innerHTML = '';
             let data = gatherData().filter(i => !i.isMemo && (i.date_single || i.date_start));
             if (activeProjectFilters.size > 0) data = data.filter(i => activeProjectFilters.has(i.project));
-            if (currentSearchKeyword) {
-                const kw = currentSearchKeyword.toLowerCase();
-                data = data.filter(i => (i.content + i.label + i.project).toLowerCase().includes(kw));
-            }
+            if (currentSearchKeyword) { const kw = currentSearchKeyword.toLowerCase(); data = data.filter(i => (i.content + i.label + i.project).toLowerCase().includes(kw)); }
             if(data.length === 0) { container.innerHTML='<div style="text-align:center;padding:20px;color:#999">無有效日期資料</div>'; return; }
             const parsed = data.map(item => {
                 let s = getMidnightTime(item.mode==='range'?item.date_start:item.date_single);
                 let e = getMidnightTime(item.mode==='range'?item.date_end:item.date_single);
-                if(!s && e) s=e; if(s && !e) e=s; if(e<s) e=s;
-                return { ...item, start: s, end: e };
+                if(!s && e) s=e; if(s && !e) e=s; if(e<s) e=s; return { ...item, start: s, end: e };
             }).filter(item => item.start !== null).sort((a,b) => a.start - b.start);
             const grouped = {}; const activeRanges = []; 
             parsed.forEach(item => {
@@ -1309,13 +862,11 @@
                     const projTag = item.project ? `<span class="proj-tag-clean">#${item.project}</span>` : '';
                     let rangeBadge = ''; let days = 1;
                     if (item.mode === 'range' && item.date_end) {
-                        const ed = new Date(item.date_end);
-                        rangeBadge = `<span class="range-end-badge">➡ ${ed.getMonth()+1}/${ed.getDate()} 結束</span>`;
+                        const ed = new Date(item.date_end); rangeBadge = `<span class="range-end-badge">➡ ${ed.getMonth()+1}/${ed.getDate()} 結束</span>`;
                         days = Math.ceil((item.end - item.start) / 86400000) + 1;
                     }
                     const conflictBadge = item.conflictMsg ? `<span class="overlap-badge">${item.conflictMsg}</span>` : '';
-                    const barWidthPct = Math.min(100, days * 3);
-                    const colorMap = { blue:'#4f46e5', green:'#10b981', red:'#ef4444', yellow:'#f59e0b' };
+                    const barWidthPct = Math.min(100, days * 3); const colorMap = { blue:'#4f46e5', green:'#10b981', red:'#ef4444', yellow:'#f59e0b' };
                     contentHtml += `<div class="chronicle-item-card" data-color="${item.color}"><div>${projTag}<span class="chronicle-title" style="display:inline;">${item.label}${rangeBadge}${conflictBadge}</span></div><div class="chronicle-desc">${item.content}</div><div class="duration-bar-container"><div class="duration-bar-fill" style="width:${barWidthPct}%; background:${colorMap[item.color]||'#4f46e5'}"></div></div><div class="duration-text">工期: ${days} 天</div></div>`;
                 });
                 html += `<div class="chronicle-row"><div class="chronicle-date-col">${dateHtml}</div><div class="chronicle-dot-col"><div class="chronicle-dot" data-color="blue" style="border-color:#94a3b8"></div></div><div class="chronicle-content-col">${contentHtml}</div></div>`;
@@ -1327,20 +878,15 @@
             const chart = document.getElementById('ganttChart'); chart.innerHTML='';
             let data = gatherData().filter(i => !i.isMemo && (i.date_single || i.date_start));
             if (activeProjectFilters.size > 0) data = data.filter(i => activeProjectFilters.has(i.project));
-            if (currentSearchKeyword) {
-                const kw = currentSearchKeyword.toLowerCase();
-                data = data.filter(i => (i.content + i.label + i.project).toLowerCase().includes(kw));
-            }
+            if (currentSearchKeyword) { const kw = currentSearchKeyword.toLowerCase(); data = data.filter(i => (i.content + i.label + i.project).toLowerCase().includes(kw)); }
             if(data.length === 0) { chart.innerHTML='<div style="text-align:center;padding:20px;color:#999">無有效日期資料</div>'; return; }
             const parsed = data.map(d => {
                 let s = getMidnightTime(d.mode==='range' ? d.date_start : d.date_single);
                 let e = getMidnightTime(d.mode==='range' ? d.date_end : d.date_single);
-                if(!s && e) s=e; if(s && !e) e=s; if(e<s) e=s;
-                return { ...d, start: s, end: e };
+                if(!s && e) s=e; if(s && !e) e=s; if(e<s) e=s; return { ...d, start: s, end: e };
             }).filter(d => d.start !== null);
             const dayMs = 86400000;
-            let minT = Math.min(...parsed.map(p=>p.start)) - (dayMs * 2);
-            let maxT = Math.max(...parsed.map(p=>p.end)) + (dayMs * 2);
+            let minT = Math.min(...parsed.map(p=>p.start)) - (dayMs * 2); let maxT = Math.max(...parsed.map(p=>p.end)) + (dayMs * 2);
             const plotDur = maxT - minT;
             let minPxPerDay = 50;
             if (currentScale === 'week') minPxPerDay = 20; else if (currentScale === 'month') minPxPerDay = 10; 
@@ -1383,6 +929,76 @@
             chart.innerHTML = `<div style="display:inline-block; min-width:100%;">${headerHtml}${rowsHtml}</div>`;
         }
 
+        function togglePresentation() { document.body.classList.toggle('presentation-mode'); }
+        function filterNodes(kw) {
+            currentSearchKeyword = kw;
+            if (currentView === 'chronicle') { renderChronicle(); return; }
+            if (currentView === 'gantt') { renderGantt(); return; }
+            const items = document.querySelectorAll('.timeline-item');
+            items.forEach(item => {
+                const text = (item.innerText + item.querySelector('input').value).toLowerCase();
+                const p = item.querySelector('.footer-project-input').value;
+                const matchKw = text.includes(kw.toLowerCase());
+                const matchProj = activeProjectFilters.size === 0 || activeProjectFilters.has(p);
+                item.classList.toggle('hidden-by-filter', !(matchKw && matchProj));
+            });
+        }
+        function toggleProjectBar() {
+            const bar = document.getElementById('project-bar');
+            bar.classList.toggle('show'); document.body.classList.toggle('has-proj-bar'); refreshProjectBar();
+        }
+        function refreshProjectBar() {
+            const bar = document.getElementById('project-bar'); if (!bar.classList.contains('show')) return;
+            const projects = new Set();
+            document.querySelectorAll('.footer-project-input').forEach(i => { if (i.value) projects.add(i.value); });
+            bar.innerHTML = '';
+            if (projects.size === 0) { bar.innerHTML = '<span style="color:#94a3b8;font-size:0.9rem;">無專案資料</span>'; return; }
+            projects.forEach(p => {
+                const badge = document.createElement('div'); badge.className = `proj-badge ${activeProjectFilters.has(p) ? 'active' : ''}`;
+                badge.innerText = p; badge.onclick = () => { if (activeProjectFilters.has(p)) activeProjectFilters.delete(p); else activeProjectFilters.add(p); badge.classList.toggle('active'); filterNodes(currentSearchKeyword); };
+                bar.appendChild(badge);
+            });
+        }
+        function toggleToolbox() { document.getElementById('toolboxContainer').classList.toggle('closed'); }
+        function downloadJSON() {
+            const data = { data: gatherData(), notes: gatherNotes(), stickers: gatherStickers() };
+            const a = document.createElement('a'); a.href = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(data.data)); a.download = `report_god_${getTodayString()}.json`; a.click();
+        }
+        function loadJSON(input) {
+            const file = input.files[0]; if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const parsed = JSON.parse(e.target.result);
+                    if (Array.isArray(parsed)) renderFromData(parsed); 
+                    else { alert('格式不符或舊版資料'); }
+                } catch(err) { alert('讀取失敗'); }
+            }; reader.readAsText(file);
+        }
+        function renderFromData(data) {
+            container.innerHTML = '';
+            data.forEach(item => container.appendChild(createNodeElement(item)));
+            autoSave(); refreshProjectBar();
+        }
+        function renderNotes(notes) {
+            document.querySelectorAll('.sticky-note').forEach(e => e.remove());
+            notes.forEach(n => createStickyElement(n));
+        }
+        function renderStickers(stickers) {
+            document.querySelectorAll('.sticker').forEach(e => e.remove());
+            stickers.forEach(s => createStickerElement(s));
+        }
+        function exportToCSV() {
+            let csvContent = "data:text/csv;charset=utf-8,\uFEFF專案,標題,開始日期,結束日期,狀態,內容\n";
+            gatherData().forEach(row => {
+                let statusMap = ['未開始','進行中','已完成','延遲'];
+                let dateStr = row.mode === 'range' ? `${row.date_start}~${row.date_end}` : row.date_single;
+                let cleanContent = row.content.replace(/<[^>]+>/g, '').replace(/[\n,]/g, ' ');
+                csvContent += `${row.project},${row.label},${dateStr},,${statusMap[row.status]},${cleanContent}\n`;
+            });
+            const encodedUri = encodeURI(csvContent); const link = document.createElement("a");
+            link.setAttribute("href", encodedUri); link.setAttribute("download", `report_export_${getTodayString()}.csv`); document.body.appendChild(link); link.click();
+        }
         function enterAIMode() { document.body.classList.add('ai-selecting'); document.getElementById('normal-toolbar').style.display = 'none'; document.getElementById('ai-toolbar').style.display = 'flex'; }
         function exitAIMode() { document.body.classList.remove('ai-selecting'); document.getElementById('normal-toolbar').style.display = 'flex'; document.getElementById('ai-toolbar').style.display = 'none'; document.querySelectorAll('.select-chk').forEach(chk => chk.checked = false); }
         function selectAllAI() { const chks = document.querySelectorAll('.select-chk'); const allChecked = Array.from(chks).every(c => c.checked); chks.forEach(chk => chk.checked = !allChecked); }
