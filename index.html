@@ -610,6 +610,7 @@
                             <div class="status-dot status-${item.status}" onclick="cycleStatus(this)"></div>
                         </div>
                         <div class="card-top-right">
+                            <button class="btn-icon" onclick="addToGoogleCalendar(this)" title="加入 Google Calendar">📆</button>
                             <button class="btn-icon" onclick="toggleRange(this)">↔️</button>
                             <button class="btn-icon" onclick="insertTodoLine(this)">☑</button>
                             <button class="btn-icon mobile-hidden" onclick="insertBullet(this)">🔹</button>
@@ -1014,6 +1015,63 @@
             if(selectedItems.length === 0) { alert('未選擇任何項目'); return; }
             const textToProcess = selectedItems.join('\n\n----------------\n\n');
             navigator.clipboard.writeText(textToProcess).then(() => { alert(`已將 ${selectedItems.length} 個項目的內容複製到剪貼簿！`); exitAIMode(); }).catch(err => { console.error('複製失敗:', err); });
+        }
+
+        // --- 📅 Google Calendar 整合功能 ---
+        function addToGoogleCalendar(btn) {
+            const item = btn.closest('.timeline-item');
+            
+            // 1. 取得資料
+            const project = item.querySelector('.footer-project-input').value;
+            const label = item.querySelector('.label-input').value || '未命名事項';
+            const content = item.querySelector('.content').innerText;
+            
+            // 2. 處理日期
+            let startDateStr, endDateStr;
+            
+            if (item.classList.contains('range-mode')) {
+                startDateStr = item.querySelector('.date-start').value;
+                endDateStr = item.querySelector('.date-end').value;
+            } else {
+                startDateStr = item.querySelector('.single-date').value;
+                endDateStr = startDateStr; // 單日模式起始與結束相同
+            }
+
+            if (!startDateStr) {
+                alert('請先設定日期才能加入行事曆！');
+                return;
+            }
+            if (!endDateStr) endDateStr = startDateStr;
+
+            // 3. 格式化日期為 Google 格式 (YYYYMMDD)
+            // 手動解析以避免時區誤差： new Date('2025-12-05') 會視為 UTC，轉本地可能變 12/04
+            const formatToGoogleDate = (y, m, d) => {
+                return `${y}${String(m).padStart(2, '0')}${String(d).padStart(2, '0')}`;
+            };
+
+            const parseDate = (str) => {
+                const parts = str.split('-').map(Number); // [2025, 12, 5]
+                return { y: parts[0], m: parts[1], d: parts[2] };
+            };
+
+            const start = parseDate(startDateStr);
+            const sStr = formatToGoogleDate(start.y, start.m, start.d);
+
+            // 結束日期需要+1天 (Google Calendar 全天事件特性)
+            const end = parseDate(endDateStr);
+            const endDateObj = new Date(end.y, end.m - 1, end.d);
+            endDateObj.setDate(endDateObj.getDate() + 1);
+            const eStr = formatToGoogleDate(endDateObj.getFullYear(), endDateObj.getMonth() + 1, endDateObj.getDate());
+
+            // 4. 組合
+            const eventDates = `${sStr}/${eStr}`; // 格式：YYYYMMDD/YYYYMMDD
+            const eventTitle = encodeURIComponent((project ? `[${project}] ` : '') + label);
+            const eventDetails = encodeURIComponent(content);
+            
+            const url = `https://www.google.com/calendar/render?action=TEMPLATE&text=${eventTitle}&dates=${eventDates}&details=${eventDetails}`;
+            
+            // 5. 開啟
+            window.open(url, '_blank');
         }
 
         init();
