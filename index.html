@@ -15,7 +15,7 @@
         #save-light.unsaved { background-color: #ef4444; box-shadow: 0 0 8px #ef4444; animation: pulse-red 1s infinite; }
         @keyframes pulse-red { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.9); } 100% { opacity: 1; transform: scale(1); } }
 
-        /* --- 📋 貼上選擇對話框 (New) --- */
+        /* --- 📋 貼上選擇對話框 --- */
         #paste-dialog {
             display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
             background: rgba(0,0,0,0.5); z-index: 5000; align-items: center; justify-content: center;
@@ -361,54 +361,61 @@
             }, 100);
         };
 
-        // --- 📸 高品質存圖功能 (替代方案) ---
+        // --- 📸 強力修正版：高品質存圖功能 ---
         function downloadAsImage() {
-            const node = document.body; // 直接抓取整個網頁
+            // 1. 強制計算整個頁面的寬高（包含捲動區域）
+            const bodyWidth = document.documentElement.scrollWidth;
+            const bodyHeight = document.documentElement.scrollHeight;
             
-            // 1. 準備模式：隱藏不必要的介面 (模擬列印模式)
-            node.classList.add('presentation-mode'); // 借用簡報模式來隱藏工具列
-            document.getElementById('save-light').style.display = 'none'; // 隱藏紅綠燈
-            document.getElementById('exit-pres-btn').style.display = 'none'; // 隱藏退出按鈕
+            const node = document.body;
             
-            // 確保背景是白色的 (避免透明背景變黑)
+            // 2. 準備模式：隱藏不必要的介面
+            node.classList.add('presentation-mode'); 
+            document.getElementById('save-light').style.display = 'none'; 
+            document.getElementById('exit-pres-btn').style.display = 'none'; 
+            
             const originalBg = node.style.backgroundColor;
             node.style.backgroundColor = '#ffffff';
 
-            // 2. 顯示等待提示
             const mainBtn = document.getElementById('mainAddBtn');
             const originalBtnText = mainBtn.innerText;
-            mainBtn.innerText = '🖼️ 圖片生成中...';
+            mainBtn.innerText = '🖼️ 處理中...';
             
-            // 3. 開始轉換
-            htmlToImage.toPng(node, { 
-                quality: 1.0, 
-                backgroundColor: '#ffffff',
-                // 過濾掉不需要截圖的元素 (二次保險)
-                filter: (domNode) => {
-                    if (domNode.classList && 
-                       (domNode.classList.contains('toolbar') || 
-                        domNode.classList.contains('toolbox-container') ||
-                        domNode.id === 'project-bar')) {
-                        return false;
+            // 3. 延遲執行，確保瀏覽器渲染完成
+            setTimeout(() => {
+                htmlToImage.toPng(node, { 
+                    quality: 1.0, 
+                    backgroundColor: '#ffffff',
+                    // 關鍵修正：明確告訴程式碼要截多大
+                    width: bodyWidth,
+                    height: bodyHeight,
+                    style: {
+                        transform: 'none', // 防止 CSS transform 偏移
+                        margin: 0
+                    },
+                    filter: (domNode) => {
+                        if (domNode.classList && 
+                           (domNode.classList.contains('toolbar') || 
+                            domNode.classList.contains('toolbox-container') ||
+                            domNode.id === 'project-bar')) {
+                            return false;
+                        }
+                        return true;
                     }
-                    return true;
-                }
-            })
-            .then(function (dataUrl) {
-                // 4. 觸發下載
-                const link = document.createElement('a');
-                link.download = `report_image_${getTodayString()}.png`;
-                link.href = dataUrl;
-                link.click();
-
-                // 5. 恢復原狀
-                cleanupUI();
-            })
-            .catch(function (error) {
-                console.error('圖片生成失敗:', error);
-                alert('圖片生成失敗，可能是圖片檔案太大或瀏覽器限制。');
-                cleanupUI();
-            });
+                })
+                .then(function (dataUrl) {
+                    const link = document.createElement('a');
+                    link.download = `report_image_${getTodayString()}.png`;
+                    link.href = dataUrl;
+                    link.click();
+                    cleanupUI();
+                })
+                .catch(function (error) {
+                    console.error('圖片生成失敗:', error);
+                    alert('圖片生成失敗，可能是內容過長。');
+                    cleanupUI();
+                });
+            }, 100); // 100ms 緩衝
 
             function cleanupUI() {
                 node.classList.remove('presentation-mode');
@@ -952,94 +959,6 @@
             chart.innerHTML = `<div style="display:inline-block; min-width:100%;">${headerHtml}${rowsHtml}</div>`;
         }
 
-        function togglePresentation() { document.body.classList.toggle('presentation-mode'); }
-        function filterNodes(kw) {
-            currentSearchKeyword = kw;
-            if (currentView === 'chronicle') { renderChronicle(); return; }
-            if (currentView === 'gantt') { renderGantt(); return; }
-            const items = document.querySelectorAll('.timeline-item');
-            items.forEach(item => {
-                const text = (item.innerText + item.querySelector('input').value).toLowerCase();
-                const p = item.querySelector('.footer-project-input').value;
-                const matchKw = text.includes(kw.toLowerCase());
-                const matchProj = activeProjectFilters.size === 0 || activeProjectFilters.has(p);
-                item.classList.toggle('hidden-by-filter', !(matchKw && matchProj));
-            });
-        }
-        function toggleProjectBar() {
-            const bar = document.getElementById('project-bar');
-            bar.classList.toggle('show'); document.body.classList.toggle('has-proj-bar'); refreshProjectBar();
-        }
-        function refreshProjectBar() {
-            const bar = document.getElementById('project-bar'); if (!bar.classList.contains('show')) return;
-            const projects = new Set();
-            document.querySelectorAll('.footer-project-input').forEach(i => { if (i.value) projects.add(i.value); });
-            bar.innerHTML = '';
-            if (projects.size === 0) { bar.innerHTML = '<span style="color:#94a3b8;font-size:0.9rem;">無專案資料</span>'; return; }
-            projects.forEach(p => {
-                const badge = document.createElement('div'); badge.className = `proj-badge ${activeProjectFilters.has(p) ? 'active' : ''}`;
-                badge.innerText = p; badge.onclick = () => { if (activeProjectFilters.has(p)) activeProjectFilters.delete(p); else activeProjectFilters.add(p); badge.classList.toggle('active'); filterNodes(currentSearchKeyword); };
-                bar.appendChild(badge);
-            });
-        }
-        function toggleToolbox() { document.getElementById('toolboxContainer').classList.toggle('closed'); }
-        function downloadJSON() {
-            const data = { data: gatherData(), notes: gatherNotes(), stickers: gatherStickers() };
-            const a = document.createElement('a'); a.href = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(data.data)); a.download = `report_god_${getTodayString()}.json`; a.click();
-        }
-        function loadJSON(input) {
-            const file = input.files[0]; if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const parsed = JSON.parse(e.target.result);
-                    if (Array.isArray(parsed)) renderFromData(parsed); 
-                    else { alert('格式不符或舊版資料'); }
-                } catch(err) { alert('讀取失敗'); }
-            }; reader.readAsText(file);
-        }
-        function renderFromData(data) {
-            container.innerHTML = '';
-            data.forEach(item => container.appendChild(createNodeElement(item)));
-            autoSave(); refreshProjectBar();
-        }
-        function renderNotes(notes) {
-            document.querySelectorAll('.sticky-note').forEach(e => e.remove());
-            notes.forEach(n => createStickyElement(n));
-        }
-        function renderStickers(stickers) {
-            document.querySelectorAll('.sticker').forEach(e => e.remove());
-            stickers.forEach(s => createStickerElement(s));
-        }
-        function exportToCSV() {
-            let csvContent = "data:text/csv;charset=utf-8,\uFEFF專案,標題,開始日期,結束日期,狀態,內容\n";
-            gatherData().forEach(row => {
-                let statusMap = ['未開始','進行中','已完成','延遲'];
-                let dateStr = row.mode === 'range' ? `${row.date_start}~${row.date_end}` : row.date_single;
-                let cleanContent = row.content.replace(/<[^>]+>/g, '').replace(/[\n,]/g, ' ');
-                csvContent += `${row.project},${row.label},${dateStr},,${statusMap[row.status]},${cleanContent}\n`;
-            });
-            const encodedUri = encodeURI(csvContent); const link = document.createElement("a");
-            link.setAttribute("href", encodedUri); link.setAttribute("download", `report_export_${getTodayString()}.csv`); document.body.appendChild(link); link.click();
-        }
-        function enterAIMode() { document.body.classList.add('ai-selecting'); document.getElementById('normal-toolbar').style.display = 'none'; document.getElementById('ai-toolbar').style.display = 'flex'; }
-        function exitAIMode() { document.body.classList.remove('ai-selecting'); document.getElementById('normal-toolbar').style.display = 'flex'; document.getElementById('ai-toolbar').style.display = 'none'; document.querySelectorAll('.select-chk').forEach(chk => chk.checked = false); }
-        function selectAllAI() { const chks = document.querySelectorAll('.select-chk'); const allChecked = Array.from(chks).every(c => c.checked); chks.forEach(chk => chk.checked = !allChecked); }
-        function confirmAIOutput() {
-            const selectedItems = [];
-            document.querySelectorAll('.timeline-item').forEach(item => {
-                if(item.querySelector('.select-chk').checked) {
-                    const label = item.querySelector('.label-input').value;
-                    const content = item.querySelector('.content').innerText;
-                    selectedItems.push(`【${label}】\n${content}`);
-                }
-            });
-            if(selectedItems.length === 0) { alert('未選擇任何項目'); return; }
-            const textToProcess = selectedItems.join('\n\n----------------\n\n');
-            navigator.clipboard.writeText(textToProcess).then(() => { alert(`已將 ${selectedItems.length} 個項目的內容複製到剪貼簿！`); exitAIMode(); }).catch(err => { console.error('複製失敗:', err); });
-        }
-
-        // --- 📅 Google Calendar 整合功能 ---
         function addToGoogleCalendar(btn) {
             const item = btn.closest('.timeline-item');
             
