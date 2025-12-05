@@ -163,7 +163,10 @@
         .select-chk { width: 18px; height: 18px; margin-right: 8px; cursor: pointer; display: none; }
         body.ai-selecting .select-chk { display: inline-block; }
         .mode-toggle-btn { font-size: 12px; border: 1px solid #94a3b8; border-radius: 4px; padding: 4px 8px; cursor: pointer; background: #f1f5f9; color: #64748b; margin-right: 5px; height: 28px; white-space: nowrap; }
-        .date-input { border: 1px solid #cbd5e1; background: #f8fafc; padding: 4px 6px; border-radius: 4px; font-family: inherit; font-size: 0.9rem; color: #334155; outline: none; cursor: pointer; width: 125px; height: 28px; }
+        
+        /* 🔧 Firefox 日期修復：加寬至 138px，減少內距 */
+        .date-input { border: 1px solid #cbd5e1; background: #f8fafc; padding: 4px 2px; border-radius: 4px; font-family: inherit; font-size: 0.9rem; color: #334155; outline: none; cursor: pointer; width: 138px; height: 28px; }
+        
         .card.memo-mode .date-input, .card.memo-mode .today-btn, .card.memo-mode .range-container { display: none !important; }
         .today-btn { background: #e0e7ff; color: #4338ca; border: none; border-radius: 4px; padding: 0 8px; font-size: 0.8rem; cursor: pointer; font-weight: bold; margin-left: 3px; height: 28px; }
         .label-input { border: none; border-bottom: 1px dashed #cbd5e1; padding: 5px 0; font-weight: bold; color: var(--primary); font-size: 1.25rem; outline: none; width: 100%; display: block; margin-top: 5px; background: transparent; }
@@ -344,7 +347,6 @@
         let currentView = 'timeline';
         let currentScale = 'day'; 
         
-        // 🚀 關鍵修復：將新增節點函式移至最上方，避免截斷風險，並設為全域
         window.addNewNode = function() {
             const newItem = {
                 id: Date.now(), pos: 'auto', mode: 'normal', color: 'blue', status: 0, isMemo: false,
@@ -354,7 +356,6 @@
             container.appendChild(el);
             autoSave();
             
-            // 平滑捲動
             setTimeout(() => {
                 el.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }, 100);
@@ -365,7 +366,6 @@
         let pendingPasteTarget = null; // 記錄當時 focus 的元素
 
         document.addEventListener('paste', function(e) {
-            // 1. 檢查是否有圖片資料
             const items = (e.clipboardData || e.originalEvent.clipboardData).items;
             let hasImage = false;
             let blob = null;
@@ -378,7 +378,6 @@
                 }
             }
 
-            // 2. 如果是圖片，攔截預設行為並顯示選單
             if (hasImage && blob) {
                 e.preventDefault();
                 e.stopPropagation();
@@ -386,7 +385,6 @@
                 pendingPasteBlob = blob;
                 pendingPasteTarget = document.activeElement;
                 
-                // 判斷是否正在編輯卡片文字
                 const isEditingCard = pendingPasteTarget && pendingPasteTarget.classList.contains('content');
                 
                 const btnCard = document.getElementById('btn-paste-card');
@@ -418,14 +416,10 @@
                 const imgData = event.target.result;
 
                 if (type === 'card' && pendingPasteTarget) {
-                    // 貼入卡片
                     const img = document.createElement("img");
                     img.src = imgData;
-                    
-                    // 恢復焦點並插入
                     pendingPasteTarget.focus();
                     
-                    // 嘗試插入游標位置
                     const selection = window.getSelection();
                     if (selection.rangeCount > 0) {
                         const range = selection.getRangeAt(0);
@@ -436,7 +430,6 @@
                         pendingPasteTarget.appendChild(img);
                     }
                 } else {
-                    // 貼成背景貼紙
                     createStickerElement({
                         id: 'sticker-' + Date.now(),
                         type: 'image',
@@ -490,7 +483,6 @@
             refreshProjectBar();
         }
 
-        // 🚦 防抖存檔
         let saveTimer = null;
         function autoSave() {
             const light = document.getElementById('save-light');
@@ -509,7 +501,6 @@
             if(light) light.classList.remove('unsaved');
         }
 
-        // --- 核心操作 ---
         function deleteNode(btn) { if(confirm('刪除此節點？')) { btn.closest('.timeline-item').remove(); autoSave(); refreshProjectBar(); } }
         function changeColor(btn) {
             const card = btn.closest('.card'); const colors = ['blue', 'green', 'red', 'yellow'];
@@ -552,7 +543,6 @@
             }
         }
 
-        // --- 資料蒐集 ---
         function gatherData() {
             return Array.from(document.querySelectorAll('.timeline-item')).map(item => {
                 const card = item.querySelector('.card');
@@ -588,7 +578,6 @@
             })); 
         }
 
-        // --- 元素創建 ---
         function createNodeElement(item) {
             const div = document.createElement('div');
             div.className = `timeline-item ${item.pos==='left'?'force-left':item.pos==='right'?'force-right':''} ${item.mode==='range'?'range-mode':''}`;
@@ -647,7 +636,6 @@
             return div;
         }
 
-        // --- 功能函式 ---
         function resizeCard(e) {
             e.stopPropagation(); const card = e.target.parentElement;
             const startX = e.clientX, startY = e.clientY, startW = card.offsetWidth, startH = card.offsetHeight;
@@ -774,7 +762,6 @@
             renderFromData(newData); autoSave();
         }
 
-        // 截圖邏輯
         function takeScreenshot() {
             if (typeof html2canvas === 'undefined') { alert('截圖功能需要網路載入元件，請檢查您的網路連線。'); return; }
             document.body.classList.add('taking-screenshot');
@@ -797,7 +784,6 @@
             });
         }
 
-        // Tooltip & 視圖 & AI
         function showTooltip(e, text) { tooltip.innerText = text; tooltip.style.display = 'block'; updateTooltipPos(e); }
         function hideTooltip() { tooltip.style.display = 'none'; }
         function updateTooltipPos(e) {
@@ -930,103 +916,13 @@
             chart.innerHTML = `<div style="display:inline-block; min-width:100%;">${headerHtml}${rowsHtml}</div>`;
         }
 
-        function togglePresentation() { document.body.classList.toggle('presentation-mode'); }
-        function filterNodes(kw) {
-            currentSearchKeyword = kw;
-            if (currentView === 'chronicle') { renderChronicle(); return; }
-            if (currentView === 'gantt') { renderGantt(); return; }
-            const items = document.querySelectorAll('.timeline-item');
-            items.forEach(item => {
-                const text = (item.innerText + item.querySelector('input').value).toLowerCase();
-                const p = item.querySelector('.footer-project-input').value;
-                const matchKw = text.includes(kw.toLowerCase());
-                const matchProj = activeProjectFilters.size === 0 || activeProjectFilters.has(p);
-                item.classList.toggle('hidden-by-filter', !(matchKw && matchProj));
-            });
-        }
-        function toggleProjectBar() {
-            const bar = document.getElementById('project-bar');
-            bar.classList.toggle('show'); document.body.classList.toggle('has-proj-bar'); refreshProjectBar();
-        }
-        function refreshProjectBar() {
-            const bar = document.getElementById('project-bar'); if (!bar.classList.contains('show')) return;
-            const projects = new Set();
-            document.querySelectorAll('.footer-project-input').forEach(i => { if (i.value) projects.add(i.value); });
-            bar.innerHTML = '';
-            if (projects.size === 0) { bar.innerHTML = '<span style="color:#94a3b8;font-size:0.9rem;">無專案資料</span>'; return; }
-            projects.forEach(p => {
-                const badge = document.createElement('div'); badge.className = `proj-badge ${activeProjectFilters.has(p) ? 'active' : ''}`;
-                badge.innerText = p; badge.onclick = () => { if (activeProjectFilters.has(p)) activeProjectFilters.delete(p); else activeProjectFilters.add(p); badge.classList.toggle('active'); filterNodes(currentSearchKeyword); };
-                bar.appendChild(badge);
-            });
-        }
-        function toggleToolbox() { document.getElementById('toolboxContainer').classList.toggle('closed'); }
-        function downloadJSON() {
-            const data = { data: gatherData(), notes: gatherNotes(), stickers: gatherStickers() };
-            const a = document.createElement('a'); a.href = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(data.data)); a.download = `report_god_${getTodayString()}.json`; a.click();
-        }
-        function loadJSON(input) {
-            const file = input.files[0]; if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const parsed = JSON.parse(e.target.result);
-                    if (Array.isArray(parsed)) renderFromData(parsed); 
-                    else { alert('格式不符或舊版資料'); }
-                } catch(err) { alert('讀取失敗'); }
-            }; reader.readAsText(file);
-        }
-        function renderFromData(data) {
-            container.innerHTML = '';
-            data.forEach(item => container.appendChild(createNodeElement(item)));
-            autoSave(); refreshProjectBar();
-        }
-        function renderNotes(notes) {
-            document.querySelectorAll('.sticky-note').forEach(e => e.remove());
-            notes.forEach(n => createStickyElement(n));
-        }
-        function renderStickers(stickers) {
-            document.querySelectorAll('.sticker').forEach(e => e.remove());
-            stickers.forEach(s => createStickerElement(s));
-        }
-        function exportToCSV() {
-            let csvContent = "data:text/csv;charset=utf-8,\uFEFF專案,標題,開始日期,結束日期,狀態,內容\n";
-            gatherData().forEach(row => {
-                let statusMap = ['未開始','進行中','已完成','延遲'];
-                let dateStr = row.mode === 'range' ? `${row.date_start}~${row.date_end}` : row.date_single;
-                let cleanContent = row.content.replace(/<[^>]+>/g, '').replace(/[\n,]/g, ' ');
-                csvContent += `${row.project},${row.label},${dateStr},,${statusMap[row.status]},${cleanContent}\n`;
-            });
-            const encodedUri = encodeURI(csvContent); const link = document.createElement("a");
-            link.setAttribute("href", encodedUri); link.setAttribute("download", `report_export_${getTodayString()}.csv`); document.body.appendChild(link); link.click();
-        }
-        function enterAIMode() { document.body.classList.add('ai-selecting'); document.getElementById('normal-toolbar').style.display = 'none'; document.getElementById('ai-toolbar').style.display = 'flex'; }
-        function exitAIMode() { document.body.classList.remove('ai-selecting'); document.getElementById('normal-toolbar').style.display = 'flex'; document.getElementById('ai-toolbar').style.display = 'none'; document.querySelectorAll('.select-chk').forEach(chk => chk.checked = false); }
-        function selectAllAI() { const chks = document.querySelectorAll('.select-chk'); const allChecked = Array.from(chks).every(c => c.checked); chks.forEach(chk => chk.checked = !allChecked); }
-        function confirmAIOutput() {
-            const selectedItems = [];
-            document.querySelectorAll('.timeline-item').forEach(item => {
-                if(item.querySelector('.select-chk').checked) {
-                    const label = item.querySelector('.label-input').value;
-                    const content = item.querySelector('.content').innerText;
-                    selectedItems.push(`【${label}】\n${content}`);
-                }
-            });
-            if(selectedItems.length === 0) { alert('未選擇任何項目'); return; }
-            const textToProcess = selectedItems.join('\n\n----------------\n\n');
-            navigator.clipboard.writeText(textToProcess).then(() => { alert(`已將 ${selectedItems.length} 個項目的內容複製到剪貼簿！`); exitAIMode(); }).catch(err => { console.error('複製失敗:', err); });
-        }
-
-        // --- 📅 Google Calendar 整合功能 ---
         function addToGoogleCalendar(btn) {
             const item = btn.closest('.timeline-item');
             
-            // 1. 取得資料
             const project = item.querySelector('.footer-project-input').value;
             const label = item.querySelector('.label-input').value || '未命名事項';
             const content = item.querySelector('.content').innerText;
             
-            // 2. 處理日期
             let startDateStr, endDateStr;
             
             if (item.classList.contains('range-mode')) {
@@ -1034,7 +930,7 @@
                 endDateStr = item.querySelector('.date-end').value;
             } else {
                 startDateStr = item.querySelector('.single-date').value;
-                endDateStr = startDateStr; // 單日模式起始與結束相同
+                endDateStr = startDateStr; 
             }
 
             if (!startDateStr) {
@@ -1043,34 +939,29 @@
             }
             if (!endDateStr) endDateStr = startDateStr;
 
-            // 3. 格式化日期為 Google 格式 (YYYYMMDD)
-            // 手動解析以避免時區誤差： new Date('2025-12-05') 會視為 UTC，轉本地可能變 12/04
             const formatToGoogleDate = (y, m, d) => {
                 return `${y}${String(m).padStart(2, '0')}${String(d).padStart(2, '0')}`;
             };
 
             const parseDate = (str) => {
-                const parts = str.split('-').map(Number); // [2025, 12, 5]
+                const parts = str.split('-').map(Number); 
                 return { y: parts[0], m: parts[1], d: parts[2] };
             };
 
             const start = parseDate(startDateStr);
             const sStr = formatToGoogleDate(start.y, start.m, start.d);
 
-            // 結束日期需要+1天 (Google Calendar 全天事件特性)
             const end = parseDate(endDateStr);
             const endDateObj = new Date(end.y, end.m - 1, end.d);
             endDateObj.setDate(endDateObj.getDate() + 1);
             const eStr = formatToGoogleDate(endDateObj.getFullYear(), endDateObj.getMonth() + 1, endDateObj.getDate());
 
-            // 4. 組合
-            const eventDates = `${sStr}/${eStr}`; // 格式：YYYYMMDD/YYYYMMDD
+            const eventDates = `${sStr}/${eStr}`;
             const eventTitle = encodeURIComponent((project ? `[${project}] ` : '') + label);
             const eventDetails = encodeURIComponent(content);
             
             const url = `https://www.google.com/calendar/render?action=TEMPLATE&text=${eventTitle}&dates=${eventDates}&details=${eventDetails}`;
             
-            // 5. 開啟
             window.open(url, '_blank');
         }
 
