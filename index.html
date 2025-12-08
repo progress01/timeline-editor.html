@@ -1014,7 +1014,197 @@
             // 5. 開啟
             window.open(url, '_blank');
         }
+// --- 1. 修復下載備份功能 ---
+        function downloadJSON() {
+            const exportData = {
+                data: gatherData(),
+                notes: gatherNotes(),
+                stickers: gatherStickers()
+            };
+            
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportData));
+            const downloadAnchorNode = document.createElement('a');
+            downloadAnchorNode.setAttribute("href", dataStr);
+            downloadAnchorNode.setAttribute("download", "report_backup_" + getTodayString() + ".json");
+            document.body.appendChild(downloadAnchorNode); // Firefox 需要將元素加到 body
+            downloadAnchorNode.click();
+            downloadAnchorNode.remove();
+        }
 
+        // --- 2. 修復上傳讀取功能 ---
+        function loadJSON(input) {
+            const file = input.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const json = JSON.parse(e.target.result);
+                    
+                    // 檢查格式並存入 LocalStorage
+                    if (json.data) localStorage.setItem('timeline_v47_data', JSON.stringify(json.data));
+                    if (json.notes) localStorage.setItem('timeline_v47_notes', JSON.stringify(json.notes));
+                    if (json.stickers) localStorage.setItem('timeline_v47_stickers', JSON.stringify(json.stickers));
+                    
+                    alert('讀取成功！頁面將重新整理以載入資料。');
+                    location.reload(); // 重新整理以確保所有渲染邏輯重跑
+                } catch (err) {
+                    console.error(err);
+                    alert('檔案格式錯誤，無法讀取。');
+                }
+            };
+            reader.readAsText(file);
+            input.value = ''; // 重置 input 以便重複上傳同個檔案
+        }
+
+        // --- 3. 補上缺失的渲染與輔助函式 (必須補上，否則 init 會報錯) ---
+        
+        // 渲染卡片
+        function renderFromData(items) {
+            container.innerHTML = '';
+            items.forEach(item => {
+                const el = createNodeElement(item);
+                container.appendChild(el);
+            });
+        }
+
+        // 渲染便利貼
+        function renderNotes(items) {
+            document.querySelectorAll('.sticky-note').forEach(el => el.remove());
+            items.forEach(item => createStickyElement(item));
+        }
+
+        // 渲染貼紙/圖片
+        function renderStickers(items) {
+            document.querySelectorAll('.sticker').forEach(el => el.remove());
+            items.forEach(item => createStickerElement(item));
+        }
+
+        // 專案列開關
+        function toggleProjectBar() {
+            projectBar.classList.toggle('show');
+            document.body.classList.toggle('has-proj-bar');
+        }
+
+        // 搜尋過濾
+        function filterNodes(keyword) {
+            currentSearchKeyword = keyword;
+            const items = document.querySelectorAll('.timeline-item');
+            items.forEach(item => {
+                const text = item.innerText.toLowerCase();
+                if (text.includes(keyword.toLowerCase())) {
+                    item.style.display = '';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+            // 如果在大事記或甘特圖模式，也要重繪
+            if(currentView === 'chronicle') renderChronicle();
+            if(currentView === 'gantt') renderGantt();
+        }
+
+        // 刷新專案列按鈕
+        function refreshProjectBar() {
+            const data = gatherData();
+            const projects = [...new Set(data.map(i => i.project).filter(p => p))];
+            
+            projectBar.innerHTML = projects.map(p => 
+                `<div class="proj-badge ${activeProjectFilters.has(p) ? 'active' : ''}" onclick="toggleProjectFilter(this, '${p}')">${p}</div>`
+            ).join('');
+            
+            if (projects.length === 0) {
+                projectBar.innerHTML = '<span style="color:#999; font-size:0.8rem;">尚無專案標籤 (請在卡片右下角輸入)</span>';
+            }
+        }
+
+        // 切換專案過濾
+        window.toggleProjectFilter = function(btn, projName) {
+            if (activeProjectFilters.has(projName)) {
+                activeProjectFilters.delete(projName);
+                btn.classList.remove('active');
+            } else {
+                activeProjectFilters.add(projName);
+                btn.classList.add('active');
+            }
+            
+            // 重新過濾畫面上的卡片
+            const items = document.querySelectorAll('.timeline-item');
+            items.forEach(item => {
+                const p = item.querySelector('.footer-project-input').value;
+                if (activeProjectFilters.size === 0 || activeProjectFilters.has(p)) {
+                    item.classList.remove('hidden-by-filter');
+                } else {
+                    item.classList.add('hidden-by-filter');
+                }
+            });
+
+            // 如果在其他視圖，重繪
+            if(currentView === 'chronicle') renderChronicle();
+            if(currentView === 'gantt') renderGantt();
+        };
+
+        // 工具箱開關
+        function toggleToolbox() {
+            document.getElementById('toolboxContainer').classList.toggle('closed');
+            const btn = document.querySelector('.toolbox-toggle-btn');
+            btn.innerText = btn.innerText === '◀' ? '▶' : '◀';
+        }
+        
+        // AI 模式切換 (預留介面)
+        function enterAIMode() {
+            document.body.classList.add('ai-selecting');
+            alert('請勾選想要讓 AI 處理的卡片，然後點擊「確認」。');
+        }
+        function exitAIMode() {
+            document.body.classList.remove('ai-selecting');
+            document.querySelectorAll('.select-chk').forEach(c => c.checked = false);
+        }
+        function selectAllAI() {
+            document.querySelectorAll('.select-chk').forEach(c => c.checked = true);
+        }
+        function confirmAIOutput() {
+            const selected = [];
+            document.querySelectorAll('.timeline-item').forEach(item => {
+                if(item.querySelector('.select-chk').checked) {
+                    selected.push({
+                        label: item.querySelector('.label-input').value,
+                        content: item.querySelector('.content').innerText
+                    });
+                }
+            });
+            if(selected.length === 0) { alert('未選擇任何卡片'); return; }
+            console.log('AI Selected Data:', selected);
+            alert('已收集 ' + selected.length + ' 張卡片資料 (功能開發中)');
+            exitAIMode();
+        }
+
+        // 簡報模式
+        function togglePresentation() {
+            document.body.classList.toggle('presentation-mode');
+        }
+        
+        // CSV 匯出
+        function exportToCSV() {
+            const data = gatherData();
+            let csvContent = "\uFEFFProject,Date,Label,Content\n";
+            data.forEach(item => {
+                let row = [
+                    `"${item.project || ''}"`,
+                    `"${item.date_single || item.date_start}"`,
+                    `"${item.label || ''}"`,
+                    `"${item.content.replace(/"/g, '""').replace(/\n/g, ' ')}"`
+                ];
+                csvContent += row.join(",") + "\n";
+            });
+            const encodedUri = encodeURI("data:text/csv;charset=utf-8," + csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "report_data.csv");
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+        }
+       
         init();
     </script>
 </body>
