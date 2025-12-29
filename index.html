@@ -880,8 +880,15 @@
                 for(let r of activeRanges) { if(item.start < r.end) { conflictMsg = `⚡ 與 [${r.label}] 重疊`; break; } }
                 for(let i=activeRanges.length-1; i>=0; i--) { if(activeRanges[i].end <= item.start) activeRanges.splice(i, 1); }
                 activeRanges.push({ end: item.end, label: item.label });
-                const sDateStr = item.date_start || item.date_single;
-                if(!grouped[sDateStr]) grouped[sDateStr] = []; grouped[sDateStr].push({ ...item, conflictMsg });
+                
+                // --- 關鍵修正：確保依照模式選擇正確的日期，解決隱藏日期干擾問題 ---
+                const sDateStr = item.mode === 'range' ? item.date_start : item.date_single; 
+                // -----------------------------------------------------------
+                
+                if(sDateStr) {
+                    if(!grouped[sDateStr]) grouped[sDateStr] = []; 
+                    grouped[sDateStr].push({ ...item, conflictMsg });
+                }
             });
             let html = '<div class="chronicle-line"></div>'; 
             Object.keys(grouped).sort().forEach(dateKey => {
@@ -1204,7 +1211,7 @@
             link.click();
             link.remove();
         }
-       
+        
         init();
     </script>
 </body>
