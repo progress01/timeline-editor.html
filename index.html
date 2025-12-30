@@ -361,15 +361,12 @@
             }, 100);
         };
 
-        // --- 📸 強力修正版：高品質存圖功能 ---
+        // --- 📸 截圖功能 (支援全頁面) ---
         function downloadAsImage() {
-            // 1. 強制計算整個頁面的寬高（包含捲動區域）
             const bodyWidth = document.documentElement.scrollWidth;
             const bodyHeight = document.documentElement.scrollHeight;
-            
             const node = document.body;
             
-            // 2. 準備模式：隱藏不必要的介面
             node.classList.add('presentation-mode'); 
             document.getElementById('save-light').style.display = 'none'; 
             document.getElementById('exit-pres-btn').style.display = 'none'; 
@@ -381,18 +378,13 @@
             const originalBtnText = mainBtn.innerText;
             mainBtn.innerText = '🖼️ 處理中...';
             
-            // 3. 延遲執行，確保瀏覽器渲染完成
             setTimeout(() => {
                 htmlToImage.toPng(node, { 
                     quality: 1.0, 
                     backgroundColor: '#ffffff',
-                    // 關鍵修正：明確告訴程式碼要截多大
                     width: bodyWidth,
                     height: bodyHeight,
-                    style: {
-                        transform: 'none', // 防止 CSS transform 偏移
-                        margin: 0
-                    },
+                    style: { transform: 'none', margin: 0 },
                     filter: (domNode) => {
                         if (domNode.classList && 
                            (domNode.classList.contains('toolbar') || 
@@ -415,7 +407,7 @@
                     alert('圖片生成失敗，可能是內容過長。');
                     cleanupUI();
                 });
-            }, 100); // 100ms 緩衝
+            }, 100);
 
             function cleanupUI() {
                 node.classList.remove('presentation-mode');
@@ -428,7 +420,7 @@
 
         // --- 📋 貼上選擇邏輯 ---
         let pendingPasteBlob = null;
-        let pendingPasteTarget = null; // 記錄當時 focus 的元素
+        let pendingPasteTarget = null; 
 
         document.addEventListener('paste', function(e) {
             const items = (e.clipboardData || e.originalEvent.clipboardData).items;
@@ -536,7 +528,7 @@
             if (!hasData) {
                 const defaultItem = {
                     id: Date.now(), pos: 'left', mode: 'normal', color: 'blue', status: 0, isMemo: false,
-                    project: '報告神氣', label: '系統初始化', date_single: getTodayString(), date_start: '', date_end: '', 
+                    project: '報告工具', label: '系統初始化', date_single: getTodayString(), date_start: '', date_end: '', 
                     content: '歡迎使用報告整理工具。'
                 };
                 container.appendChild(createNodeElement(defaultItem));
@@ -835,6 +827,97 @@
             if (top + tooltip.offsetHeight > window.innerHeight) top = e.clientY - tooltip.offsetHeight - offset;
             tooltip.style.left = left + 'px'; tooltip.style.top = top + 'px';
         }
+
+        // 渲染大事記（整合修復版：日期正確 + 紅綠燈 + 專案過濾）
+        function renderChronicle() {
+            const container = document.getElementById('vTimeline'); container.innerHTML = '';
+            
+            // 1. 蒐集並過濾資料 (回復過濾功能)
+            let data = gatherData().filter(i => !i.isMemo && (i.date_single || i.date_start));
+            
+            // 檢查全域變數 activeProjectFilters
+            if (activeProjectFilters.size > 0) {
+                data = data.filter(i => activeProjectFilters.has(i.project));
+            }
+            
+            if (currentSearchKeyword) { const kw = currentSearchKeyword.toLowerCase(); data = data.filter(i => (i.content + i.label + i.project).toLowerCase().includes(kw)); }
+            
+            if(data.length === 0) { container.innerHTML='<div style="text-align:center;padding:20px;color:#999">無有效日期資料</div>'; return; }
+            
+            // 2. 計算日期範圍
+            const parsed = data.map(item => {
+                let s = getMidnightTime(item.mode==='range'?item.date_start:item.date_single);
+                let e = getMidnightTime(item.mode==='range'?item.date_end:item.date_single);
+                if(!s && e) s=e; if(s && !e) e=s; if(e<s) e=s; return { ...item, start: s, end: e };
+            }).filter(item => item.start !== null).sort((a,b) => a.start - b.start);
+            
+            const grouped = {}; const activeRanges = []; 
+            
+            // 3. 分組邏輯
+            parsed.forEach(item => {
+                let conflictMsg = '';
+                for(let r of activeRanges) { if(item.start < r.end) { conflictMsg = `⚡ 與 [${r.label}] 重疊`; break; } }
+                for(let i=activeRanges.length-1; i>=0; i--) { if(activeRanges[i].end <= item.start) activeRanges.splice(i, 1); }
+                activeRanges.push({ end: item.end, label: item.label });
+                
+                // 依照模式取得正確顯示日期
+                const sDateStr = item.mode === 'range' ? item.date_start : item.date_single; 
+                if(sDateStr) {
+                    if(!grouped[sDateStr]) grouped[sDateStr] = []; 
+                    grouped[sDateStr].push({ ...item, conflictMsg });
+                }
+            });
+
+            // 4. 產生 HTML
+            let html = '<div class="chronicle-line"></div>'; 
+            
+            // 定義狀態燈顏色對照表 (0:灰, 1:黃, 2:綠, 3:紅)
+            const statusColors = ['#9ca3af', '#f59e0b', '#10b981', '#ef4444'];
+
+            Object.keys(grouped).sort().forEach(dateKey => {
+                const items = grouped[dateKey]; const d = new Date(dateKey);
+                const dateHtml = `<div class="date-pill">${d.getFullYear()}年<br>${d.getMonth()+1}月${d.getDate()}日</div>`;
+                let contentHtml = '';
+                
+                items.forEach(item => {
+                    const projTag = item.project ? `<span class="proj-tag-clean">#${item.project}</span>` : '';
+                    let rangeBadge = ''; let days = 1;
+                    
+                    if (item.mode === 'range' && item.date_end) {
+                        const ed = new Date(item.date_end); rangeBadge = `<span class="range-end-badge">➡ ${ed.getMonth()+1}/${ed.getDate()} 結束</span>`;
+                        days = Math.ceil((item.end - item.start) / 86400000) + 1;
+                    }
+                    
+                    const conflictBadge = item.conflictMsg ? `<span class="overlap-badge">${item.conflictMsg}</span>` : '';
+                    const barWidthPct = Math.min(100, days * 3); 
+                    const colorMap = { blue:'#4f46e5', green:'#10b981', red:'#ef4444', yellow:'#f59e0b' };
+                    
+                    // --- 新增：狀態燈 HTML ---
+                    const statusColor = statusColors[item.status] || '#9ca3af';
+                    const statusLightHtml = `<span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:${statusColor}; margin-right:8px; flex-shrink:0; box-shadow: 0 0 2px rgba(0,0,0,0.2);"></span>`;
+                    // -----------------------
+
+                    contentHtml += `
+                        <div class="chronicle-item-card" data-color="${item.color}">
+                            <div>${projTag}</div>
+                            <div style="display:flex; align-items:center; margin-bottom:4px;">
+                                ${statusLightHtml}
+                                <span class="chronicle-title" style="margin:0;">${item.label}${rangeBadge}${conflictBadge}</span>
+                            </div>
+                            <div class="chronicle-desc">${item.content}</div>
+                            <div class="duration-bar-container">
+                                <div class="duration-bar-fill" style="width:${barWidthPct}%; background:${colorMap[item.color]||'#4f46e5'}"></div>
+                            </div>
+                            <div class="duration-text">工期: ${days} 天</div>
+                        </div>`;
+                });
+                
+                html += `<div class="chronicle-row"><div class="chronicle-date-col">${dateHtml}</div><div class="chronicle-dot-col"><div class="chronicle-dot" data-color="blue" style="border-color:#94a3b8"></div></div><div class="chronicle-content-col">${contentHtml}</div></div>`;
+            });
+            
+            container.innerHTML = html;
+        }
+
         function toggleChronicleView() {
             if (currentView === 'chronicle') resetToTimeline();
             else {
@@ -863,54 +946,6 @@
             if (isNaN(y) || isNaN(m) || isNaN(d)) return null; return new Date(y, m-1, d, 0, 0, 0).getTime();
         }
         
-        function renderChronicle() {
-            const container = document.getElementById('vTimeline'); container.innerHTML = '';
-            let data = gatherData().filter(i => !i.isMemo && (i.date_single || i.date_start));
-            if (activeProjectFilters.size > 0) data = data.filter(i => activeProjectFilters.has(i.project));
-            if (currentSearchKeyword) { const kw = currentSearchKeyword.toLowerCase(); data = data.filter(i => (i.content + i.label + i.project).toLowerCase().includes(kw)); }
-            if(data.length === 0) { container.innerHTML='<div style="text-align:center;padding:20px;color:#999">無有效日期資料</div>'; return; }
-            const parsed = data.map(item => {
-                let s = getMidnightTime(item.mode==='range'?item.date_start:item.date_single);
-                let e = getMidnightTime(item.mode==='range'?item.date_end:item.date_single);
-                if(!s && e) s=e; if(s && !e) e=s; if(e<s) e=s; return { ...item, start: s, end: e };
-            }).filter(item => item.start !== null).sort((a,b) => a.start - b.start);
-            const grouped = {}; const activeRanges = []; 
-            parsed.forEach(item => {
-                let conflictMsg = '';
-                for(let r of activeRanges) { if(item.start < r.end) { conflictMsg = `⚡ 與 [${r.label}] 重疊`; break; } }
-                for(let i=activeRanges.length-1; i>=0; i--) { if(activeRanges[i].end <= item.start) activeRanges.splice(i, 1); }
-                activeRanges.push({ end: item.end, label: item.label });
-                
-                // --- 關鍵修正：確保依照模式選擇正確的日期，解決隱藏日期干擾問題 ---
-                const sDateStr = item.mode === 'range' ? item.date_start : item.date_single; 
-                // -----------------------------------------------------------
-                
-                if(sDateStr) {
-                    if(!grouped[sDateStr]) grouped[sDateStr] = []; 
-                    grouped[sDateStr].push({ ...item, conflictMsg });
-                }
-            });
-            let html = '<div class="chronicle-line"></div>'; 
-            Object.keys(grouped).sort().forEach(dateKey => {
-                const items = grouped[dateKey]; const d = new Date(dateKey);
-                const dateHtml = `<div class="date-pill">${d.getFullYear()}年<br>${d.getMonth()+1}月${d.getDate()}日</div>`;
-                let contentHtml = '';
-                items.forEach(item => {
-                    const projTag = item.project ? `<span class="proj-tag-clean">#${item.project}</span>` : '';
-                    let rangeBadge = ''; let days = 1;
-                    if (item.mode === 'range' && item.date_end) {
-                        const ed = new Date(item.date_end); rangeBadge = `<span class="range-end-badge">➡ ${ed.getMonth()+1}/${ed.getDate()} 結束</span>`;
-                        days = Math.ceil((item.end - item.start) / 86400000) + 1;
-                    }
-                    const conflictBadge = item.conflictMsg ? `<span class="overlap-badge">${item.conflictMsg}</span>` : '';
-                    const barWidthPct = Math.min(100, days * 3); const colorMap = { blue:'#4f46e5', green:'#10b981', red:'#ef4444', yellow:'#f59e0b' };
-                    contentHtml += `<div class="chronicle-item-card" data-color="${item.color}"><div>${projTag}<span class="chronicle-title" style="display:inline;">${item.label}${rangeBadge}${conflictBadge}</span></div><div class="chronicle-desc">${item.content}</div><div class="duration-bar-container"><div class="duration-bar-fill" style="width:${barWidthPct}%; background:${colorMap[item.color]||'#4f46e5'}"></div></div><div class="duration-text">工期: ${days} 天</div></div>`;
-                });
-                html += `<div class="chronicle-row"><div class="chronicle-date-col">${dateHtml}</div><div class="chronicle-dot-col"><div class="chronicle-dot" data-color="blue" style="border-color:#94a3b8"></div></div><div class="chronicle-content-col">${contentHtml}</div></div>`;
-            });
-            container.innerHTML = html;
-        }
-
         function renderGantt() {
             const chart = document.getElementById('ganttChart'); chart.innerHTML='';
             let data = gatherData().filter(i => !i.isMemo && (i.date_single || i.date_start));
@@ -1021,7 +1056,7 @@
             // 5. 開啟
             window.open(url, '_blank');
         }
-// --- 1. 修復下載備份功能 ---
+
         function downloadJSON() {
             const exportData = {
                 data: gatherData(),
@@ -1038,7 +1073,6 @@
             downloadAnchorNode.remove();
         }
 
-        // --- 2. 修復上傳讀取功能 ---
         function loadJSON(input) {
             const file = input.files[0];
             if (!file) return;
@@ -1054,19 +1088,16 @@
                     if (json.stickers) localStorage.setItem('timeline_v47_stickers', JSON.stringify(json.stickers));
                     
                     alert('讀取成功！頁面將重新整理以載入資料。');
-                    location.reload(); // 重新整理以確保所有渲染邏輯重跑
+                    location.reload(); 
                 } catch (err) {
                     console.error(err);
                     alert('檔案格式錯誤，無法讀取。');
                 }
             };
             reader.readAsText(file);
-            input.value = ''; // 重置 input 以便重複上傳同個檔案
+            input.value = ''; 
         }
 
-        // --- 3. 補上缺失的渲染與輔助函式 (必須補上，否則 init 會報錯) ---
-        
-        // 渲染卡片
         function renderFromData(items) {
             container.innerHTML = '';
             items.forEach(item => {
@@ -1075,25 +1106,21 @@
             });
         }
 
-        // 渲染便利貼
         function renderNotes(items) {
             document.querySelectorAll('.sticky-note').forEach(el => el.remove());
             items.forEach(item => createStickyElement(item));
         }
 
-        // 渲染貼紙/圖片
         function renderStickers(items) {
             document.querySelectorAll('.sticker').forEach(el => el.remove());
             items.forEach(item => createStickerElement(item));
         }
 
-        // 專案列開關
         function toggleProjectBar() {
             projectBar.classList.toggle('show');
             document.body.classList.toggle('has-proj-bar');
         }
 
-        // 搜尋過濾
         function filterNodes(keyword) {
             currentSearchKeyword = keyword;
             const items = document.querySelectorAll('.timeline-item');
@@ -1110,7 +1137,6 @@
             if(currentView === 'gantt') renderGantt();
         }
 
-        // 刷新專案列按鈕
         function refreshProjectBar() {
             const data = gatherData();
             const projects = [...new Set(data.map(i => i.project).filter(p => p))];
@@ -1124,7 +1150,6 @@
             }
         }
 
-        // 切換專案過濾
         window.toggleProjectFilter = function(btn, projName) {
             if (activeProjectFilters.has(projName)) {
                 activeProjectFilters.delete(projName);
@@ -1150,14 +1175,12 @@
             if(currentView === 'gantt') renderGantt();
         };
 
-        // 工具箱開關
         function toggleToolbox() {
             document.getElementById('toolboxContainer').classList.toggle('closed');
             const btn = document.querySelector('.toolbox-toggle-btn');
             btn.innerText = btn.innerText === '◀' ? '▶' : '◀';
         }
         
-        // AI 模式切換 (預留介面)
         function enterAIMode() {
             document.body.classList.add('ai-selecting');
             alert('請勾選想要讓 AI 處理的卡片，然後點擊「確認」。');
@@ -1185,12 +1208,10 @@
             exitAIMode();
         }
 
-        // 簡報模式
         function togglePresentation() {
             document.body.classList.toggle('presentation-mode');
         }
         
-        // CSV 匯出
         function exportToCSV() {
             const data = gatherData();
             let csvContent = "\uFEFFProject,Date,Label,Content\n";
