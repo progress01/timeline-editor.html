@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>報告整理工具</title>
+    <title>報告整理工</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html-to-image/1.11.11/html-to-image.js"></script>
     <style>
         :root { --primary: #4f46e5; --bg: #f8fafc; --text: #1f2937; --font-stack: "Microsoft JhengHei", "Heiti TC", sans-serif; }
@@ -16,24 +16,13 @@
         @keyframes pulse-red { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.9); } 100% { opacity: 1; transform: scale(1); } }
 
         /* --- 📋 貼上選擇對話框 --- */
-        #paste-dialog {
-            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.5); z-index: 5000; align-items: center; justify-content: center;
-            backdrop-filter: blur(3px);
-        }
-        .paste-modal {
-            background: white; padding: 25px; border-radius: 12px; width: 340px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2); text-align: center;
-            border: 1px solid #e2e8f0; animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
+        #paste-dialog { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 5000; align-items: center; justify-content: center; backdrop-filter: blur(3px); }
+        .paste-modal { background: white; padding: 25px; border-radius: 12px; width: 340px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); text-align: center; border: 1px solid #e2e8f0; animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         @keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         .paste-title { font-size: 1.1rem; font-weight: bold; margin-bottom: 5px; color: #1e293b; }
         .paste-desc { font-size: 0.9rem; color: #64748b; margin-bottom: 20px; }
         .paste-btn-group { display: flex; flex-direction: column; gap: 10px; }
-        .paste-btn {
-            padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; background: white;
-            cursor: pointer; font-weight: bold; color: #475569; display: flex; align-items: center; justify-content: center; gap: 10px; transition: 0.2s;
-        }
+        .paste-btn { padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; background: white; cursor: pointer; font-weight: bold; color: #475569; display: flex; align-items: center; justify-content: center; gap: 10px; transition: 0.2s; }
         .paste-btn:hover { border-color: #3b82f6; color: #3b82f6; background: #eff6ff; }
         .paste-btn.disabled { opacity: 0.5; cursor: not-allowed; background: #f1f5f9; border-color: #e2e8f0; color: #94a3b8; }
         .paste-cancel { margin-top: 15px; font-size: 0.9rem; color: #94a3b8; cursor: pointer; text-decoration: underline; background: none; border: none; }
@@ -43,12 +32,10 @@
         .tool-left { display: flex; align-items: center; gap: 15px; flex-shrink: 0; }
         .tool-right { display: flex; align-items: center; gap: 10px; margin-left: auto; }
         .tool-title { font-weight: bold; font-size: 1.1rem; display: flex; align-items: center; gap: 10px; }
-        
         .search-box { position: relative; display: flex; align-items: center; gap: 10px; }
         .search-input { background: #334155; border: 1px solid #475569; color: white; padding: 6px 10px 6px 30px; border-radius: 20px; font-size: 0.9rem; width: 120px; transition: width 0.3s; outline: none; }
         .search-input:focus { width: 180px; border-color: #3b82f6; }
         .search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); opacity: 0.6; font-size: 12px; }
-        
         .tool-btn-group { display: flex; gap: 8px; overflow-x: auto; padding-right: 10px; align-items: center; height: 100%; border-right: 1px solid #475569; margin-right: 10px; }
         .tool-btn-group::-webkit-scrollbar { display: none; }
         .tool-btn { background: transparent; border: 1px solid #475569; color: #e2e8f0; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; gap: 6px; transition: 0.2s; white-space: nowrap; flex-shrink: 0; }
@@ -58,13 +45,11 @@
         .tool-btn.danger-btn { border-color: #f87171; color: #f87171; }
         .tool-btn.ai-btn { border-color: #c084fc; color: #c084fc; }
         .tool-btn.filter-btn { border-color: #d97706; color: #fbbf24; }
-
         .gantt-switch-btn { background: #fbbf24; color: #78350f; border: none; padding: 6px 16px; border-radius: 20px; font-weight: bold; cursor: pointer; box-shadow: 0 0 10px rgba(251, 191, 36, 0.5); transition: 0.2s; display: flex; align-items: center; gap: 5px; }
         .gantt-switch-btn:hover { background: #f59e0b; transform: scale(1.05); }
         .gantt-switch-btn.active { background: #fff; color: #d97706; box-shadow: inset 0 2px 4px rgba(0,0,0,0.1); }
         .view-select { background: #334155; border: 1px solid #475569; color: white; padding: 6px 10px; border-radius: 4px; font-size: 0.9rem; cursor: pointer; outline: none; display: none; }
         body.view-gantt .view-select { display: inline-block; }
-
         #ai-toolbar { display: none; }
         body.ai-selecting #normal-toolbar { display: none; }
         body.ai-selecting #ai-toolbar { display: flex; }
@@ -76,7 +61,7 @@
         .proj-badge:hover { background: #f1f5f9; border-color: #94a3b8; }
         .proj-badge.active { background: #dbeafe; border-color: #3b82f6; color: #2563eb; font-weight: bold; }
 
-        /* --- 📑 左側垂直分頁系統 (修正版) --- */
+        /* --- 📑 左側垂直分頁系統 --- */
         #tab-bar-container {
             position: fixed; top: 60px; left: 0; bottom: 0;
             width: 42px; /* 窄版左側欄 */
@@ -86,20 +71,16 @@
             box-shadow: 2px 0 5px rgba(0,0,0,0.05);
         }
         
-        /* 當分頁列存在時，主畫面往右推 */
-        body.has-tab-bar .main-area { margin-left: 50px !important; margin-top: 80px !important; }
-        body.has-tab-bar.has-proj-bar .main-area { margin-top: 140px !important; }
-
         .tab-item {
             padding: 15px 4px;
             background: #cbd5e1; color: #64748b;
             cursor: pointer; font-size: 0.9rem; font-weight: bold;
             user-select: none; transition: 0.2s;
             position: relative; 
-            writing-mode: vertical-lr; /* 關鍵：文字直排 */
-            text-orientation: upright; /* 文字正向 */
+            writing-mode: vertical-lr; /* 直排 */
+            text-orientation: upright;
             letter-spacing: 2px;
-            border-radius: 0 8px 8px 0; /* 右邊圓角 */
+            border-radius: 0 8px 8px 0;
             width: 100%;
             display: flex; align-items: center; justify-content: center;
             border-left: 3px solid transparent;
@@ -118,27 +99,34 @@
             margin-top: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         .new-tab-btn:hover { color: #3b82f6; border-color: #3b82f6; }
-        
         .btn-move-tab { color: #8b5cf6 !important; border-color: #8b5cf6 !important; } 
 
-        /* 調整工具箱位置，避免被左側分頁擋住 */
-        .toolbox-container { position: fixed; top: 200px; left: 60px; z-index: 1800; transition: transform 0.3s ease; }
-        .toolbox-container.closed { transform: translateX(-180%); }
+        /* --- 🔧 工具箱修正 (解決擋住與消失問題) --- */
+        .toolbox-container { 
+            position: fixed; top: 200px; left: 42px; /* 緊貼分頁列 */
+            z-index: 2000; /* 比分頁列高 */
+            transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); 
+        }
+        .toolbox-container.closed { transform: translateX(-100%); } /* 收合時只縮自己的寬度 */
 
-        .toolbox { width: 70px; background: white; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); display: flex; flex-direction: column; gap: 5px; padding: 10px 5px; align-items: center; position: relative; border: 1px solid #e2e8f0; }
-        .toolbox-toggle-btn { position: absolute; top: 0; right: -24px; width: 24px; height: 40px; background: #3b82f6; color: white; border-top-right-radius: 8px; border-bottom-right-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 2px 2px 5px rgba(0,0,0,0.1); font-size: 14px; }
+        .toolbox { width: 70px; background: white; border-radius: 0 8px 8px 0; box-shadow: 4px 4px 12px rgba(0,0,0,0.15); display: flex; flex-direction: column; gap: 5px; padding: 10px 5px; align-items: center; position: relative; border: 1px solid #e2e8f0; border-left: none; }
+        .toolbox-toggle-btn { position: absolute; top: 0; right: -24px; width: 24px; height: 40px; background: #3b82f6; color: white; border-top-right-radius: 8px; border-bottom-right-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 2px 2px 5px rgba(0,0,0,0.1); font-size: 14px; z-index: 2001; }
         .toolbox-header { font-size: 0.75rem; color: #64748b; font-weight:bold; margin: 5px 0 2px 0; border-bottom: 1px solid #eee; width: 100%; text-align: center; }
         .tool-item { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 50px; padding: 5px 0; cursor: pointer; border-radius: 6px; transition: 0.2s; border: 1px solid transparent; }
         .tool-item:hover { background: #f1f5f9; border-color: #cbd5e1; }
         .tool-icon { font-size: 1.2rem; line-height: 1; margin-bottom: 2px; }
         .tool-text { font-size: 0.7rem; color: #475569; }
 
+        /* --- 📝 便利貼升級 (支援螢光筆) --- */
+        .note-header { height: 28px; background: rgba(0,0,0,0.05); cursor: move; display: flex; justify-content: space-between; align-items: center; padding: 0 5px; }
+        .note-tools { display: flex; gap: 5px; align-items: center; }
+        .note-btn { cursor: pointer; font-size: 14px; padding: 2px 4px; border-radius: 4px; transition: 0.2s; user-select: none; }
+        .note-btn:hover { background: rgba(0,0,0,0.1); }
+        .note-close { cursor: pointer; color: #78350f; font-weight: bold; font-size: 16px; padding: 0 5px; }
+        .note-content { flex: 1; background: transparent; border: none; padding: 10px; font-family: inherit; outline: none; font-size: 1rem; color: #451a03; overflow-y: auto; white-space: pre-wrap; word-break: break-word; }
+        
         /* 物件樣式 */
         .sticky-note { position: absolute; width: 180px; min-height: 160px; background: #fef3c7; border: 1px solid #d97706; box-shadow: 3px 3px 10px rgba(0,0,0,0.2); z-index: 1500; display: flex; flex-direction: column; transform: rotate(-1deg); border-radius: 2px; }
-        .note-header { height: 24px; background: rgba(0,0,0,0.05); cursor: move; display: flex; justify-content: flex-end; align-items: center; padding: 0 5px; }
-        .note-close { cursor: pointer; color: #78350f; font-weight: bold; font-size: 16px; padding: 0 5px; }
-        .note-content { flex: 1; background: transparent; border: none; resize: none; padding: 10px; font-family: inherit; outline: none; font-size: 1rem; color: #451a03; }
-        
         .sticker { position: absolute; z-index: 1500; cursor: move; display: inline-block; }
         .sticker[data-type^="arrow"], .sticker[data-type^="circle"], .sticker[data-type^="rect"] { width: 80px; height: 80px; }
         .sticker[data-type="image"] { width: auto; height: auto; max-width: 400px; }
@@ -159,15 +147,23 @@
         body.taking-screenshot .resize-handle, body.taking-screenshot .sticker-del, body.taking-screenshot .note-header { display: none !important; }
         .screenshot-clone-div { white-space: pre-wrap; word-break: break-word; overflow: visible; display: block; }
 
-        /* 主區域佈局 */
-        .main-area { max-width: 900px; margin: 80px auto 0 auto; padding: 40px 20px; min-height: calc(100vh - 100px); background: var(--bg); transition: margin-top 0.3s; }
-        body.has-proj-bar .main-area { margin-top: 140px; }
+        /* --- 🎨 主區域佈局修正 (避免被工具箱擋住) --- */
+        .main-area { max-width: 900px; margin: 80px auto 0 auto; padding: 40px 20px; min-height: calc(100vh - 100px); background: var(--bg); transition: margin-left 0.3s ease; }
+        
+        /* 當分頁列存在時，主畫面往右推 140px (分頁42+工具箱70+緩衝) */
+        body.has-tab-bar .main-area { margin-left: 140px !important; margin-top: 80px !important; }
+        body.has-tab-bar.has-proj-bar .main-area { margin-top: 140px !important; }
+
         body.view-gantt .main-area { max-width: 98%; padding: 20px 5px; }
 
+        /* Timeline & Drag Drop Styles */
         .timeline { position: relative; padding: 20px 0; }
         .timeline::before { content: ''; position: absolute; top: 0; bottom: 0; left: 50%; width: 4px; background: #e5e7eb; transform: translateX(-50%); border-radius: 2px; z-index: 0; }
-        .timeline-item { position: relative; margin-bottom: 40px; width: 100%; display: flex; }
+        
+        .timeline-item { position: relative; margin-bottom: 40px; width: 100%; display: flex; cursor: grab; /* 增加抓取游標 */ }
+        .timeline-item.dragging { opacity: 0.5; } /* 拖曳時半透明 */
         .timeline-item.hidden-by-filter { display: none !important; } 
+        
         .timeline-item:nth-child(odd) { justify-content: flex-start; padding-right: 50%; }
         .timeline-item:nth-child(even) { justify-content: flex-end; padding-left: 50%; }
         .timeline-item.force-left { justify-content: flex-start !important; padding-right: 50% !important; padding-left: 0 !important; }
@@ -278,6 +274,7 @@
         body.presentation-mode .content { font-size: 1.2rem; }
         
         @media screen and (max-width: 768px) {
+            body.has-tab-bar .main-area { margin-left: 50px !important; } /* 手機版左邊距小一點 */
             .main-area { margin-top: 60px; padding: 10px; } body.has-proj-bar .main-area { margin-top: 150px; }
             .toolbox-container { display: none !important; } .timeline-item { flex-direction: column; width: 100%; padding: 0 !important; }
             .timeline-item .card { width: 100% !important; margin: 0 0 20px 0 !important; } .timeline::before { left: 10px; } .dot { left: 10px; }
@@ -396,11 +393,9 @@
         let currentTabId = 'main'; // 預設主分頁
         let allTabs = JSON.parse(localStorage.getItem('timeline_tabs_meta')) || [{id: 'main', name: '主工作區'}];
 
-        // 如果是一次執行，確保 meta 有寫入
         if (!localStorage.getItem('timeline_tabs_meta')) {
             localStorage.setItem('timeline_tabs_meta', JSON.stringify(allTabs));
         }
-        // 啟動時給 body 加個 class 讓 CSS 知道分頁列存在
         document.body.classList.add('has-tab-bar');
 
         const container = document.getElementById('container');
@@ -411,6 +406,34 @@
         let currentView = 'timeline';
         let currentScale = 'day'; 
         
+        // --- 🖱️ Drag & Drop Logic (新功能) ---
+        function enableDragAndDrop() {
+            container.addEventListener('dragover', e => {
+                e.preventDefault();
+                const afterElement = getDragAfterElement(container, e.clientY);
+                const draggable = document.querySelector('.dragging');
+                if (!draggable) return;
+                if (afterElement == null) {
+                    container.appendChild(draggable);
+                } else {
+                    container.insertBefore(draggable, afterElement);
+                }
+            });
+        }
+
+        function getDragAfterElement(container, y) {
+            const draggableElements = [...container.querySelectorAll('.timeline-item:not(.dragging)')];
+            return draggableElements.reduce((closest, child) => {
+                const box = child.getBoundingClientRect();
+                const offset = y - box.top - box.height / 2;
+                if (offset < 0 && offset > closest.offset) {
+                    return { offset: offset, element: child };
+                } else {
+                    return closest;
+                }
+            }, { offset: Number.NEGATIVE_INFINITY }).element;
+        }
+
         window.addNewNode = function() {
             const newItem = {
                 id: Date.now(), pos: 'auto', mode: 'normal', color: 'blue', status: 0, isMemo: false,
@@ -419,12 +442,10 @@
             const el = createNodeElement(newItem);
             container.appendChild(el);
             autoSave();
-            
-            setTimeout(() => {
-                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }, 100);
+            setTimeout(() => { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 100);
         };
 
+        // ... [圖片下載/貼上邏輯保持不變, 略過以節省篇幅, 功能皆保留] ...
         // --- 📸 截圖功能 (支援全頁面) ---
         function downloadAsImage() {
             const bodyWidth = document.documentElement.scrollWidth;
@@ -491,91 +512,49 @@
             const items = (e.clipboardData || e.originalEvent.clipboardData).items;
             let hasImage = false;
             let blob = null;
-
             for (let i = 0; i < items.length; i++) {
-                if (items[i].type.indexOf("image") === 0) {
-                    blob = items[i].getAsFile();
-                    hasImage = true;
-                    break;
-                }
+                if (items[i].type.indexOf("image") === 0) { blob = items[i].getAsFile(); hasImage = true; break; }
             }
-
             if (hasImage && blob) {
-                e.preventDefault();
-                e.stopPropagation();
-                
-                pendingPasteBlob = blob;
-                pendingPasteTarget = document.activeElement;
-                
+                e.preventDefault(); e.stopPropagation();
+                pendingPasteBlob = blob; pendingPasteTarget = document.activeElement;
                 const isEditingCard = pendingPasteTarget && pendingPasteTarget.classList.contains('content');
-                
                 const btnCard = document.getElementById('btn-paste-card');
                 if (isEditingCard) {
-                    btnCard.classList.remove('disabled');
-                    btnCard.innerHTML = '📄 貼入卡片文字框中';
-                    btnCard.disabled = false;
+                    btnCard.classList.remove('disabled'); btnCard.innerHTML = '📄 貼入卡片文字框中'; btnCard.disabled = false;
                 } else {
-                    btnCard.classList.add('disabled');
-                    btnCard.innerHTML = '📄 貼入卡片 (請先點選文字框)';
-                    btnCard.disabled = true;
+                    btnCard.classList.add('disabled'); btnCard.innerHTML = '📄 貼入卡片 (請先點選文字框)'; btnCard.disabled = true;
                 }
-
                 document.getElementById('paste-dialog').style.display = 'flex';
             }
         });
 
-        function closePasteDialog() {
-            document.getElementById('paste-dialog').style.display = 'none';
-            pendingPasteBlob = null;
-            pendingPasteTarget = null;
-        }
+        function closePasteDialog() { document.getElementById('paste-dialog').style.display = 'none'; pendingPasteBlob = null; pendingPasteTarget = null; }
 
         function processPaste(type) {
             if (!pendingPasteBlob) return;
-
             const reader = new FileReader();
             reader.onload = function(event) {
                 const imgData = event.target.result;
-
                 if (type === 'card' && pendingPasteTarget) {
-                    const img = document.createElement("img");
-                    img.src = imgData;
-                    pendingPasteTarget.focus();
-                    
+                    const img = document.createElement("img"); img.src = imgData; pendingPasteTarget.focus();
                     const selection = window.getSelection();
                     if (selection.rangeCount > 0) {
-                        const range = selection.getRangeAt(0);
-                        range.deleteContents();
-                        range.insertNode(img);
-                        range.collapse(false);
-                    } else {
-                        pendingPasteTarget.appendChild(img);
-                    }
+                        const range = selection.getRangeAt(0); range.deleteContents(); range.insertNode(img); range.collapse(false);
+                    } else { pendingPasteTarget.appendChild(img); }
                 } else {
-                    createStickerElement({
-                        id: 'sticker-' + Date.now(),
-                        type: 'image',
-                        x: window.scrollX + window.innerWidth / 2 - 150,
-                        y: window.scrollY + window.innerHeight / 2 - 150,
-                        content: imgData
-                    });
+                    createStickerElement({ id: 'sticker-' + Date.now(), type: 'image', x: window.scrollX + window.innerWidth / 2 - 150, y: window.scrollY + window.innerHeight / 2 - 150, content: imgData });
                 }
-                autoSave();
-                closePasteDialog();
+                autoSave(); closePasteDialog();
             };
             reader.readAsDataURL(pendingPasteBlob);
         }
+        
+        function getTodayString() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }
 
-        function getTodayString() {
-            const d = new Date();
-            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-        }
-
-        // [修改版] 初始化：根據現在的分頁讀取資料
+        // [Init] 整合分頁與拖曳功能
         function init() {
-            renderTabs(); // 繪製分頁列
-
-            // 根據目前的 Tab ID 決定要讀哪個 Key
+            renderTabs(); 
             const dataKey = currentTabId === 'main' ? 'timeline_v47_data' : `timeline_v47_data_${currentTabId}`;
             const notesKey = currentTabId === 'main' ? 'timeline_v47_notes' : `timeline_v47_notes_${currentTabId}`;
             const stickersKey = currentTabId === 'main' ? 'timeline_v47_stickers' : `timeline_v47_stickers_${currentTabId}`;
@@ -584,30 +563,21 @@
             const savedNotes = localStorage.getItem(notesKey);
             const savedStickers = localStorage.getItem(stickersKey);
 
-            // 清空畫面
             container.innerHTML = '';
             document.querySelectorAll('.sticky-note, .sticker').forEach(el => el.remove());
 
             let hasData = false;
-            
             if (savedData) {
                 try {
                     const parsed = JSON.parse(savedData);
-                    if (Array.isArray(parsed) && parsed.length > 0) {
-                        renderFromData(parsed);
-                        hasData = true;
-                    }
-                } catch (e) {
-                    console.error("資料讀取失敗:", e);
-                }
+                    if (Array.isArray(parsed) && parsed.length > 0) { renderFromData(parsed); hasData = true; }
+                } catch (e) { console.error("資料讀取失敗:", e); }
             }
             
-            // 如果是主分頁且沒資料，才給預設卡片；其他分頁沒資料就留白
             if (!hasData && currentTabId === 'main') {
                 const defaultItem = {
                     id: Date.now(), pos: 'left', mode: 'normal', color: 'blue', status: 0, isMemo: false,
-                    project: '報告工具', label: '系統初始化', date_single: getTodayString(), date_start: '', date_end: '', 
-                    content: '歡迎使用報告整理工具。'
+                    project: '報告工具', label: '系統初始化', date_single: getTodayString(), date_start: '', date_end: '', content: '歡迎使用報告整理工具。'
                 };
                 container.appendChild(createNodeElement(defaultItem));
             }
@@ -616,6 +586,21 @@
             if (savedStickers) { try { renderStickers(JSON.parse(savedStickers)); } catch(e){} }
             
             refreshProjectBar();
+            enableDragAndDrop(); // 啟動拖曳排序
+
+            // 便利貼升級邏輯 (Textarea -> Div)
+            document.querySelectorAll('.sticky-note').forEach(note => {
+                const textarea = note.querySelector('textarea.note-content');
+                if (textarea) {
+                    const text = textarea.value;
+                    const rect = note.getBoundingClientRect();
+                    note.remove(); 
+                    createStickyElement({
+                        id: note.id, x: rect.left + window.scrollX, y: rect.top + window.scrollY, w: rect.width, h: rect.height,
+                        content: text.replace(/\n/g, '<br>') 
+                    });
+                }
+            });
         }
 
         let saveTimer = null;
@@ -626,20 +611,16 @@
             saveTimer = setTimeout(() => { performActualSave(); }, 1000);
         }
 
-        // [修改版] 存檔：存到對應的分頁 Key
         function performActualSave() {
             const data = gatherData();
             const notes = gatherNotes();
             const stickers = gatherStickers();
-            
             const dataKey = currentTabId === 'main' ? 'timeline_v47_data' : `timeline_v47_data_${currentTabId}`;
             const notesKey = currentTabId === 'main' ? 'timeline_v47_notes' : `timeline_v47_notes_${currentTabId}`;
             const stickersKey = currentTabId === 'main' ? 'timeline_v47_stickers' : `timeline_v47_stickers_${currentTabId}`;
-
             localStorage.setItem(dataKey, JSON.stringify(data));
             localStorage.setItem(notesKey, JSON.stringify(notes));
             localStorage.setItem(stickersKey, JSON.stringify(stickers));
-            
             const light = document.getElementById('save-light');
             if(light) light.classList.remove('unsaved');
         }
@@ -710,7 +691,7 @@
             return Array.from(document.querySelectorAll('.sticky-note')).map(n => ({ 
                 id: n.id, x: parseInt(n.style.left), y: parseInt(n.style.top), 
                 w: n.style.width ? parseInt(n.style.width) : null, h: n.style.height ? parseInt(n.style.height) : null,
-                content: n.querySelector('textarea').value 
+                content: n.querySelector('.note-content').innerHTML 
             })); 
         }
         function gatherStickers() { 
@@ -721,9 +702,26 @@
             })); 
         }
 
+        // [Element] 建立節點 (新增 draggable)
         function createNodeElement(item) {
             const div = document.createElement('div');
             div.className = `timeline-item ${item.pos==='left'?'force-left':item.pos==='right'?'force-right':''} ${item.mode==='range'?'range-mode':''}`;
+            
+            // 啟用拖曳
+            div.setAttribute('draggable', 'true');
+            div.addEventListener('dragstart', (e) => {
+                // 如果正在編輯文字，不要拖曳
+                if (e.target.isContentEditable || e.target.tagName === 'INPUT') {
+                    e.preventDefault();
+                    return;
+                }
+                div.classList.add('dragging');
+            });
+            div.addEventListener('dragend', () => {
+                div.classList.remove('dragging');
+                autoSave();
+            });
+
             const isMemo = item.isMemo ? 'memo-mode' : '';
             div.innerHTML = `
                 <div class="dot"></div>
@@ -801,13 +799,42 @@
             createStickyElement({ id: 'note-' + Date.now(), x: window.scrollX + 100, y: window.scrollY + 100, content: '' });
             autoSave(); if(window.innerWidth < 768) toggleToolbox();
         }
+
+        // [Element] 建立便利貼 (修正版: div + contenteditable)
         function createStickyElement(data) {
             const div = document.createElement('div'); div.className = 'sticky-note'; div.id = data.id;
             div.style.left = data.x + 'px'; div.style.top = data.y + 'px';
             if (data.w) div.style.width = data.w + 'px'; if (data.h) div.style.height = data.h + 'px';
-            div.innerHTML = `<div class="note-header"><span class="note-close" onclick="deleteSticky(this)">×</span></div><textarea class="note-content" placeholder="輸入記事..." oninput="autoSave()">${data.content || ''}</textarea><div class="resize-handle" onmousedown="resizeNote(event)">↘</div>`;
+            const initialContent = data.content || '';
+
+            div.innerHTML = `
+                <div class="note-header">
+                    <div class="note-tools">
+                        <span class="note-btn" onclick="toggleNoteHighlight(this)" title="螢光筆">🖍️</span>
+                        <span class="note-btn" onclick="clearNoteFormat(this)" title="清除">🧹</span>
+                    </div>
+                    <span class="note-close" onclick="deleteSticky(this)">×</span>
+                </div>
+                <div class="note-content" contenteditable="true" oninput="autoSave()">${initialContent}</div>
+                <div class="resize-handle" onmousedown="resizeNote(event)">↘</div>
+            `;
             document.body.appendChild(div); makeDraggable(div, div.querySelector('.note-header'));
         }
+        
+        function toggleNoteHighlight(btn) {
+            const noteContent = btn.closest('.sticky-note').querySelector('.note-content');
+            noteContent.focus();
+            document.execCommand('styleWithCSS', false, true);
+            document.execCommand('hiliteColor', false, '#fef08a'); 
+            autoSave();
+        }
+        function clearNoteFormat(btn) {
+            const noteContent = btn.closest('.sticky-note').querySelector('.note-content');
+            noteContent.focus();
+            document.execCommand('removeFormat');
+            autoSave();
+        }
+
         function resizeNote(e) {
             e.stopPropagation(); const note = e.target.parentElement;
             const startX = e.clientX, startY = e.clientY, startW = note.offsetWidth, startH = note.offsetHeight;
@@ -873,7 +900,7 @@
             dragHandle.onmousedown = dragMouseDown;
             function dragMouseDown(e) {
                 e = e || window.event;
-                if (e.target.classList.contains('resize-handle') || e.target.classList.contains('sticker-del')) return;
+                if (e.target.classList.contains('resize-handle') || e.target.classList.contains('sticker-del') || e.target.classList.contains('note-btn')) return;
                 e.preventDefault(); pos3 = e.clientX; pos4 = e.clientY;
                 document.onmouseup = closeDragElement; document.onmousemove = elementDrag;
                 document.querySelectorAll('.sticky-note, .sticker').forEach(el => el.style.zIndex = 1500); elmnt.style.zIndex = 1501;
@@ -915,23 +942,14 @@
             tooltip.style.left = left + 'px'; tooltip.style.top = top + 'px';
         }
 
-        // 渲染大事記（整合修復版：日期正確 + 紅綠燈 + 專案過濾）
+        // --- 渲染與檢視功能 (Chronicle & Gantt) 保持原樣 ---
         function renderChronicle() {
             const container = document.getElementById('vTimeline'); container.innerHTML = '';
-            
-            // 1. 蒐集並過濾資料 (回復過濾功能)
             let data = gatherData().filter(i => !i.isMemo && (i.date_single || i.date_start));
-            
-            // 檢查全域變數 activeProjectFilters
-            if (activeProjectFilters.size > 0) {
-                data = data.filter(i => activeProjectFilters.has(i.project));
-            }
-            
+            if (activeProjectFilters.size > 0) { data = data.filter(i => activeProjectFilters.has(i.project)); }
             if (currentSearchKeyword) { const kw = currentSearchKeyword.toLowerCase(); data = data.filter(i => (i.content + i.label + i.project).toLowerCase().includes(kw)); }
-            
             if(data.length === 0) { container.innerHTML='<div style="text-align:center;padding:20px;color:#999">無有效日期資料</div>'; return; }
             
-            // 2. 計算日期範圍
             const parsed = data.map(item => {
                 let s = getMidnightTime(item.mode==='range'?item.date_start:item.date_single);
                 let e = getMidnightTime(item.mode==='range'?item.date_end:item.date_single);
@@ -939,26 +957,16 @@
             }).filter(item => item.start !== null).sort((a,b) => a.start - b.start);
             
             const grouped = {}; const activeRanges = []; 
-            
-            // 3. 分組邏輯
             parsed.forEach(item => {
                 let conflictMsg = '';
                 for(let r of activeRanges) { if(item.start < r.end) { conflictMsg = `⚡ 與 [${r.label}] 重疊`; break; } }
                 for(let i=activeRanges.length-1; i>=0; i--) { if(activeRanges[i].end <= item.start) activeRanges.splice(i, 1); }
                 activeRanges.push({ end: item.end, label: item.label });
-                
-                // 依照模式取得正確顯示日期
                 const sDateStr = item.mode === 'range' ? item.date_start : item.date_single; 
-                if(sDateStr) {
-                    if(!grouped[sDateStr]) grouped[sDateStr] = []; 
-                    grouped[sDateStr].push({ ...item, conflictMsg });
-                }
+                if(sDateStr) { if(!grouped[sDateStr]) grouped[sDateStr] = []; grouped[sDateStr].push({ ...item, conflictMsg }); }
             });
 
-            // 4. 產生 HTML
             let html = '<div class="chronicle-line"></div>'; 
-            
-            // 定義狀態燈顏色對照表 (0:灰, 1:黃, 2:綠, 3:紅)
             const statusColors = ['#9ca3af', '#f59e0b', '#10b981', '#ef4444'];
 
             Object.keys(grouped).sort().forEach(dateKey => {
@@ -969,20 +977,15 @@
                 items.forEach(item => {
                     const projTag = item.project ? `<span class="proj-tag-clean">#${item.project}</span>` : '';
                     let rangeBadge = ''; let days = 1;
-                    
                     if (item.mode === 'range' && item.date_end) {
                         const ed = new Date(item.date_end); rangeBadge = `<span class="range-end-badge">➡ ${ed.getMonth()+1}/${ed.getDate()} 結束</span>`;
                         days = Math.ceil((item.end - item.start) / 86400000) + 1;
                     }
-                    
                     const conflictBadge = item.conflictMsg ? `<span class="overlap-badge">${item.conflictMsg}</span>` : '';
                     const barWidthPct = Math.min(100, days * 3); 
                     const colorMap = { blue:'#4f46e5', green:'#10b981', red:'#ef4444', yellow:'#f59e0b' };
-                    
-                    // --- 新增：狀態燈 HTML ---
                     const statusColor = statusColors[item.status] || '#9ca3af';
                     const statusLightHtml = `<span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:${statusColor}; margin-right:8px; flex-shrink:0; box-shadow: 0 0 2px rgba(0,0,0,0.2);"></span>`;
-                    // -----------------------
 
                     contentHtml += `
                         <div class="chronicle-item-card" data-color="${item.color}">
@@ -998,10 +1001,8 @@
                             <div class="duration-text">工期: ${days} 天</div>
                         </div>`;
                 });
-                
                 html += `<div class="chronicle-row"><div class="chronicle-date-col">${dateHtml}</div><div class="chronicle-dot-col"><div class="chronicle-dot" data-color="blue" style="border-color:#94a3b8"></div></div><div class="chronicle-content-col">${contentHtml}</div></div>`;
             });
-            
             container.innerHTML = html;
         }
 
@@ -1090,136 +1091,70 @@
 
         function addToGoogleCalendar(btn) {
             const item = btn.closest('.timeline-item');
-            
-            // 1. 取得資料
             const project = item.querySelector('.footer-project-input').value;
             const label = item.querySelector('.label-input').value || '未命名事項';
             const content = item.querySelector('.content').innerText;
-            
-            // 2. 處理日期
             let startDateStr, endDateStr;
-            
             if (item.classList.contains('range-mode')) {
-                startDateStr = item.querySelector('.date-start').value;
-                endDateStr = item.querySelector('.date-end').value;
+                startDateStr = item.querySelector('.date-start').value; endDateStr = item.querySelector('.date-end').value;
             } else {
-                startDateStr = item.querySelector('.single-date').value;
-                endDateStr = startDateStr; // 單日模式起始與結束相同
+                startDateStr = item.querySelector('.single-date').value; endDateStr = startDateStr;
             }
-
-            if (!startDateStr) {
-                alert('請先設定日期才能加入行事曆！');
-                return;
-            }
+            if (!startDateStr) { alert('請先設定日期才能加入行事曆！'); return; }
             if (!endDateStr) endDateStr = startDateStr;
-
-            // 3. 格式化日期為 Google 格式 (YYYYMMDD)
-            const formatToGoogleDate = (y, m, d) => {
-                return `${y}${String(m).padStart(2, '0')}${String(d).padStart(2, '0')}`;
-            };
-
-            const parseDate = (str) => {
-                const parts = str.split('-').map(Number); // [2025, 12, 5]
-                return { y: parts[0], m: parts[1], d: parts[2] };
-            };
-
+            const formatToGoogleDate = (y, m, d) => { return `${y}${String(m).padStart(2, '0')}${String(d).padStart(2, '0')}`; };
+            const parseDate = (str) => { const parts = str.split('-').map(Number); return { y: parts[0], m: parts[1], d: parts[2] }; };
             const start = parseDate(startDateStr);
             const sStr = formatToGoogleDate(start.y, start.m, start.d);
-
-            // 結束日期需要+1天 (Google Calendar 全天事件特性)
             const end = parseDate(endDateStr);
             const endDateObj = new Date(end.y, end.m - 1, end.d);
             endDateObj.setDate(endDateObj.getDate() + 1);
             const eStr = formatToGoogleDate(endDateObj.getFullYear(), endDateObj.getMonth() + 1, endDateObj.getDate());
-
-            // 4. 組合
-            const eventDates = `${sStr}/${eStr}`; // 格式：YYYYMMDD/YYYYMMDD
+            const eventDates = `${sStr}/${eStr}`; 
             const eventTitle = encodeURIComponent((project ? `[${project}] ` : '') + label);
             const eventDetails = encodeURIComponent(content);
-            
             const url = `https://www.google.com/calendar/render?action=TEMPLATE&text=${eventTitle}&dates=${eventDates}&details=${eventDetails}`;
-            
             window.open(url, '_blank');
         }
 
         function downloadJSON() {
-            const exportData = {
-                data: gatherData(),
-                notes: gatherNotes(),
-                stickers: gatherStickers()
-            };
-            
+            const exportData = { data: gatherData(), notes: gatherNotes(), stickers: gatherStickers() };
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportData));
             const downloadAnchorNode = document.createElement('a');
             downloadAnchorNode.setAttribute("href", dataStr);
             downloadAnchorNode.setAttribute("download", "report_backup_" + getTodayString() + ".json");
-            document.body.appendChild(downloadAnchorNode); 
-            downloadAnchorNode.click();
-            downloadAnchorNode.remove();
+            document.body.appendChild(downloadAnchorNode); downloadAnchorNode.click(); downloadAnchorNode.remove();
         }
 
         function loadJSON(input) {
-            const file = input.files[0];
-            if (!file) return;
-
+            const file = input.files[0]; if (!file) return;
             const reader = new FileReader();
             reader.onload = function(e) {
                 try {
                     const json = JSON.parse(e.target.result);
-                    
-                    // 檢查格式並存入 LocalStorage (這裡我們強制存入當前分頁)
                     const dataKey = currentTabId === 'main' ? 'timeline_v47_data' : `timeline_v47_data_${currentTabId}`;
                     const notesKey = currentTabId === 'main' ? 'timeline_v47_notes' : `timeline_v47_notes_${currentTabId}`;
                     const stickersKey = currentTabId === 'main' ? 'timeline_v47_stickers' : `timeline_v47_stickers_${currentTabId}`;
-
                     if (json.data) localStorage.setItem(dataKey, JSON.stringify(json.data));
                     if (json.notes) localStorage.setItem(notesKey, JSON.stringify(json.notes));
                     if (json.stickers) localStorage.setItem(stickersKey, JSON.stringify(json.stickers));
-                    
-                    alert('讀取成功！頁面將重新整理以載入資料。');
-                    location.reload(); 
-                } catch (err) {
-                    console.error(err);
-                    alert('檔案格式錯誤，無法讀取。');
-                }
+                    alert('讀取成功！頁面將重新整理以載入資料。'); location.reload(); 
+                } catch (err) { console.error(err); alert('檔案格式錯誤，無法讀取。'); }
             };
-            reader.readAsText(file);
-            input.value = ''; 
+            reader.readAsText(file); input.value = ''; 
         }
 
-        function renderFromData(items) {
-            container.innerHTML = '';
-            items.forEach(item => {
-                const el = createNodeElement(item);
-                container.appendChild(el);
-            });
-        }
-
-        function renderNotes(items) {
-            document.querySelectorAll('.sticky-note').forEach(el => el.remove());
-            items.forEach(item => createStickyElement(item));
-        }
-
-        function renderStickers(items) {
-            document.querySelectorAll('.sticker').forEach(el => el.remove());
-            items.forEach(item => createStickerElement(item));
-        }
-
-        function toggleProjectBar() {
-            projectBar.classList.toggle('show');
-            document.body.classList.toggle('has-proj-bar');
-        }
+        function renderFromData(items) { container.innerHTML = ''; items.forEach(item => { const el = createNodeElement(item); container.appendChild(el); }); }
+        function renderNotes(items) { document.querySelectorAll('.sticky-note').forEach(el => el.remove()); items.forEach(item => createStickyElement(item)); }
+        function renderStickers(items) { document.querySelectorAll('.sticker').forEach(el => el.remove()); items.forEach(item => createStickerElement(item)); }
+        function toggleProjectBar() { projectBar.classList.toggle('show'); document.body.classList.toggle('has-proj-bar'); }
 
         function filterNodes(keyword) {
             currentSearchKeyword = keyword;
             const items = document.querySelectorAll('.timeline-item');
             items.forEach(item => {
                 const text = item.innerText.toLowerCase();
-                if (text.includes(keyword.toLowerCase())) {
-                    item.style.display = '';
-                } else {
-                    item.style.display = 'none';
-                }
+                if (text.includes(keyword.toLowerCase())) { item.style.display = ''; } else { item.style.display = 'none'; }
             });
             if(currentView === 'chronicle') renderChronicle();
             if(currentView === 'gantt') renderGantt();
@@ -1228,35 +1163,18 @@
         function refreshProjectBar() {
             const data = gatherData();
             const projects = [...new Set(data.map(i => i.project).filter(p => p))];
-            
-            projectBar.innerHTML = projects.map(p => 
-                `<div class="proj-badge ${activeProjectFilters.has(p) ? 'active' : ''}" onclick="toggleProjectFilter(this, '${p}')">${p}</div>`
-            ).join('');
-            
-            if (projects.length === 0) {
-                projectBar.innerHTML = '<span style="color:#999; font-size:0.8rem;">尚無專案標籤 (請在卡片右下角輸入)</span>';
-            }
+            projectBar.innerHTML = projects.map(p => `<div class="proj-badge ${activeProjectFilters.has(p) ? 'active' : ''}" onclick="toggleProjectFilter(this, '${p}')">${p}</div>`).join('');
+            if (projects.length === 0) { projectBar.innerHTML = '<span style="color:#999; font-size:0.8rem;">尚無專案標籤 (請在卡片右下角輸入)</span>'; }
         }
 
         window.toggleProjectFilter = function(btn, projName) {
-            if (activeProjectFilters.has(projName)) {
-                activeProjectFilters.delete(projName);
-                btn.classList.remove('active');
-            } else {
-                activeProjectFilters.add(projName);
-                btn.classList.add('active');
-            }
-            
+            if (activeProjectFilters.has(projName)) { activeProjectFilters.delete(projName); btn.classList.remove('active'); } 
+            else { activeProjectFilters.add(projName); btn.classList.add('active'); }
             const items = document.querySelectorAll('.timeline-item');
             items.forEach(item => {
                 const p = item.querySelector('.footer-project-input').value;
-                if (activeProjectFilters.size === 0 || activeProjectFilters.has(p)) {
-                    item.classList.remove('hidden-by-filter');
-                } else {
-                    item.classList.add('hidden-by-filter');
-                }
+                if (activeProjectFilters.size === 0 || activeProjectFilters.has(p)) { item.classList.remove('hidden-by-filter'); } else { item.classList.add('hidden-by-filter'); }
             });
-
             if(currentView === 'chronicle') renderChronicle();
             if(currentView === 'gantt') renderGantt();
         };
@@ -1267,25 +1185,14 @@
             btn.innerText = btn.innerText === '◀' ? '▶' : '◀';
         }
         
-        function enterAIMode() {
-            document.body.classList.add('ai-selecting');
-            alert('請勾選想要讓 AI 處理的卡片，然後點擊「確認」。');
-        }
-        function exitAIMode() {
-            document.body.classList.remove('ai-selecting');
-            document.querySelectorAll('.select-chk').forEach(c => c.checked = false);
-        }
-        function selectAllAI() {
-            document.querySelectorAll('.select-chk').forEach(c => c.checked = true);
-        }
+        function enterAIMode() { document.body.classList.add('ai-selecting'); alert('請勾選想要讓 AI 處理的卡片，然後點擊「確認」。'); }
+        function exitAIMode() { document.body.classList.remove('ai-selecting'); document.querySelectorAll('.select-chk').forEach(c => c.checked = false); }
+        function selectAllAI() { document.querySelectorAll('.select-chk').forEach(c => c.checked = true); }
         function confirmAIOutput() {
             const selected = [];
             document.querySelectorAll('.timeline-item').forEach(item => {
                 if(item.querySelector('.select-chk').checked) {
-                    selected.push({
-                        label: item.querySelector('.label-input').value,
-                        content: item.querySelector('.content').innerText
-                    });
+                    selected.push({ label: item.querySelector('.label-input').value, content: item.querySelector('.content').innerText });
                 }
             });
             if(selected.length === 0) { alert('未選擇任何卡片'); return; }
@@ -1294,140 +1201,102 @@
             exitAIMode();
         }
 
-        function togglePresentation() {
-            document.body.classList.toggle('presentation-mode');
-        }
+        function togglePresentation() { document.body.classList.toggle('presentation-mode'); }
         
         function exportToCSV() {
             const data = gatherData();
             let csvContent = "\uFEFFProject,Date,Label,Content\n";
             data.forEach(item => {
-                let row = [
-                    `"${item.project || ''}"`,
-                    `"${item.date_single || item.date_start}"`,
-                    `"${item.label || ''}"`,
-                    `"${item.content.replace(/"/g, '""').replace(/\n/g, ' ')}"`
-                ];
+                let row = [ `"${item.project || ''}"`, `"${item.date_single || item.date_start}"`, `"${item.label || ''}"`, `"${item.content.replace(/"/g, '""').replace(/\n/g, ' ')}"` ];
                 csvContent += row.join(",") + "\n";
             });
             const encodedUri = encodeURI("data:text/csv;charset=utf-8," + csvContent);
             const link = document.createElement("a");
             link.setAttribute("href", encodedUri);
             link.setAttribute("download", "report_data.csv");
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
+            document.body.appendChild(link); link.click(); link.remove();
         }
 
         // --- 🔌 分頁功能擴充邏輯 ---
-
         function renderTabs() {
             const bar = document.getElementById('tab-list');
-            bar.innerHTML = allTabs.map(t => 
-                `<div class="tab-item ${t.id === currentTabId ? 'active' : ''}" 
-                      onclick="switchTab('${t.id}')" 
-                      oncontextmenu="renameTab(event, '${t.id}')">
-                    ${t.name}
-                </div>`
-            ).join('');
+            bar.innerHTML = allTabs.map(t => `<div class="tab-item ${t.id === currentTabId ? 'active' : ''}" onclick="switchTab('${t.id}')" oncontextmenu="renameTab(event, '${t.id}')">${t.name}</div>`).join('');
         }
 
         function createNewTab() {
-            // 由於直式空間有限，建議分頁名稱短一點
             const name = prompt("請輸入新分頁名稱 (建議 4 個字以內)：");
             if (!name) return;
             const newId = 'tab_' + Date.now();
             allTabs.push({ id: newId, name: name });
             localStorage.setItem('timeline_tabs_meta', JSON.stringify(allTabs));
             renderTabs();
-            // 自動切換到新分頁
             switchTab(newId);
         }
 
         function switchTab(id) {
             if (currentTabId === id) return;
-            // 1. 先強制存檔當前分頁
             performActualSave();
-            // 2. 切換 ID
             currentTabId = id;
-            // 3. 重新初始化
             init();
         }
 
         function renameTab(e, id) {
-            e.preventDefault(); // 阻擋右鍵選單
+            e.preventDefault(); 
             if (id === 'main') { alert('主工作區不能改名或刪除'); return; }
-            
             if (confirm('確定要刪除這個分頁嗎？(裡面的資料也會消失)')) {
                  if (confirm('再次確認刪除？無法復原！')) {
-                     // 刪除資料
                      localStorage.removeItem(`timeline_v47_data_${id}`);
                      localStorage.removeItem(`timeline_v47_notes_${id}`);
                      localStorage.removeItem(`timeline_v47_stickers_${id}`);
-                     // 移除 meta
                      allTabs = allTabs.filter(t => t.id !== id);
                      localStorage.setItem('timeline_tabs_meta', JSON.stringify(allTabs));
-                     // 切回主頁
                      currentTabId = 'main';
                      init();
                  }
             }
         }
 
-        // [功能] 移動卡片到其他分頁
+        // [移動卡片邏輯修正版]
         function moveCardToTab(btn) {
             const item = btn.closest('.timeline-item');
-            
-            // 找出其他分頁
+            if (!item) { alert('找不到卡片物件，請刷新頁面再試。'); return; }
             const otherTabs = allTabs.filter(t => t.id !== currentTabId);
-            if (otherTabs.length === 0) {
-                alert('請先按上方「＋」建立新分頁 (例如: 歸檔區)，才能移動卡片。');
-                return;
-            }
-
-            // 建立選項字串
-            let msg = "請輸入要移動到的分頁編號：\n";
-            otherTabs.forEach((t, index) => {
-                msg += `[${index + 1}] ${t.name}\n`;
-            });
+            if (otherTabs.length === 0) { alert('❌ 無處可去！\n\n請先按左下方的「＋」建立一個新分頁 (例如: 歸檔區)，才能進行移動。'); return; }
+            
+            let msg = "請輸入要移動到的「目標分頁編號」：\n------------------\n";
+            otherTabs.forEach((t, index) => { msg += `[ ${index + 1} ]  ${t.name}\n`; });
 
             const choice = prompt(msg);
-            const index = parseInt(choice) - 1;
+            if (choice === null) return; 
 
+            const index = parseInt(choice) - 1;
             if (!isNaN(index) && otherTabs[index]) {
                 const targetTab = otherTabs[index];
                 const targetId = targetTab.id;
-                
-                // 1. 取得該卡片資料
-                const cardData = {
-                    pos: item.classList.contains('force-left')?'left':(item.classList.contains('force-right')?'right':'auto'),
-                    mode: item.classList.contains('range-mode')?'range':'normal',
-                    color: item.querySelector('.card').dataset.color || 'blue',
-                    status: 0, 
-                    isMemo: item.querySelector('.card').classList.contains('memo-mode'),
-                    project: item.querySelector('.footer-project-input').value,
-                    label: item.querySelector('.label-input').value,
-                    date_single: item.querySelector('.single-date').value,
-                    date_start: item.querySelector('.date-start').value,
-                    date_end: item.querySelector('.date-end').value,
-                    content: item.querySelector('.content').innerHTML
-                };
-
-                // 2. 讀取目標分頁的舊資料
-                const targetKey = targetId === 'main' ? 'timeline_v47_data' : `timeline_v47_data_${targetId}`;
-                const targetRaw = localStorage.getItem(targetKey);
-                let targetData = targetRaw ? JSON.parse(targetRaw) : [];
-                
-                // 3. 寫入目標
-                targetData.push(cardData);
-                localStorage.setItem(targetKey, JSON.stringify(targetData));
-
-                // 4. 刪除當前畫面的卡片
-                item.remove();
-                autoSave(); // 存檔當前分頁狀態
-
-                alert(`已移動到「${targetTab.name}」！`);
-            }
+                try {
+                    const cardData = {
+                        pos: item.classList.contains('force-left')?'left':(item.classList.contains('force-right')?'right':'auto'),
+                        mode: item.classList.contains('range-mode')?'range':'normal',
+                        color: item.querySelector('.card').dataset.color || 'blue',
+                        status: 0, 
+                        isMemo: item.querySelector('.card').classList.contains('memo-mode'),
+                        project: item.querySelector('.footer-project-input').value,
+                        label: item.querySelector('.label-input').value,
+                        date_single: item.querySelector('.single-date').value,
+                        date_start: item.querySelector('.date-start').value,
+                        date_end: item.querySelector('.date-end').value,
+                        content: item.querySelector('.content').innerHTML
+                    };
+                    const targetKey = targetId === 'main' ? 'timeline_v47_data' : `timeline_v47_data_${targetId}`;
+                    const targetRaw = localStorage.getItem(targetKey);
+                    let targetData = targetRaw ? JSON.parse(targetRaw) : [];
+                    targetData.push(cardData);
+                    localStorage.setItem(targetKey, JSON.stringify(targetData));
+                    item.remove();
+                    autoSave(); 
+                    alert(`✅ 成功！\n\n這張卡片已經移動到「${targetTab.name}」了。`);
+                } catch (error) { console.error(error); alert('移動失敗：發生未預期的錯誤，請查看 Console (F12)。'); }
+            } else { alert(`❌ 移動失敗\n\n您輸入的編號 "${choice}" 無效。\n請輸入清單上顯示的數字 (例如 1)。`); }
         }
         
         init();
