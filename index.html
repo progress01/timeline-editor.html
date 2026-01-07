@@ -76,6 +76,44 @@
         .proj-badge:hover { background: #f1f5f9; border-color: #94a3b8; }
         .proj-badge.active { background: #dbeafe; border-color: #3b82f6; color: #2563eb; font-weight: bold; }
 
+        /* --- 📑 分頁系統樣式 (外掛新增) --- */
+        #tab-bar-container {
+            position: fixed; top: 60px; left: 0; right: 0;
+            height: 40px; background: #e2e8f0; z-index: 1900;
+            display: flex; align-items: flex-end; padding: 0 20px;
+            box-shadow: inset 0 -2px 0 #cbd5e1; gap: 5px;
+        }
+        /* 當專案過濾列出現時，分頁列自動往下移 (避免重疊) */
+        body.has-proj-bar #tab-bar-container { top: 110px; }
+        /* 主區域也要跟著往下推，才不會被擋住 */
+        body.has-tab-bar .main-area { margin-top: 110px !important; }
+        body.has-tab-bar.has-proj-bar .main-area { margin-top: 160px !important; }
+
+        .tab-item {
+            padding: 8px 20px 6px 20px;
+            background: #cbd5e1; color: #64748b;
+            border-radius: 8px 8px 0 0; cursor: pointer;
+            font-size: 0.9rem; font-weight: bold;
+            user-select: none; transition: 0.2s;
+            position: relative; border: 1px solid transparent;
+            margin-bottom: -2px; /* 壓在線上 */
+        }
+        .tab-item:hover { background: #d1d5db; }
+        .tab-item.active {
+            background: var(--bg); color: var(--primary);
+            border: 1px solid #cbd5e1; border-bottom: 2px solid var(--bg);
+            z-index: 10;
+        }
+        .new-tab-btn {
+            background: transparent; border: none; font-size: 1.2rem;
+            color: #64748b; cursor: pointer; padding: 0 10px; margin-bottom: 5px;
+        }
+        .new-tab-btn:hover { color: #3b82f6; }
+        
+        /* 增加移動按鈕樣式 */
+        .btn-move-tab { color: #8b5cf6 !important; border-color: #8b5cf6 !important; } 
+        /* ---------------------------------- */
+
         .toolbox-container { position: fixed; top: 200px; left: 20px; z-index: 1800; transition: transform 0.3s ease; }
         .toolbox-container.closed { transform: translateX(-140%); }
         .toolbox { width: 70px; background: white; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); display: flex; flex-direction: column; gap: 5px; padding: 10px 5px; align-items: center; position: relative; border: 1px solid #e2e8f0; }
@@ -164,7 +202,6 @@
         body.ai-selecting .select-chk { display: inline-block; }
         .mode-toggle-btn { font-size: 12px; border: 1px solid #94a3b8; border-radius: 4px; padding: 4px 8px; cursor: pointer; background: #f1f5f9; color: #64748b; margin-right: 5px; height: 28px; white-space: nowrap; }
         
-        /* 🔧 修正：日期欄位加寬與減少內距，解決 Firefox 顯示問題 */
         .date-input { border: 1px solid #cbd5e1; background: #f8fafc; padding: 4px 2px; border-radius: 4px; font-family: inherit; font-size: 0.9rem; color: #334155; outline: none; cursor: pointer; width: 138px; height: 28px; }
         
         .card.memo-mode .date-input, .card.memo-mode .today-btn, .card.memo-mode .range-container { display: none !important; }
@@ -224,7 +261,7 @@
         #exit-pres-btn { display: none; position: fixed; top: 20px; right: 20px; z-index: 3000; padding: 10px 20px; background: #ef4444; color: white; border: none; border-radius: 30px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.3); font-weight: bold; }
         body.presentation-mode { background-color: #ffffff; padding: 20px; }
         body.presentation-mode #exit-pres-btn { display: block; }
-        body.presentation-mode .toolbar, body.presentation-mode .toolbox-container, body.presentation-mode .add-main, body.presentation-mode .sticker-del, body.presentation-mode .today-btn, body.presentation-mode .note-header, body.presentation-mode .select-chk, body.presentation-mode .footer-project-input::placeholder, body.presentation-mode #project-bar, body.presentation-mode .card-top-right, body.presentation-mode .card-side-tools, body.presentation-mode .mode-toggle-btn { display: none !important; }
+        body.presentation-mode .toolbar, body.presentation-mode .toolbox-container, body.presentation-mode .add-main, body.presentation-mode .sticker-del, body.presentation-mode .today-btn, body.presentation-mode .note-header, body.presentation-mode .select-chk, body.presentation-mode .footer-project-input::placeholder, body.presentation-mode #project-bar, body.presentation-mode .card-top-right, body.presentation-mode .card-side-tools, body.presentation-mode .mode-toggle-btn, body.presentation-mode #tab-bar-container { display: none !important; }
         body.presentation-mode .main-area { margin-top: 0 !important; max-width: 1200px; }
         body.presentation-mode .card { box-shadow: none; border: 1px solid #e5e7eb; border-top: none; padding-right: 20px; min-height: auto; } 
         body.presentation-mode .card.memo-mode { border-top: 1px dashed #cbd5e1; }
@@ -239,7 +276,7 @@
             .chronicle-line { left: 20px; } .chronicle-date-col { display: none; } .chronicle-content-col { margin-left: 30px; border-left: 2px solid #e2e8f0; padding-left: 15px; } .chronicle-dot-col { display: none; }
         }
         @media print { 
-            .toolbar, .toolbox-container, .card-top-right, .card-side-tools, .add-main, .note-header, .sticker-del, .today-btn, #exit-pres-btn, .select-chk, #project-bar, .mode-toggle-btn, #save-light { display: none !important; } 
+            .toolbar, .toolbox-container, .card-top-right, .card-side-tools, .add-main, .note-header, .sticker-del, .today-btn, #exit-pres-btn, .select-chk, #project-bar, .mode-toggle-btn, #save-light, #tab-bar-container { display: none !important; } 
             .sticky-note, .sticker { border: none; box-shadow: none; } .resize-handle { display: none !important; }
         }
     </style>
@@ -303,6 +340,13 @@
     </div>
 
     <div id="project-bar"></div>
+
+    <div id="tab-bar-container">
+        <div id="tab-list">
+            </div>
+        <button class="new-tab-btn" onclick="createNewTab()">＋</button>
+    </div>
+
     <button id="exit-pres-btn" onclick="togglePresentation()">❌ 退出簡報模式 (ESC)</button>
 
     <div class="toolbox-container" id="toolboxContainer">
@@ -339,6 +383,17 @@
     <div id="custom-tooltip"></div>
 
     <script>
+        // --- 🔌 分頁系統變數 ---
+        let currentTabId = 'main'; // 預設主分頁
+        let allTabs = JSON.parse(localStorage.getItem('timeline_tabs_meta')) || [{id: 'main', name: '🏠 主工作區'}];
+
+        // 如果是一次執行，確保 meta 有寫入
+        if (!localStorage.getItem('timeline_tabs_meta')) {
+            localStorage.setItem('timeline_tabs_meta', JSON.stringify(allTabs));
+        }
+        // 啟動時給 body 加個 class 讓 CSS 知道分頁列存在
+        document.body.classList.add('has-tab-bar');
+
         const container = document.getElementById('container');
         const projectBar = document.getElementById('project-bar');
         const tooltip = document.getElementById('custom-tooltip');
@@ -389,7 +444,8 @@
                         if (domNode.classList && 
                            (domNode.classList.contains('toolbar') || 
                             domNode.classList.contains('toolbox-container') ||
-                            domNode.id === 'project-bar')) {
+                            domNode.id === 'project-bar' || 
+                            domNode.id === 'tab-bar-container')) {
                             return false;
                         }
                         return true;
@@ -506,10 +562,22 @@
             return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
         }
 
+        // [修改版] 初始化：根據現在的分頁讀取資料
         function init() {
-            const savedData = localStorage.getItem('timeline_v47_data'); 
-            const savedNotes = localStorage.getItem('timeline_v47_notes');
-            const savedStickers = localStorage.getItem('timeline_v47_stickers');
+            renderTabs(); // 繪製分頁列
+
+            // 根據目前的 Tab ID 決定要讀哪個 Key
+            const dataKey = currentTabId === 'main' ? 'timeline_v47_data' : `timeline_v47_data_${currentTabId}`;
+            const notesKey = currentTabId === 'main' ? 'timeline_v47_notes' : `timeline_v47_notes_${currentTabId}`;
+            const stickersKey = currentTabId === 'main' ? 'timeline_v47_stickers' : `timeline_v47_stickers_${currentTabId}`;
+
+            const savedData = localStorage.getItem(dataKey); 
+            const savedNotes = localStorage.getItem(notesKey);
+            const savedStickers = localStorage.getItem(stickersKey);
+
+            // 清空畫面
+            container.innerHTML = '';
+            document.querySelectorAll('.sticky-note, .sticker').forEach(el => el.remove());
 
             let hasData = false;
             
@@ -525,7 +593,8 @@
                 }
             }
             
-            if (!hasData) {
+            // 如果是主分頁且沒資料，才給預設卡片；其他分頁沒資料就留白
+            if (!hasData && currentTabId === 'main') {
                 const defaultItem = {
                     id: Date.now(), pos: 'left', mode: 'normal', color: 'blue', status: 0, isMemo: false,
                     project: '報告工具', label: '系統初始化', date_single: getTodayString(), date_start: '', date_end: '', 
@@ -547,13 +616,21 @@
             if (saveTimer) clearTimeout(saveTimer);
             saveTimer = setTimeout(() => { performActualSave(); }, 1000);
         }
+
+        // [修改版] 存檔：存到對應的分頁 Key
         function performActualSave() {
             const data = gatherData();
             const notes = gatherNotes();
             const stickers = gatherStickers();
-            localStorage.setItem('timeline_v47_data', JSON.stringify(data));
-            localStorage.setItem('timeline_v47_notes', JSON.stringify(notes));
-            localStorage.setItem('timeline_v47_stickers', JSON.stringify(stickers));
+            
+            const dataKey = currentTabId === 'main' ? 'timeline_v47_data' : `timeline_v47_data_${currentTabId}`;
+            const notesKey = currentTabId === 'main' ? 'timeline_v47_notes' : `timeline_v47_notes_${currentTabId}`;
+            const stickersKey = currentTabId === 'main' ? 'timeline_v47_stickers' : `timeline_v47_stickers_${currentTabId}`;
+
+            localStorage.setItem(dataKey, JSON.stringify(data));
+            localStorage.setItem(notesKey, JSON.stringify(notes));
+            localStorage.setItem(stickersKey, JSON.stringify(stickers));
+            
             const light = document.getElementById('save-light');
             if(light) light.classList.remove('unsaved');
         }
@@ -656,6 +733,7 @@
                             <div class="status-dot status-${item.status}" onclick="cycleStatus(this)"></div>
                         </div>
                         <div class="card-top-right">
+                            <button class="btn-icon btn-move-tab" onclick="moveCardToTab(this)" title="移動到其他分頁">📦</button>
                             <button class="btn-icon" onclick="addToGoogleCalendar(this)" title="加入 Google Calendar">📆</button>
                             <button class="btn-icon" onclick="toggleRange(this)">↔️</button>
                             <button class="btn-icon" onclick="insertTodoLine(this)">☑</button>
@@ -1027,7 +1105,6 @@
             if (!endDateStr) endDateStr = startDateStr;
 
             // 3. 格式化日期為 Google 格式 (YYYYMMDD)
-            // 手動解析以避免時區誤差： new Date('2025-12-05') 會視為 UTC，轉本地可能變 12/04
             const formatToGoogleDate = (y, m, d) => {
                 return `${y}${String(m).padStart(2, '0')}${String(d).padStart(2, '0')}`;
             };
@@ -1053,7 +1130,6 @@
             
             const url = `https://www.google.com/calendar/render?action=TEMPLATE&text=${eventTitle}&dates=${eventDates}&details=${eventDetails}`;
             
-            // 5. 開啟
             window.open(url, '_blank');
         }
 
@@ -1068,7 +1144,7 @@
             const downloadAnchorNode = document.createElement('a');
             downloadAnchorNode.setAttribute("href", dataStr);
             downloadAnchorNode.setAttribute("download", "report_backup_" + getTodayString() + ".json");
-            document.body.appendChild(downloadAnchorNode); // Firefox 需要將元素加到 body
+            document.body.appendChild(downloadAnchorNode); 
             downloadAnchorNode.click();
             downloadAnchorNode.remove();
         }
@@ -1082,10 +1158,14 @@
                 try {
                     const json = JSON.parse(e.target.result);
                     
-                    // 檢查格式並存入 LocalStorage
-                    if (json.data) localStorage.setItem('timeline_v47_data', JSON.stringify(json.data));
-                    if (json.notes) localStorage.setItem('timeline_v47_notes', JSON.stringify(json.notes));
-                    if (json.stickers) localStorage.setItem('timeline_v47_stickers', JSON.stringify(json.stickers));
+                    // 檢查格式並存入 LocalStorage (這裡我們強制存入當前分頁)
+                    const dataKey = currentTabId === 'main' ? 'timeline_v47_data' : `timeline_v47_data_${currentTabId}`;
+                    const notesKey = currentTabId === 'main' ? 'timeline_v47_notes' : `timeline_v47_notes_${currentTabId}`;
+                    const stickersKey = currentTabId === 'main' ? 'timeline_v47_stickers' : `timeline_v47_stickers_${currentTabId}`;
+
+                    if (json.data) localStorage.setItem(dataKey, JSON.stringify(json.data));
+                    if (json.notes) localStorage.setItem(notesKey, JSON.stringify(json.notes));
+                    if (json.stickers) localStorage.setItem(stickersKey, JSON.stringify(json.stickers));
                     
                     alert('讀取成功！頁面將重新整理以載入資料。');
                     location.reload(); 
@@ -1132,7 +1212,6 @@
                     item.style.display = 'none';
                 }
             });
-            // 如果在大事記或甘特圖模式，也要重繪
             if(currentView === 'chronicle') renderChronicle();
             if(currentView === 'gantt') renderGantt();
         }
@@ -1159,7 +1238,6 @@
                 btn.classList.add('active');
             }
             
-            // 重新過濾畫面上的卡片
             const items = document.querySelectorAll('.timeline-item');
             items.forEach(item => {
                 const p = item.querySelector('.footer-project-input').value;
@@ -1170,7 +1248,6 @@
                 }
             });
 
-            // 如果在其他視圖，重繪
             if(currentView === 'chronicle') renderChronicle();
             if(currentView === 'gantt') renderGantt();
         };
@@ -1231,6 +1308,116 @@
             document.body.appendChild(link);
             link.click();
             link.remove();
+        }
+
+        // --- 🔌 分頁功能擴充邏輯 ---
+
+        function renderTabs() {
+            const bar = document.getElementById('tab-list');
+            bar.innerHTML = allTabs.map(t => 
+                `<div class="tab-item ${t.id === currentTabId ? 'active' : ''}" 
+                      onclick="switchTab('${t.id}')" 
+                      oncontextmenu="renameTab(event, '${t.id}')">
+                    ${t.name}
+                </div>`
+            ).join('');
+        }
+
+        function createNewTab() {
+            const name = prompt("請輸入新分頁名稱 (例如: 2024歸檔)：");
+            if (!name) return;
+            const newId = 'tab_' + Date.now();
+            allTabs.push({ id: newId, name: name });
+            localStorage.setItem('timeline_tabs_meta', JSON.stringify(allTabs));
+            renderTabs();
+            // 自動切換到新分頁
+            switchTab(newId);
+        }
+
+        function switchTab(id) {
+            if (currentTabId === id) return;
+            // 1. 先強制存檔當前分頁
+            performActualSave();
+            // 2. 切換 ID
+            currentTabId = id;
+            // 3. 重新初始化
+            init();
+        }
+
+        function renameTab(e, id) {
+            e.preventDefault(); // 阻擋右鍵選單
+            if (id === 'main') { alert('主工作區不能改名或刪除'); return; }
+            
+            if (confirm('確定要刪除這個分頁嗎？(裡面的資料也會消失)')) {
+                 if (confirm('再次確認刪除？無法復原！')) {
+                     // 刪除資料
+                     localStorage.removeItem(`timeline_v47_data_${id}`);
+                     localStorage.removeItem(`timeline_v47_notes_${id}`);
+                     localStorage.removeItem(`timeline_v47_stickers_${id}`);
+                     // 移除 meta
+                     allTabs = allTabs.filter(t => t.id !== id);
+                     localStorage.setItem('timeline_tabs_meta', JSON.stringify(allTabs));
+                     // 切回主頁
+                     currentTabId = 'main';
+                     init();
+                 }
+            }
+        }
+
+        // [功能] 移動卡片到其他分頁
+        function moveCardToTab(btn) {
+            const item = btn.closest('.timeline-item');
+            
+            // 找出其他分頁
+            const otherTabs = allTabs.filter(t => t.id !== currentTabId);
+            if (otherTabs.length === 0) {
+                alert('請先按上方「＋」建立新分頁 (例如: 歸檔區)，才能移動卡片。');
+                return;
+            }
+
+            // 建立選項字串
+            let msg = "請輸入要移動到的分頁編號：\n";
+            otherTabs.forEach((t, index) => {
+                msg += `[${index + 1}] ${t.name}\n`;
+            });
+
+            const choice = prompt(msg);
+            const index = parseInt(choice) - 1;
+
+            if (!isNaN(index) && otherTabs[index]) {
+                const targetTab = otherTabs[index];
+                const targetId = targetTab.id;
+                
+                // 1. 取得該卡片資料
+                const cardData = {
+                    pos: item.classList.contains('force-left')?'left':(item.classList.contains('force-right')?'right':'auto'),
+                    mode: item.classList.contains('range-mode')?'range':'normal',
+                    color: item.querySelector('.card').dataset.color || 'blue',
+                    status: 0, 
+                    isMemo: item.querySelector('.card').classList.contains('memo-mode'),
+                    project: item.querySelector('.footer-project-input').value,
+                    label: item.querySelector('.label-input').value,
+                    date_single: item.querySelector('.single-date').value,
+                    date_start: item.querySelector('.date-start').value,
+                    date_end: item.querySelector('.date-end').value,
+                    content: item.querySelector('.content').innerHTML
+                };
+
+                // 2. 讀取目標分頁的舊資料
+                const targetKey = targetId === 'main' ? 'timeline_v47_data' : `timeline_v47_data_${targetId}`;
+                const targetRaw = localStorage.getItem(targetKey);
+                let targetData = targetRaw ? JSON.parse(targetRaw) : [];
+                
+                // 3. 寫入目標
+                targetData.push(cardData);
+                localStorage.setItem(targetKey, JSON.stringify(targetData));
+
+                // 4. 刪除當前畫面的卡片
+                item.remove();
+                autoSave(); // 存檔當前分頁狀態
+
+                alert(`已移動到「${targetTab.name}」！`);
+            }
         }
         
         init();
