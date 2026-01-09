@@ -15,8 +15,8 @@
         #save-light.unsaved { background-color: #ef4444; box-shadow: 0 0 8px #ef4444; animation: pulse-red 1s infinite; }
         @keyframes pulse-red { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.9); } 100% { opacity: 1; transform: scale(1); } }
 
-        /* --- 📋 貼上選擇對話框 --- */
-        #paste-dialog { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 5000; align-items: center; justify-content: center; backdrop-filter: blur(3px); }
+        /* --- 📋 貼上與彈窗通用樣式 --- */
+        #paste-dialog, #pomo-dialog, #notebook-dialog { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 8000; align-items: center; justify-content: center; backdrop-filter: blur(2px); }
         .paste-modal { background: white; padding: 25px; border-radius: 12px; width: 340px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); text-align: center; border: 1px solid #e2e8f0; animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         @keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         .paste-title { font-size: 1.1rem; font-weight: bold; margin-bottom: 5px; color: #1e293b; }
@@ -29,9 +29,9 @@
 
         /* --- 工具列 --- */
         .toolbar { position: fixed; top: 0; left: 0; right: 0; background: #1e293b; color: white; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; z-index: 2000; height: 60px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
-        .tool-left { display: flex; align-items: center; gap: 15px; flex-shrink: 0; }
+        .tool-left { display: flex; align-items: center; gap: 15px; flex-shrink: 0; overflow-x: auto; }
         .tool-right { display: flex; align-items: center; gap: 10px; margin-left: auto; }
-        .tool-title { font-weight: bold; font-size: 1.1rem; display: flex; align-items: center; gap: 10px; }
+        .tool-title { font-weight: bold; font-size: 1.1rem; display: flex; align-items: center; gap: 10px; white-space: nowrap; }
         .search-box { position: relative; display: flex; align-items: center; gap: 10px; }
         .search-input { background: #334155; border: 1px solid #475569; color: white; padding: 6px 10px 6px 30px; border-radius: 20px; font-size: 0.9rem; width: 120px; transition: width 0.3s; outline: none; }
         .search-input:focus { width: 180px; border-color: #3b82f6; }
@@ -45,7 +45,7 @@
         .tool-btn.danger-btn { border-color: #f87171; color: #f87171; }
         .tool-btn.ai-btn { border-color: #c084fc; color: #c084fc; }
         .tool-btn.filter-btn { border-color: #d97706; color: #fbbf24; }
-        .gantt-switch-btn { background: #fbbf24; color: #78350f; border: none; padding: 6px 16px; border-radius: 20px; font-weight: bold; cursor: pointer; box-shadow: 0 0 10px rgba(251, 191, 36, 0.5); transition: 0.2s; display: flex; align-items: center; gap: 5px; }
+        .gantt-switch-btn { background: #fbbf24; color: #78350f; border: none; padding: 6px 16px; border-radius: 20px; font-weight: bold; cursor: pointer; box-shadow: 0 0 10px rgba(251, 191, 36, 0.5); transition: 0.2s; display: flex; align-items: center; gap: 5px; white-space: nowrap; }
         .gantt-switch-btn:hover { background: #f59e0b; transform: scale(1.05); }
         .gantt-switch-btn.active { background: #fff; color: #d97706; box-shadow: inset 0 2px 4px rgba(0,0,0,0.1); }
         .view-select { background: #334155; border: 1px solid #475569; color: white; padding: 6px 10px; border-radius: 4px; font-size: 0.9rem; cursor: pointer; outline: none; display: none; }
@@ -118,10 +118,11 @@
         .note-close { cursor: pointer; color: #78350f; font-weight: bold; font-size: 16px; padding: 0 5px; }
         .note-content { flex: 1; background: transparent; border: none; padding: 10px; font-family: inherit; outline: none; font-size: 1rem; color: #451a03; overflow-y: auto; white-space: pre-wrap; word-break: break-word; }
         
+        /* 貼紙與圖片 */
         .sticky-note { position: absolute; width: 180px; min-height: 160px; background: #fef3c7; border: 1px solid #d97706; box-shadow: 3px 3px 10px rgba(0,0,0,0.2); z-index: 1500; display: flex; flex-direction: column; transform: rotate(-1deg); border-radius: 2px; }
         .sticker { position: absolute; z-index: 1500; cursor: move; display: inline-block; }
         .sticker[data-type^="arrow"], .sticker[data-type^="circle"], .sticker[data-type^="rect"] { width: 80px; height: 80px; }
-        .sticker[data-type="image"] { width: auto; height: auto; max-width: 400px; }
+        .sticker[data-type="image"] { width: auto; height: auto; max-width: 500px; }
         .sticker img { max-width: 100%; height: auto; border-radius: 4px; box-shadow: 0 4px 8px rgba(0,0,0,0.3); pointer-events: none; }
         .sticker svg { width: 100%; height: 100%; drop-shadow: 2px 2px 2px rgba(0,0,0,0.2); pointer-events: none; }
         .sticker-del { position: absolute; top: -10px; right: -10px; width: 24px; height: 24px; background: #ef4444; color: white; font-size: 14px; border-radius: 50%; display: none; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.2); z-index: 1501; border: 2px solid white; }
@@ -137,6 +138,15 @@
         body.taking-screenshot .card, body.taking-screenshot .sticky-note, body.taking-screenshot .sticker { box-shadow: none !important; transform: none !important; border: 1px solid #cbd5e1 !important; }
         body.taking-screenshot .resize-handle, body.taking-screenshot .sticker-del, body.taking-screenshot .note-header, body.taking-screenshot .chronicle-tool-header { display: none !important; }
         .screenshot-clone-div { white-space: pre-wrap; word-break: break-word; overflow: visible; display: block; }
+
+        /* --- 📖 筆記本樣式 --- */
+        .nb-textarea { width: 100%; height: 100%; resize: none; border: 1px solid #e2e8f0; padding: 15px; font-size: 1rem; line-height: 1.6; outline: none; border-radius: 8px; color: #334155; background: #fafafa; transition: 0.2s; }
+        .nb-textarea:focus { border-color: #4f46e5; background: #fff; box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
+        .cornell-layout { display: grid; grid-template-columns: 30% 70%; grid-template-rows: 75% 25%; width: 100%; height: 100%; gap: 10px; }
+        .cornell-cues { grid-column: 1; grid-row: 1; } .cornell-notes { grid-column: 2; grid-row: 1; } .cornell-summary { grid-column: 1 / span 2; grid-row: 2; }
+        .matrix-layout { display: grid; grid-template-columns: 50% 50%; grid-template-rows: 50% 50%; width: 100%; height: 100%; gap: 10px; }
+        .matrix-q1 { border-top: 4px solid #ef4444; } .matrix-q2 { border-top: 4px solid #3b82f6; } .matrix-q3 { border-top: 4px solid #f59e0b; } .matrix-q4 { border-top: 4px solid #10b981; }
+        .nb-label { font-size: 0.8rem; font-weight: bold; color: #94a3b8; margin-bottom: 5px; display: block; } .nb-box { display: flex; flex-direction: column; height: 100%; }
 
         /* --- 🎨 主區域佈局 --- */
         .main-area { max-width: 900px; margin: 80px auto 0 auto; padding: 40px 20px; min-height: calc(100vh - 100px); background: var(--bg); transition: margin-left 0.3s ease; }
@@ -220,8 +230,6 @@
         .duration-bar-fill { height: 100%; border-radius: 3px; opacity: 0.7; }
         .duration-text { font-size: 0.7rem; color: #94a3b8; margin-top: 2px; }
         .chronicle-title { font-size: 1.1rem; font-weight: 800; color: #1e293b; margin-bottom: 4px; line-height: 1.4; display: flex; align-items: center; flex-wrap: wrap; }
-        
-        /* [修正] 大事記內文可編輯樣式 */
         .chronicle-desc { font-size: 0.95rem; color: #475569; white-space: pre-wrap; line-height: 1.6; outline: none; padding: 2px; border: 1px solid transparent; border-radius: 4px; transition: border 0.2s; }
         .chronicle-desc:focus { border-color: #cbd5e1; background: white; }
 
@@ -252,13 +260,19 @@
         @media screen and (max-width: 768px) {
             body.has-tab-bar .main-area { margin-left: 50px !important; }
             .main-area { margin-top: 60px; padding: 10px; } body.has-proj-bar .main-area { margin-top: 150px; }
-            .toolbox-container { display: none !important; } .timeline-item { flex-direction: column; width: 100%; padding: 0 !important; }
+            .toolbox-container { transition: transform 0.3s ease; } 
+            
+            .timeline-item { flex-direction: column; width: 100%; padding: 0 !important; }
             .timeline-item .card { width: 100% !important; margin: 0 0 20px 0 !important; } .timeline::before { left: 10px; } .dot { left: 10px; }
-            .mobile-hidden { display: none !important; } .tool-right { display: none; }
+            
+            /* 手機版優化: 隱藏甘特圖與檢視切換，但保留番茄鐘與筆記本 */
+            .tool-right .view-select, .tool-right .gantt-switch-btn { display: none; }
+            .tool-right { gap: 5px; }
+            
             .chronicle-line { left: 20px; } .chronicle-date-col { display: none; } .chronicle-content-col { margin-left: 30px; border-left: 2px solid #e2e8f0; padding-left: 15px; } .chronicle-dot-col { display: none; }
         }
         @media print { 
-            .toolbar, .toolbox-container, .card-top-right, .card-side-tools, .add-main, .note-header, .sticker-del, .today-btn, #exit-pres-btn, .select-chk, #project-bar, .mode-toggle-btn, #save-light, #tab-bar-container { display: none !important; } 
+            .toolbar, .toolbox-container, .card-top-right, .card-side-tools, .add-main, .note-header, .sticker-del, .today-btn, #exit-pres-btn, .select-chk, #project-bar, .mode-toggle-btn, #save-light, #tab-bar-container, #pomodoro-btn { display: none !important; } 
             .sticky-note, .sticker { border: none; box-shadow: none; } .resize-handle { display: none !important; }
         }
     </style>
@@ -278,6 +292,36 @@
                 <button class="paste-btn" id="btn-paste-sticker" onclick="processPaste('sticker')">🖼️ 貼成背景移動貼紙</button>
             </div>
             <button class="paste-cancel" onclick="closePasteDialog()">取消</button>
+        </div>
+    </div>
+
+    <div id="pomo-dialog" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.6); z-index:9000; align-items:center; justify-content:center; backdrop-filter: blur(2px);">
+        <div style="background:white; padding:30px; border-radius:16px; width:320px; text-align:center; box-shadow:0 10px 25px rgba(0,0,0,0.3); animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
+            <div style="font-size:3rem; margin-bottom:10px;">🍅</div>
+            <h2 style="color:#1e293b; margin:0 0 10px 0;">專注時間結束！</h2>
+            <p style="color:#64748b; margin-bottom:25px; line-height:1.5;">辛苦了！休息是為了走更長遠的路。<br>為了防止資料遺失，<br><strong>強烈建議您現在下載備份檔案。</strong></p>
+            <div style="display:flex; flex-direction:column; gap:10px;">
+                <button onclick="pomoSaveAndClose()" style="padding:12px; background:#10b981; color:white; border:none; border-radius:8px; font-weight:bold; cursor:pointer; font-size:1rem; box-shadow:0 4px 6px rgba(16, 185, 129, 0.3);">📥 下載備份並休息</button>
+                <button onclick="closePomoDialog()" style="padding:12px; background:transparent; color:#94a3b8; border:1px solid #e2e8f0; border-radius:8px; cursor:pointer;">先不要，我只想休息</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="notebook-dialog" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.6); z-index:8000; align-items:center; justify-content:center; backdrop-filter: blur(2px);">
+        <div style="background:white; width:90%; height:90%; max-width:1000px; border-radius:12px; display:flex; flex-direction:column; box-shadow:0 10px 25px rgba(0,0,0,0.3); overflow:hidden;">
+            <div style="padding:15px; border-bottom:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; background:#f8fafc;">
+                <div style="font-weight:bold; color:#1e293b; font-size:1.1rem;">📖 全域共用筆記本</div>
+                <div style="display:flex; gap:10px;">
+                    <select id="nb-template-select" onchange="switchNotebookTemplate(this.value)" style="padding:6px; border-radius:6px; border:1px solid #cbd5e1; outline:none;">
+                        <option value="free">📝 自由筆記</option>
+                        <option value="cornell">🎓 康乃爾筆記法</option>
+                        <option value="matrix">⚖️ 艾森豪矩陣 (四象限)</option>
+                    </select>
+                    <button onclick="closeNotebook()" style="padding:6px 12px; border:1px solid #cbd5e1; background:white; border-radius:6px; cursor:pointer;">❌ 關閉</button>
+                </div>
+            </div>
+            <div id="nb-content-area" style="flex:1; background:#fff; padding:20px; overflow:hidden; display:flex;"></div>
+            <div style="padding:5px 15px; background:#f1f5f9; text-align:right; font-size:0.8rem; color:#64748b;">💡 筆記內容獨立儲存，切換分頁不會消失。</div>
         </div>
     </div>
 
@@ -310,6 +354,12 @@
             </div>
         </div>
         <div class="tool-right">
+            <button id="pomodoro-btn" class="tool-btn" onclick="togglePomodoro()" oncontextmenu="resetPomodoro(event)" title="左鍵:開始/暫停 | 右鍵:重置">
+                🍅 <span id="pomo-time">25:00</span>
+            </button>
+            <div style="width:1px; height:20px; background:#475569; margin:0 10px;"></div>
+            
+            <button class="tool-btn" onclick="openNotebook()" title="全域筆記本">📖 筆記</button>
             <select class="view-select" id="scaleSelect" onchange="changeScale(this.value)">
                 <option value="day">📅 刻度: 日</option>
                 <option value="week">🗓️ 刻度: 週</option>
@@ -362,12 +412,15 @@
     <div id="custom-tooltip"></div>
 
     <script>
-        // --- 🔌 分頁系統變數 ---
-        let currentTabId = 'main'; 
+        // --- 🔌 分頁系統變數 (加入記憶功能) ---
+        let currentTabId = localStorage.getItem('timeline_last_tab_id') || 'main';
         let allTabs = JSON.parse(localStorage.getItem('timeline_tabs_meta')) || [{id: 'main', name: '主工作區'}];
+        if (!allTabs.find(t => t.id === currentTabId)) { currentTabId = 'main'; }
         if (!localStorage.getItem('timeline_tabs_meta')) { localStorage.setItem('timeline_tabs_meta', JSON.stringify(allTabs)); }
         document.body.classList.add('has-tab-bar');
 
+        // --- 🔒 安全鎖與全域變數 ---
+        let isLoading = true; 
         const container = document.getElementById('container');
         const projectBar = document.getElementById('project-bar');
         const tooltip = document.getElementById('custom-tooltip');
@@ -375,7 +428,8 @@
         let currentSearchKeyword = '';
         let currentView = 'timeline';
         let currentScale = 'day'; 
-        
+        let saveTimer = null; 
+
         // --- 🖱️ Drag & Drop Logic ---
         function enableDragAndDrop() {
             container.addEventListener('dragover', e => {
@@ -467,34 +521,57 @@
         }
         function getTodayString() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }
 
+        // [核心] 初始化載入
         function init() {
+            isLoading = true; 
             renderTabs(); 
             const dataKey = currentTabId === 'main' ? 'timeline_v47_data' : `timeline_v47_data_${currentTabId}`;
             const notesKey = currentTabId === 'main' ? 'timeline_v47_notes' : `timeline_v47_notes_${currentTabId}`;
             const stickersKey = currentTabId === 'main' ? 'timeline_v47_stickers' : `timeline_v47_stickers_${currentTabId}`;
-            const savedData = localStorage.getItem(dataKey); const savedNotes = localStorage.getItem(notesKey); const savedStickers = localStorage.getItem(stickersKey);
-            container.innerHTML = ''; document.querySelectorAll('.sticky-note, .sticker').forEach(el => el.remove());
+
+            const savedData = localStorage.getItem(dataKey); 
+            const savedNotes = localStorage.getItem(notesKey);
+            const savedStickers = localStorage.getItem(stickersKey);
+
+            container.innerHTML = ''; 
+            document.querySelectorAll('.sticky-note, .sticker').forEach(el => el.remove());
+
             let hasData = false;
-            if (savedData) { try { const parsed = JSON.parse(savedData); if (Array.isArray(parsed) && parsed.length > 0) { renderFromData(parsed); hasData = true; } } catch (e) { console.error("資料讀取失敗:", e); } }
-            if (!hasData && currentTabId === 'main') {
-                const defaultItem = { id: Date.now(), pos: 'left', mode: 'normal', color: 'blue', status: 0, isMemo: false, project: '報告工具', label: '系統初始化', date_single: getTodayString(), date_start: '', date_end: '', content: '歡迎使用報告整理工具。' };
-                container.appendChild(createNodeElement(defaultItem));
-            }
-            if (savedNotes) { try { renderNotes(JSON.parse(savedNotes)); } catch(e){} }
-            if (savedStickers) { try { renderStickers(JSON.parse(savedStickers)); } catch(e){} }
-            refreshProjectBar(); enableDragAndDrop();
-            document.querySelectorAll('.sticky-note').forEach(note => {
-                const textarea = note.querySelector('textarea.note-content');
-                if (textarea) {
-                    const text = textarea.value; const rect = note.getBoundingClientRect(); note.remove(); 
-                    createStickyElement({ id: note.id, x: rect.left + window.scrollX, y: rect.top + window.scrollY, w: rect.width, h: rect.height, content: text.replace(/\n/g, '<br>') });
+            try {
+                if (savedData) { const parsed = JSON.parse(savedData); if (Array.isArray(parsed) && parsed.length > 0) { renderFromData(parsed); hasData = true; } }
+                if (!hasData && currentTabId === 'main') {
+                    const defaultItem = {
+                        id: Date.now(), pos: 'left', mode: 'normal', color: 'blue', status: 0, isMemo: false,
+                        project: '報告工具', label: '系統初始化', date_single: getTodayString(), date_start: '', date_end: '', content: '歡迎使用報告整理工具。'
+                    };
+                    container.appendChild(createNodeElement(defaultItem));
                 }
-            });
+                if (savedNotes) { renderNotes(JSON.parse(savedNotes)); }
+                if (savedStickers) { renderStickers(JSON.parse(savedStickers)); }
+                
+                refreshProjectBar();
+                enableDragAndDrop();
+                
+                document.querySelectorAll('.sticky-note').forEach(note => {
+                    const textarea = note.querySelector('textarea.note-content');
+                    if (textarea) {
+                        const text = textarea.value; const rect = note.getBoundingClientRect(); note.remove(); 
+                        createStickyElement({ id: note.id, x: rect.left + window.scrollX, y: rect.top + window.scrollY, w: rect.width, h: rect.height, content: text.replace(/\n/g, '<br>') });
+                    }
+                });
+            } catch (e) { console.error("Critical Error during init:", e); alert("資料讀取發生錯誤，請檢查 Console 或嘗試匯入備份。"); } finally { isLoading = false; }
         }
 
-        let saveTimer = null;
-        function autoSave() { const light = document.getElementById('save-light'); light.classList.add('unsaved'); if (saveTimer) clearTimeout(saveTimer); saveTimer = setTimeout(() => { performActualSave(); }, 1000); }
+        // [核心] 存檔邏輯 (含防呆)
+        function autoSave() { 
+            const light = document.getElementById('save-light'); 
+            light.classList.add('unsaved'); 
+            if (saveTimer) clearTimeout(saveTimer); 
+            saveTimer = setTimeout(() => { performActualSave(); }, 1000); 
+        }
+
         function performActualSave() {
+            if (isLoading) { console.warn("Save blocked because system is loading."); return; }
             const data = gatherData(); const notes = gatherNotes(); const stickers = gatherStickers();
             const dataKey = currentTabId === 'main' ? 'timeline_v47_data' : `timeline_v47_data_${currentTabId}`;
             const notesKey = currentTabId === 'main' ? 'timeline_v47_notes' : `timeline_v47_notes_${currentTabId}`;
@@ -524,11 +601,10 @@
         function gatherData() {
             return Array.from(document.querySelectorAll('.timeline-item')).map(item => {
                 const card = item.querySelector('.card'); const dot = item.querySelector('.status-dot');
-                // 關鍵修正：將 item 的 dataset.id 存回去，確保同步功能正常
                 const id = item.dataset.id || Date.now(); 
                 let status = 0; if(dot.classList.contains('status-1')) status = 1; else if(dot.classList.contains('status-2')) status = 2; else if(dot.classList.contains('status-3')) status = 3;
                 return {
-                    id: id, // 保存 ID
+                    id: id,
                     pos: item.classList.contains('force-left')?'left':(item.classList.contains('force-right')?'right':'auto'),
                     mode: item.classList.contains('range-mode')?'range':'normal',
                     color: card.dataset.color || 'blue', status: status, isMemo: card.classList.contains('memo-mode'),
@@ -545,7 +621,6 @@
         function createNodeElement(item) {
             const div = document.createElement('div');
             div.className = `timeline-item ${item.pos==='left'?'force-left':item.pos==='right'?'force-right':''} ${item.mode==='range'?'range-mode':''}`;
-            // 綁定 ID 以便同步
             div.dataset.id = item.id || Date.now(); 
             
             div.setAttribute('draggable', 'true');
@@ -558,8 +633,8 @@
                     <div class="resize-handle" onmousedown="resizeCard(event)">↘</div>
                     <div class="card-side-tools">
                         <button class="btn-icon side-btn" onclick="changeColor(this)" title="換色">🎨</button>
-                        <button class="btn-icon side-btn mobile-hidden" onclick="moveNode(this,'up')">⬆️</button>
-                        <button class="btn-icon side-btn mobile-hidden" onclick="moveNode(this,'down')">⬇️</button>
+                        <button class="btn-icon side-btn" onclick="moveNode(this,'up')">⬆️</button>
+                        <button class="btn-icon side-btn" onclick="moveNode(this,'down')">⬇️</button>
                         <button class="btn-icon side-btn mobile-hidden" onclick="togglePos(this,'left')">⬅️</button>
                         <button class="btn-icon side-btn mobile-hidden" onclick="togglePos(this,'right')">➡️</button>
                     </div>
@@ -612,7 +687,12 @@
         function createStickerElement(data) {
             const div = document.createElement('div'); div.className = 'sticker'; div.id = data.id; div.dataset.type = data.type; div.style.left = data.x + 'px'; div.style.top = data.y + 'px'; if (data.w) div.style.width = data.w + 'px'; if (data.h) div.style.height = data.h + 'px';
             let content = ''; if (data.type === 'arrow-up') content = '<svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><path d="M12 19V5M5 12l7-7 7 7"/></svg>'; else if (data.type === 'arrow-right') content = '<svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>'; else if (data.type === 'arrow-down') content = '<svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg>'; else if (data.type === 'arrow-left') content = '<svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>'; else if (data.type === 'circle-red') content = '<svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="3"><circle cx="12" cy="12" r="10"/></svg>'; else if (data.type === 'rect-blue') content = '<svg viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="3"><rect x="2" y="4" width="20" height="16" rx="2"/></svg>'; else if (data.type === 'image') content = `<img src="${data.content}">`;
-            let resizeHandle = (data.type === 'circle-red' || data.type === 'rect-blue') ? '<div class="resize-handle" onmousedown="resizeSticker(event)">↘</div>' : ''; div.innerHTML = `<div class="sticker-del" onclick="deleteSticky(this)">×</div>${content}${resizeHandle}`; document.body.appendChild(div); makeDraggable(div);
+            
+            // 修正：圖片現在也允許顯示 Resize Handle
+            let allowResize = (data.type === 'circle-red' || data.type === 'rect-blue' || data.type === 'image');
+            let resizeHandle = allowResize ? '<div class="resize-handle" onmousedown="resizeSticker(event)">↘</div>' : ''; 
+            
+            div.innerHTML = `<div class="sticker-del" onclick="deleteSticky(this)">×</div>${content}${resizeHandle}`; document.body.appendChild(div); makeDraggable(div);
         }
         function resizeSticker(e) { e.stopPropagation(); const sticker = e.target.parentElement; const startX = e.clientX, startY = e.clientY, startW = sticker.offsetWidth, startH = sticker.offsetHeight; function doDrag(ev) { const newW = startW + (ev.clientX - startX), newH = startH + (ev.clientY - startY); if (newW > 20) sticker.style.width = newW + 'px'; if (newH > 20) sticker.style.height = newH + 'px'; } function stopDrag() { document.documentElement.removeEventListener('mousemove', doDrag); document.documentElement.removeEventListener('mouseup', stopDrag); autoSave(); } document.documentElement.addEventListener('mousemove', doDrag); document.documentElement.addEventListener('mouseup', stopDrag); }
         function deleteSticky(btn) { if(confirm('移除此物件？')) { const note = btn.closest('.sticky-note'); const sticker = btn.closest('.sticker'); if(note) note.remove(); else if(sticker) sticker.remove(); autoSave(); } }
@@ -636,7 +716,7 @@
         function syncFromChronicle(id, element) {
             const originalItem = document.querySelector(`.timeline-item[data-id="${id}"] .content`);
             if (originalItem) {
-                originalItem.innerHTML = element.innerHTML; // 同步內容
+                originalItem.innerHTML = element.innerHTML; 
                 autoSave();
             }
         }
@@ -649,13 +729,13 @@
             contentDiv.focus();
             document.execCommand('styleWithCSS', false, true);
             document.execCommand('hiliteColor', false, '#fef08a');
-            contentDiv.dispatchEvent(new Event('input')); // 觸發同步
+            contentDiv.dispatchEvent(new Event('input')); 
         }
         function clearChronicleFormat(btn) {
             const contentDiv = btn.closest('.chronicle-item-card').querySelector('.chronicle-desc');
             contentDiv.focus();
             document.execCommand('removeFormat');
-            contentDiv.dispatchEvent(new Event('input')); // 觸發同步
+            contentDiv.dispatchEvent(new Event('input')); 
         }
 
         function renderChronicle() {
@@ -842,7 +922,14 @@
         // --- 🔌 分頁功能擴充 ---
         function renderTabs() { const bar = document.getElementById('tab-list'); bar.innerHTML = allTabs.map(t => `<div class="tab-item ${t.id === currentTabId ? 'active' : ''}" onclick="switchTab('${t.id}')" oncontextmenu="renameTab(event, '${t.id}')">${t.name}</div>`).join(''); }
         function createNewTab() { const name = prompt("請輸入新分頁名稱 (建議 4 個字以內)："); if (!name) return; const newId = 'tab_' + Date.now(); allTabs.push({ id: newId, name: name }); localStorage.setItem('timeline_tabs_meta', JSON.stringify(allTabs)); renderTabs(); switchTab(newId); }
-        function switchTab(id) { if (currentTabId === id) return; performActualSave(); currentTabId = id; init(); }
+        function switchTab(id) { 
+            if (saveTimer) { clearTimeout(saveTimer); saveTimer = null; }
+            if (currentTabId === id) return;
+            performActualSave();
+            currentTabId = id;
+            localStorage.setItem('timeline_last_tab_id', id); 
+            init(); 
+        }
         function renameTab(e, id) { e.preventDefault(); if (id === 'main') { alert('主工作區不能改名或刪除'); return; } if (confirm('確定要刪除這個分頁嗎？(裡面的資料也會消失)')) { if (confirm('再次確認刪除？無法復原！')) { localStorage.removeItem(`timeline_v47_data_${id}`); localStorage.removeItem(`timeline_v47_notes_${id}`); localStorage.removeItem(`timeline_v47_stickers_${id}`); allTabs = allTabs.filter(t => t.id !== id); localStorage.setItem('timeline_tabs_meta', JSON.stringify(allTabs)); currentTabId = 'main'; init(); } } }
         function moveCardToTab(btn) {
             const item = btn.closest('.timeline-item'); if (!item) { alert('找不到卡片物件，請刷新頁面再試。'); return; }
@@ -854,7 +941,7 @@
                 const targetTab = otherTabs[index]; const targetId = targetTab.id;
                 try {
                     const cardData = {
-                        id: item.dataset.id, // 保留 ID
+                        id: item.dataset.id, 
                         pos: item.classList.contains('force-left')?'left':(item.classList.contains('force-right')?'right':'auto'), mode: item.classList.contains('range-mode')?'range':'normal', color: item.querySelector('.card').dataset.color || 'blue', status: 0, isMemo: item.querySelector('.card').classList.contains('memo-mode'),
                         project: item.querySelector('.footer-project-input').value, label: item.querySelector('.label-input').value, date_single: item.querySelector('.single-date').value, date_start: item.querySelector('.date-start').value, date_end: item.querySelector('.date-end').value, content: item.querySelector('.content').innerHTML
                     };
@@ -865,9 +952,8 @@
             } else { alert(`❌ 移動失敗\n\n您輸入的編號 "${choice}" 無效。\n請輸入清單上顯示的數字 (例如 1)。`); }
         }
 
-        // --- 🤖 AI 智能助理 (提示詞生成模式) ---
+        // --- 🤖 AI 智能助理 ---
         function confirmAIOutput() {
-            // 1. 蒐集被勾選的卡片
             const selected = [];
             document.querySelectorAll('.timeline-item').forEach(item => {
                 if(item.querySelector('.select-chk').checked) {
@@ -875,134 +961,124 @@
                         date: item.querySelector('.single-date').value || item.querySelector('.date-start').value || '未壓日期',
                         project: item.querySelector('.footer-project-input').value || '未分類',
                         label: item.querySelector('.label-input').value || '無標題',
-                        content: item.querySelector('.content').innerText.replace(/\n/g, ' ') // 去除多餘換行
+                        content: item.querySelector('.content').innerText.replace(/\n/g, ' ') 
                     });
                 }
             });
-
             if(selected.length === 0) { alert('請先勾選卡片 (點選卡片左上角的方框)'); return; }
-
-            // 2. 詢問使用者意圖
-            const intent = prompt(
-                `已選取 ${selected.length} 個項目。\n請問您希望 AI 協助做什麼？\n\n` +
-                `1. 📝 撰寫週報 (整理成條列式匯報)\n` +
-                `2. 🔍 重點摘要 (歸納核心結論)\n` +
-                `3. 🧠 尋找關聯 (分析項目間的因果)\n` +
-                `4. 📋 僅複製資料 (純文字備份)\n\n` +
-                `請輸入數字 (1-4)：`, "1"
-            );
-
+            const intent = prompt(`已選取 ${selected.length} 個項目。\n請問您希望 AI 協助做什麼？\n\n1. 📝 撰寫週報\n2. 🔍 重點摘要\n3. 🧠 尋找關聯\n4. 📋 僅複製資料\n\n請輸入數字 (1-4)：`, "1");
             if (!intent) return;
-
-            // 3. 生成提示詞
             const promptText = generatePrompt(intent, selected);
-
-            // 4. 複製到剪貼簿
-            navigator.clipboard.writeText(promptText).then(() => {
-                alert(`✅ AI 提示詞已複製！\n\n現在請打開 ChatGPT / Gemini / Claude，\n直接按 Ctrl+V (貼上) 即可獲得結果。`);
-                exitAIMode(); // 退出選取模式
-            }).catch(err => {
-                console.error('複製失敗:', err);
-                alert('複製失敗，請手動查看 Console');
-            });
+            navigator.clipboard.writeText(promptText).then(() => { alert(`✅ AI 提示詞已複製！\n\n現在請打開 ChatGPT / Gemini / Claude，\n直接按 Ctrl+V (貼上) 即可獲得結果。`); exitAIMode(); }).catch(err => { console.error('複製失敗:', err); alert('複製失敗，請手動查看 Console'); });
         }
 
-        // 輔助：根據意圖組裝文字
         function generatePrompt(type, data) {
-            let instructions = "";
-            let role = "";
-
+            let instructions = "", role = "";
             switch(type) {
-                case "1": // 週報
-                    role = "你是一位專業的專案經理，擅長撰寫清晰、有條理的進度報告。";
-                    instructions = "請根據以下資料，為我撰寫一份「工作週報」。請將內容依專案分類，並標註進度與關鍵產出。語氣要專業且精簡。";
-                    break;
-                case "2": // 摘要
-                    role = "你是一位邏輯清晰的分析師。";
-                    instructions = "請閱讀以下資料，幫我歸納出 3-5 個最重要的「核心重點」。";
-                    break;
-                case "3": // 關聯
-                    role = "你是一位善於洞察趨勢的顧問。";
-                    instructions = "請分析以下資料，告訴我這些事件之間是否有因果關係？或者有哪些潛在的風險需要注意？";
-                    break;
-                case "4": // 純複製
-                    return JSON.stringify(data, null, 2);
-                default:
-                    role = "你是一個有用的助手。";
-                    instructions = "請處理以下資料：";
+                case "1": role = "你是一位專業的專案經理。"; instructions = "請根據以下資料，為我撰寫一份「工作週報」。"; break;
+                case "2": role = "你是一位邏輯清晰的分析師。"; instructions = "請閱讀以下資料，幫我歸納出 3-5 個最重要的「核心重點」。"; break;
+                case "3": role = "你是一位善於洞察趨勢的顧問。"; instructions = "請分析以下資料，告訴我這些事件之間是否有因果關係？"; break;
+                case "4": return JSON.stringify(data, null, 2);
+                default: role = "你是一個有用的助手。"; instructions = "請處理以下資料：";
             }
-
-            // 蒐集所有便利貼作為「參考備忘」
             const allNotes = Array.from(document.querySelectorAll('.sticky-note .note-content')).map(div => div.innerText.replace(/\n/g, ' ')).filter(text => text.trim() !== "");
-            
-            // 組裝卡片資料區塊
-            let dataBlock = "【主要時間軸項目】：\n\n" + data.map((item, idx) => {
-                return `[項目 ${idx+1}] (${item.date}) 【${item.project}】${item.label}\n內容：${item.content}`;
-            }).join('\n\n----------------\n\n');
-
-            // 如果有便利貼，加到資料塊後面
-            if (allNotes.length > 0) {
-                dataBlock += "\n\n================\n\n【參考備忘錄 (Sticky Notes)】：\n\n" + allNotes.map((note, idx) => `[備忘 ${idx+1}] ${note}`).join('\n\n');
-            }
-
-            // 最終提示詞格式
+            let dataBlock = "【主要時間軸項目】：\n\n" + data.map((item, idx) => `[項目 ${idx+1}] (${item.date}) 【${item.project}】${item.label}\n內容：${item.content}`).join('\n\n----------------\n\n');
+            if (allNotes.length > 0) { dataBlock += "\n\n================\n\n【參考備忘錄 (Sticky Notes)】：\n\n" + allNotes.map((note, idx) => `[備忘 ${idx+1}] ${note}`).join('\n\n'); }
             return `${role}\n\n${instructions}\n\n【原始資料如下】：\n\n${dataBlock}`;
         }
 
-        // --- 📅 ICS 匯入功能 (新) ---
+        // --- 📅 ICS 匯入功能 ---
         function handleICSUpload(input) {
-            const file = input.files[0];
-            if (!file) return;
+            const file = input.files[0]; if (!file) return;
             const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const icsData = e.target.result;
-                    parseICS(icsData);
-                } catch (err) {
-                    console.error(err);
-                    alert('ICS 檔案解析失敗');
-                }
-                input.value = '';
-            };
+            reader.onload = function(e) { try { parseICS(e.target.result); } catch (err) { console.error(err); alert('ICS 檔案解析失敗'); } input.value = ''; };
             reader.readAsText(file);
         }
-
         function parseICS(icsData) {
-            // 簡單正則解析
             const events = icsData.match(/BEGIN:VEVENT[\s\S]*?END:VEVENT/g);
             if (!events) { alert('檔案中找不到任何活動'); return; }
-            
             let count = 0;
             events.forEach(eventBlock => {
                 const summaryMatch = eventBlock.match(/SUMMARY:(.*)/);
-                const descMatch = eventBlock.match(/DESCRIPTION:([\s\S]*?)(?=\n[A-Z]+:)/); // 粗略抓取描述
+                const descMatch = eventBlock.match(/DESCRIPTION:([\s\S]*?)(?=\n[A-Z]+:)/);
                 const dtStartMatch = eventBlock.match(/DTSTART(?:;VALUE=DATE)?:(\d{8}(?:T\d{6}Z?)?)/);
-                
                 if (summaryMatch && dtStartMatch) {
-                    let title = summaryMatch[1].trim();
-                    let dateRaw = dtStartMatch[1];
-                    // 格式轉換: 20250101 -> 2025-01-01
-                    let y = dateRaw.substring(0, 4);
-                    let m = dateRaw.substring(4, 6);
-                    let d = dateRaw.substring(6, 8);
+                    let title = summaryMatch[1].trim(); let dateRaw = dtStartMatch[1];
+                    let y = dateRaw.substring(0, 4); let m = dateRaw.substring(4, 6); let d = dateRaw.substring(6, 8);
                     let formattedDate = `${y}-${m}-${d}`;
-                    
                     let content = descMatch ? descMatch[1].replace(/\\n/g, '<br>').trim() : '';
-                    
-                    const newItem = {
-                        id: Date.now() + Math.random(), 
-                        pos: 'auto', mode: 'normal', color: 'blue', status: 0, isMemo: false,
-                        project: '日曆匯入', label: title, date_single: formattedDate, date_start: '', date_end: '', 
-                        content: content
-                    };
-                    const el = createNodeElement(newItem);
-                    container.appendChild(el);
-                    count++;
+                    const newItem = { id: Date.now() + Math.random(), pos: 'auto', mode: 'normal', color: 'blue', status: 0, isMemo: false, project: '日曆匯入', label: title, date_single: formattedDate, date_start: '', date_end: '', content: content };
+                    const el = createNodeElement(newItem); container.appendChild(el); count++;
                 }
             });
-            autoSave();
-            alert(`成功匯入 ${count} 個活動！`);
+            autoSave(); alert(`成功匯入 ${count} 個活動！`);
         }
+
+        // --- 🍅 番茄鐘邏輯 ---
+        let pomoTimer = null;
+        let pomoTimeLeft = 25 * 60; 
+        let isPomoRunning = false;
+        const pomoDisplay = document.getElementById('pomo-time');
+        const pomoBtn = document.getElementById('pomodoro-btn');
+
+        function togglePomodoro() {
+            if (isPomoRunning) {
+                clearInterval(pomoTimer); isPomoRunning = false;
+                pomoBtn.classList.remove('highlight'); pomoBtn.style.borderColor = '#475569';
+            } else {
+                isPomoRunning = true; pomoBtn.classList.add('highlight'); pomoBtn.style.borderColor = '#ef4444'; 
+                pomoTimer = setInterval(() => {
+                    pomoTimeLeft--; updatePomoDisplay();
+                    if (pomoTimeLeft <= 0) { pomoFinished(); }
+                }, 1000);
+            }
+        }
+        function updatePomoDisplay() {
+            const m = Math.floor(pomoTimeLeft / 60).toString().padStart(2, '0');
+            const s = (pomoTimeLeft % 60).toString().padStart(2, '0');
+            pomoDisplay.innerText = `${m}:${s}`;
+            if (isPomoRunning) { document.title = `(${m}:${s}) 報告整理工具`; } else { document.title = `報告整理工具`; }
+        }
+        function resetPomodoro(e) { e.preventDefault(); clearInterval(pomoTimer); isPomoRunning = false; pomoTimeLeft = 25 * 60; updatePomoDisplay(); pomoBtn.classList.remove('highlight'); pomoBtn.style.borderColor = '#475569'; }
+        function pomoFinished() {
+            clearInterval(pomoTimer); isPomoRunning = false; pomoTimeLeft = 25 * 60; updatePomoDisplay(); pomoBtn.classList.remove('highlight');
+            try { const utterance = new SpeechSynthesisUtterance("番茄鐘結束，請記得存檔"); utterance.rate = 1; window.speechSynthesis.speak(utterance); } catch(e) {}
+            document.getElementById('pomo-dialog').style.display = 'flex';
+        }
+        function closePomoDialog() { document.getElementById('pomo-dialog').style.display = 'none'; }
+        function pomoSaveAndClose() { downloadJSON(); closePomoDialog(); alert('備份已下載！好好休息吧 ☕'); }
+
+        // --- 📖 全域筆記本邏輯 ---
+        const notebookDialog = document.getElementById('notebook-dialog');
+        const nbContentArea = document.getElementById('nb-content-area');
+        const nbSelector = document.getElementById('nb-template-select');
+        let notebookData = { currentTemplate: 'free', free: '', cornell: { cues: '', notes: '', summary: '' }, matrix: { q1: '', q2: '', q3: '', q4: '' } };
+
+        function openNotebook() {
+            const saved = localStorage.getItem('timeline_global_notebook');
+            if (saved) { try { notebookData = JSON.parse(saved); } catch(e) {} }
+            nbSelector.value = notebookData.currentTemplate || 'free';
+            renderNotebook(); notebookDialog.style.display = 'flex';
+        }
+        function closeNotebook() { notebookDialog.style.display = 'none'; }
+        function switchNotebookTemplate(template) { notebookData.currentTemplate = template; saveNotebook(); renderNotebook(); }
+        function renderNotebook() {
+            const t = notebookData.currentTemplate; let html = '';
+            if (t === 'free') { html = `<textarea class="nb-textarea" placeholder="在此輸入自由筆記..." oninput="updateNbData('free', this.value)">${notebookData.free || ''}</textarea>`; } 
+            else if (t === 'cornell') {
+                const d = notebookData.cornell || {};
+                html = `<div class="cornell-layout"><div class="nb-box cornell-cues"><span class="nb-label">💡 線索/關鍵字 (Cues)</span><textarea class="nb-textarea" oninput="updateNbData('cornell.cues', this.value)">${d.cues || ''}</textarea></div><div class="nb-box cornell-notes"><span class="nb-label">📝 筆記內容 (Notes)</span><textarea class="nb-textarea" oninput="updateNbData('cornell.notes', this.value)">${d.notes || ''}</textarea></div><div class="nb-box cornell-summary"><span class="nb-label">📌 總結 (Summary)</span><textarea class="nb-textarea" oninput="updateNbData('cornell.summary', this.value)">${d.summary || ''}</textarea></div></div>`;
+            } else if (t === 'matrix') {
+                const d = notebookData.matrix || {};
+                html = `<div class="matrix-layout"><div class="nb-box"><span class="nb-label" style="color:#ef4444">🔥 重要且緊急</span><textarea class="nb-textarea matrix-q1" oninput="updateNbData('matrix.q1', this.value)">${d.q1 || ''}</textarea></div><div class="nb-box"><span class="nb-label" style="color:#3b82f6">📅 重要不緊急 (計畫)</span><textarea class="nb-textarea matrix-q2" oninput="updateNbData('matrix.q2', this.value)">${d.q2 || ''}</textarea></div><div class="nb-box"><span class="nb-label" style="color:#f59e0b">⚡ 緊急不重要 (授權)</span><textarea class="nb-textarea matrix-q3" oninput="updateNbData('matrix.q3', this.value)">${d.q3 || ''}</textarea></div><div class="nb-box"><span class="nb-label" style="color:#10b981">☕ 不重要不緊急 (刪除)</span><textarea class="nb-textarea matrix-q4" oninput="updateNbData('matrix.q4', this.value)">${d.q4 || ''}</textarea></div></div>`;
+            }
+            nbContentArea.innerHTML = html;
+        }
+        function updateNbData(path, value) {
+            if (path === 'free') { notebookData.free = value; } else { const [mode, key] = path.split('.'); if (!notebookData[mode]) notebookData[mode] = {}; notebookData[mode][key] = value; }
+            saveNotebook();
+        }
+        function saveNotebook() { localStorage.setItem('timeline_global_notebook', JSON.stringify(notebookData)); }
         
         init();
     </script>
