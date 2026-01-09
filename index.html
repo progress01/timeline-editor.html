@@ -259,6 +259,7 @@
         body.presentation-mode .date-input, body.presentation-mode .label-input { background: transparent; border: none; font-size: 1.2rem; }
         body.presentation-mode .content { font-size: 1.2rem; }
         
+        /* 📱 手機版優化區塊 */
         @media screen and (max-width: 768px) {
             body.has-tab-bar .main-area { margin-left: 50px !important; }
             .main-area { margin-top: 60px; padding: 10px; } body.has-proj-bar .main-area { margin-top: 150px; }
@@ -272,6 +273,7 @@
             .tool-right { gap: 5px; margin-left: 0; }
             
             .chronicle-line { left: 20px; } .chronicle-date-col { display: none; } .chronicle-content-col { margin-left: 30px; border-left: 2px solid #e2e8f0; padding-left: 15px; } .chronicle-dot-col { display: none; }
+            .mobile-hidden { display: none !important; }
         }
         @media print { 
             .toolbar, .toolbox-container, .card-top-right, .card-side-tools, .add-main, .note-header, .sticker-del, .today-btn, #exit-pres-btn, .select-chk, #project-bar, .mode-toggle-btn, #save-light, #tab-bar-container, #pomodoro-btn { display: none !important; } 
@@ -329,24 +331,24 @@
 
     <div class="toolbar">
         <div class="tool-left">
-            <div class="tool-title">🧠 報告整理工具</div>
+            <div class="tool-title">🧠 報告工具</div>
             <div class="search-box">
                 <span class="search-icon">🔍</span>
                 <input type="text" class="search-input" placeholder="搜尋..." oninput="filterNodes(this.value)">
             </div>
             <div class="tool-btn-group" id="normal-toolbar">
                 <button class="tool-btn filter-btn" onclick="toggleProjectBar()" title="過濾">📁 專案</button>
-                <button class="tool-btn view-btn" onclick="toggleChronicleView()" id="chronicleBtn">📜 大事記</button>
-                <button class="tool-btn pres-btn" onclick="togglePresentation()">📽️ 簡報</button>
+                <button class="tool-btn view-btn mobile-hidden" onclick="toggleChronicleView()" id="chronicleBtn">📜 大事記</button>
+                <button class="tool-btn pres-btn mobile-hidden" onclick="togglePresentation()">📽️ 簡報</button>
                 <button class="tool-btn ai-btn" onclick="enterAIMode()">🤖 AI</button>
-                <button class="tool-btn cal-btn" onclick="exportToCSV()">📅 CSV</button>
+                <button class="tool-btn cal-btn mobile-hidden" onclick="exportToCSV()">📅 CSV</button>
                 <button class="tool-btn highlight" onclick="sortByDate()">📅 排序</button>
-                <button class="tool-btn danger-btn" onclick="clearAllImages()">🧹 清圖</button>
-                <button class="tool-btn camera-btn" onclick="downloadAsImage()">📸 存成圖片</button>
+                <button class="tool-btn danger-btn mobile-hidden" onclick="clearAllImages()">🧹 清圖</button>
+                <button class="tool-btn camera-btn mobile-hidden" onclick="downloadAsImage()">📸 圖片</button>
                 <button class="tool-btn" onclick="downloadJSON()">📥 備份</button>
                 <button class="tool-btn" onclick="document.getElementById('fileInput').click()">📤 讀取</button>
-                <button class="tool-btn" onclick="document.getElementById('ics-upload').click()">📥 匯入日曆 (.ics)</button>
-                <button class="tool-btn danger-btn" onclick="resetAllData()">💥 重置</button>
+                <button class="tool-btn mobile-hidden" onclick="document.getElementById('ics-upload').click()">📥 ICS</button>
+                <button class="tool-btn danger-btn mobile-hidden" onclick="resetAllData()">💥 重置</button>
                 <input type="file" id="fileInput" hidden onchange="loadJSON(this)">
             </div>
             <div class="tool-btn-group" id="ai-toolbar">
@@ -462,6 +464,149 @@
             setTimeout(() => { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 100);
         };
 
+        // --- 🚑 [修復] 核心渲染與備份函數 (解決白畫面問題) ---
+        function renderFromData(items) {
+            if(!Array.isArray(items)) return;
+            items.forEach(item => {
+                const el = createNodeElement(item);
+                container.appendChild(el);
+            });
+        }
+
+        function downloadJSON() {
+            const data = {
+                data: JSON.parse(localStorage.getItem(currentTabId === 'main' ? 'timeline_v47_data' : `timeline_v47_data_${currentTabId}`) || '[]'),
+                notes: JSON.parse(localStorage.getItem(currentTabId === 'main' ? 'timeline_v47_notes' : `timeline_v47_notes_${currentTabId}`) || '[]'),
+                stickers: JSON.parse(localStorage.getItem(currentTabId === 'main' ? 'timeline_v47_stickers' : `timeline_v47_stickers_${currentTabId}`) || '[]'),
+                notebook: JSON.parse(localStorage.getItem('timeline_global_notebook') || '{}'),
+                tabs: allTabs
+            };
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `backup_${getTodayString()}.json`;
+            link.click();
+        }
+
+        function loadJSON(input) {
+            const file = input.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const json = JSON.parse(e.target.result);
+                    if (confirm('確定要讀取備份嗎？目前的資料將被覆蓋！')) {
+                        const dKey = currentTabId === 'main' ? 'timeline_v47_data' : `timeline_v47_data_${currentTabId}`;
+                        const nKey = currentTabId === 'main' ? 'timeline_v47_notes' : `timeline_v47_notes_${currentTabId}`;
+                        const sKey = currentTabId === 'main' ? 'timeline_v47_stickers' : `timeline_v47_stickers_${currentTabId}`;
+                        
+                        localStorage.setItem(dKey, JSON.stringify(json.data || []));
+                        localStorage.setItem(nKey, JSON.stringify(json.notes || []));
+                        localStorage.setItem(sKey, JSON.stringify(json.stickers || []));
+                        if(json.notebook) localStorage.setItem('timeline_global_notebook', JSON.stringify(json.notebook));
+                        
+                        alert('讀取成功！頁面將重新整理。');
+                        location.reload();
+                    }
+                } catch (err) {
+                    console.error(err);
+                    alert('檔案格式錯誤。');
+                }
+            };
+            reader.readAsText(file);
+            input.value = '';
+        }
+
+        function filterNodes(keyword) {
+            currentSearchKeyword = keyword.trim();
+            const items = document.querySelectorAll('.timeline-item');
+            items.forEach(item => {
+                const text = (item.querySelector('.content').innerText + item.querySelector('.label-input').value + item.querySelector('.footer-project-input').value).toLowerCase();
+                if (text.includes(currentSearchKeyword.toLowerCase())) {
+                    item.classList.remove('hidden-by-filter');
+                } else {
+                    item.classList.add('hidden-by-filter');
+                }
+            });
+            if (currentView === 'gantt') renderGantt();
+            if (currentView === 'chronicle') renderChronicle();
+        }
+
+        function toggleProjectBar() {
+            const bar = document.getElementById('project-bar');
+            bar.classList.toggle('show');
+            if (bar.classList.contains('show')) refreshProjectBar();
+        }
+
+        function refreshProjectBar() {
+            const bar = document.getElementById('project-bar');
+            const data = gatherData();
+            const projects = new Set(data.map(i => i.project).filter(p => p && p.trim() !== ''));
+            let html = '<span class="proj-badge" onclick="resetProjectFilter()">清除過濾</span>';
+            projects.forEach(p => {
+                const active = activeProjectFilters.has(p) ? 'active' : '';
+                html += `<span class="proj-badge ${active}" onclick="toggleProjectFilter('${p}')">${p}</span>`;
+            });
+            bar.innerHTML = html;
+        }
+
+        function toggleProjectFilter(p) {
+            if (activeProjectFilters.has(p)) activeProjectFilters.delete(p);
+            else activeProjectFilters.add(p);
+            refreshProjectBar();
+            document.querySelectorAll('.timeline-item').forEach(item => {
+                const pName = item.querySelector('.footer-project-input').value;
+                if (activeProjectFilters.size === 0 || activeProjectFilters.has(pName)) {
+                    item.classList.remove('hidden-by-filter');
+                } else {
+                    item.classList.add('hidden-by-filter');
+                }
+            });
+            if (currentView === 'gantt') renderGantt();
+            if (currentView === 'chronicle') renderChronicle();
+        }
+
+        function resetProjectFilter() {
+            activeProjectFilters.clear();
+            refreshProjectBar();
+            document.querySelectorAll('.timeline-item').forEach(i => i.classList.remove('hidden-by-filter'));
+            if (currentView === 'gantt') renderGantt();
+            if (currentView === 'chronicle') renderChronicle();
+        }
+
+        function toggleToolbox() {
+            document.getElementById('toolboxContainer').classList.toggle('closed');
+        }
+
+        function enterAIMode() {
+            document.body.classList.add('ai-selecting');
+            alert('請勾選卡片左上角的方框，選擇要 AI 分析的內容。');
+        }
+
+        function exitAIMode() {
+            document.body.classList.remove('ai-selecting');
+            document.querySelectorAll('.select-chk').forEach(chk => chk.checked = false);
+        }
+
+        function selectAllAI() {
+            document.querySelectorAll('.select-chk').forEach(chk => chk.checked = true);
+        }
+
+        function exportToCSV() {
+            const data = gatherData();
+            let csvContent = "\uFEFF專案,標題,日期,內容\n";
+            data.forEach(row => {
+                const cleanContent = row.content.replace(/<[^>]+>/g, '').replace(/\n/g, ' ').replace(/,/g, '，');
+                csvContent += `${row.project},${row.label},${row.date_single || row.date_start},${cleanContent}\n`;
+            });
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `export_${getTodayString()}.csv`;
+            link.click();
+        }
+
+        // --- 📸 截圖與影像功能 ---
         function downloadAsImage() {
             const bodyWidth = document.documentElement.scrollWidth;
             const bodyHeight = document.documentElement.scrollHeight;
@@ -540,7 +685,10 @@
 
             let hasData = false;
             try {
-                if (savedData) { const parsed = JSON.parse(savedData); if (Array.isArray(parsed) && parsed.length > 0) { renderFromData(parsed); hasData = true; } }
+                if (savedData) { 
+                    const parsed = JSON.parse(savedData); 
+                    if (Array.isArray(parsed) && parsed.length > 0) { renderFromData(parsed); hasData = true; } 
+                }
                 if (!hasData && currentTabId === 'main') {
                     const defaultItem = {
                         id: Date.now(), pos: 'left', mode: 'normal', color: 'blue', status: 0, isMemo: false,
@@ -563,6 +711,9 @@
                 });
             } catch (e) { console.error("Init Error:", e); } finally { isLoading = false; }
         }
+
+        function renderNotes(items) { items.forEach(i => createStickyElement(i)); }
+        function renderStickers(items) { items.forEach(i => createStickerElement(i)); }
 
         // [核心] 存檔邏輯 (含防呆)
         function autoSave() { 
@@ -691,7 +842,6 @@
             const div = document.createElement('div'); div.className = 'sticker'; div.id = data.id; div.dataset.type = data.type; div.style.left = data.x + 'px'; div.style.top = data.y + 'px'; if (data.w) div.style.width = data.w + 'px'; if (data.h) div.style.height = data.h + 'px';
             let content = ''; if (data.type === 'arrow-up') content = '<svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><path d="M12 19V5M5 12l7-7 7 7"/></svg>'; else if (data.type === 'arrow-right') content = '<svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>'; else if (data.type === 'arrow-down') content = '<svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg>'; else if (data.type === 'arrow-left') content = '<svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>'; else if (data.type === 'circle-red') content = '<svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="3"><circle cx="12" cy="12" r="10"/></svg>'; else if (data.type === 'rect-blue') content = '<svg viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="3"><rect x="2" y="4" width="20" height="16" rx="2"/></svg>'; else if (data.type === 'image') content = `<img src="${data.content}">`;
             
-            // 修正：圖片現在也允許顯示 Resize Handle
             let allowResize = (data.type === 'circle-red' || data.type === 'rect-blue' || data.type === 'image');
             let resizeHandle = allowResize ? '<div class="resize-handle" onmousedown="resizeSticker(event)">↘</div>' : ''; 
             
@@ -1083,6 +1233,7 @@
         }
         function saveNotebook() { localStorage.setItem('timeline_global_notebook', JSON.stringify(notebookData)); }
         
+        // 🚀 啟動
         init();
     </script>
 </body>
