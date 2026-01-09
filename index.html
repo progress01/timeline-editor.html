@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>報告整理工</title>
+    <title>報告整理工具</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html-to-image/1.11.11/html-to-image.js"></script>
     <style>
         :root { --primary: #4f46e5; --bg: #f8fafc; --text: #1f2937; --font-stack: "Microsoft JhengHei", "Heiti TC", sans-serif; }
@@ -64,24 +64,17 @@
         /* --- 📑 左側垂直分頁系統 --- */
         #tab-bar-container {
             position: fixed; top: 60px; left: 0; bottom: 0;
-            width: 42px; /* 窄版左側欄 */
-            background: #e2e8f0; z-index: 1900;
+            width: 42px; background: #e2e8f0; z-index: 1900;
             display: flex; flex-direction: column; align-items: center;
             padding: 10px 0; gap: 8px;
             box-shadow: 2px 0 5px rgba(0,0,0,0.05);
         }
-        
         .tab-item {
-            padding: 15px 4px;
-            background: #cbd5e1; color: #64748b;
+            padding: 15px 4px; background: #cbd5e1; color: #64748b;
             cursor: pointer; font-size: 0.9rem; font-weight: bold;
-            user-select: none; transition: 0.2s;
-            position: relative; 
-            writing-mode: vertical-lr; /* 直排 */
-            text-orientation: upright;
-            letter-spacing: 2px;
-            border-radius: 0 8px 8px 0;
-            width: 100%;
+            user-select: none; transition: 0.2s; position: relative; 
+            writing-mode: vertical-lr; text-orientation: upright; letter-spacing: 2px;
+            border-radius: 0 8px 8px 0; width: 100%;
             display: flex; align-items: center; justify-content: center;
             border-left: 3px solid transparent;
         }
@@ -89,8 +82,7 @@
         .tab-item.active {
             background: var(--bg); color: var(--primary);
             border-left: 3px solid var(--primary);
-            box-shadow: 2px 2px 5px rgba(0,0,0,0.05);
-            z-index: 10;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.05); z-index: 10;
         }
         .new-tab-btn {
             background: white; border: 1px solid #cbd5e1; font-size: 1.2rem;
@@ -101,13 +93,13 @@
         .new-tab-btn:hover { color: #3b82f6; border-color: #3b82f6; }
         .btn-move-tab { color: #8b5cf6 !important; border-color: #8b5cf6 !important; } 
 
-        /* --- 🔧 工具箱修正 (解決擋住與消失問題) --- */
+        /* --- 🔧 工具箱 --- */
         .toolbox-container { 
-            position: fixed; top: 200px; left: 42px; /* 緊貼分頁列 */
-            z-index: 2000; /* 比分頁列高 */
+            position: fixed; top: 200px; left: 42px; 
+            z-index: 2000; 
             transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); 
         }
-        .toolbox-container.closed { transform: translateX(-100%); } /* 收合時只縮自己的寬度 */
+        .toolbox-container.closed { transform: translateX(-100%); }
 
         .toolbox { width: 70px; background: white; border-radius: 0 8px 8px 0; box-shadow: 4px 4px 12px rgba(0,0,0,0.15); display: flex; flex-direction: column; gap: 5px; padding: 10px 5px; align-items: center; position: relative; border: 1px solid #e2e8f0; border-left: none; }
         .toolbox-toggle-btn { position: absolute; top: 0; right: -24px; width: 24px; height: 40px; background: #3b82f6; color: white; border-top-right-radius: 8px; border-bottom-right-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 2px 2px 5px rgba(0,0,0,0.1); font-size: 14px; z-index: 2001; }
@@ -117,15 +109,15 @@
         .tool-icon { font-size: 1.2rem; line-height: 1; margin-bottom: 2px; }
         .tool-text { font-size: 0.7rem; color: #475569; }
 
-        /* --- 📝 便利貼升級 (支援螢光筆) --- */
-        .note-header { height: 28px; background: rgba(0,0,0,0.05); cursor: move; display: flex; justify-content: space-between; align-items: center; padding: 0 5px; }
-        .note-tools { display: flex; gap: 5px; align-items: center; }
-        .note-btn { cursor: pointer; font-size: 14px; padding: 2px 4px; border-radius: 4px; transition: 0.2s; user-select: none; }
-        .note-btn:hover { background: rgba(0,0,0,0.1); }
+        /* --- 📝 便利貼 & 大事記編輯 --- */
+        .note-header, .chronicle-tool-header { height: 28px; background: rgba(0,0,0,0.05); cursor: move; display: flex; justify-content: space-between; align-items: center; padding: 0 5px; }
+        .chronicle-tool-header { background: transparent; cursor: default; justify-content: flex-end; margin-bottom: 5px; border-bottom: 1px dashed #eee; }
+        .note-tools, .chronicle-tools { display: flex; gap: 5px; align-items: center; }
+        .note-btn { cursor: pointer; font-size: 14px; padding: 2px 6px; border-radius: 4px; transition: 0.2s; user-select: none; background: white; border: 1px solid #e2e8f0; }
+        .note-btn:hover { background: #eff6ff; color: var(--primary); border-color: var(--primary); }
         .note-close { cursor: pointer; color: #78350f; font-weight: bold; font-size: 16px; padding: 0 5px; }
         .note-content { flex: 1; background: transparent; border: none; padding: 10px; font-family: inherit; outline: none; font-size: 1rem; color: #451a03; overflow-y: auto; white-space: pre-wrap; word-break: break-word; }
         
-        /* 物件樣式 */
         .sticky-note { position: absolute; width: 180px; min-height: 160px; background: #fef3c7; border: 1px solid #d97706; box-shadow: 3px 3px 10px rgba(0,0,0,0.2); z-index: 1500; display: flex; flex-direction: column; transform: rotate(-1deg); border-radius: 2px; }
         .sticker { position: absolute; z-index: 1500; cursor: move; display: inline-block; }
         .sticker[data-type^="arrow"], .sticker[data-type^="circle"], .sticker[data-type^="rect"] { width: 80px; height: 80px; }
@@ -142,44 +134,33 @@
         .card:hover .resize-handle { display: block; }
         .card .resize-handle { bottom: 2px; right: 2px; z-index: 50; }
 
-        /* 截圖模式 */
         body.taking-screenshot .card, body.taking-screenshot .sticky-note, body.taking-screenshot .sticker { box-shadow: none !important; transform: none !important; border: 1px solid #cbd5e1 !important; }
-        body.taking-screenshot .resize-handle, body.taking-screenshot .sticker-del, body.taking-screenshot .note-header { display: none !important; }
+        body.taking-screenshot .resize-handle, body.taking-screenshot .sticker-del, body.taking-screenshot .note-header, body.taking-screenshot .chronicle-tool-header { display: none !important; }
         .screenshot-clone-div { white-space: pre-wrap; word-break: break-word; overflow: visible; display: block; }
 
-        /* --- 🎨 主區域佈局修正 (避免被工具箱擋住) --- */
+        /* --- 🎨 主區域佈局 --- */
         .main-area { max-width: 900px; margin: 80px auto 0 auto; padding: 40px 20px; min-height: calc(100vh - 100px); background: var(--bg); transition: margin-left 0.3s ease; }
-        
-        /* 當分頁列存在時，主畫面往右推 140px (分頁42+工具箱70+緩衝) */
         body.has-tab-bar .main-area { margin-left: 140px !important; margin-top: 80px !important; }
         body.has-tab-bar.has-proj-bar .main-area { margin-top: 140px !important; }
-
         body.view-gantt .main-area { max-width: 98%; padding: 20px 5px; }
 
-        /* Timeline & Drag Drop Styles */
+        /* Timeline & Drag Drop */
         .timeline { position: relative; padding: 20px 0; }
         .timeline::before { content: ''; position: absolute; top: 0; bottom: 0; left: 50%; width: 4px; background: #e5e7eb; transform: translateX(-50%); border-radius: 2px; z-index: 0; }
-        
-        .timeline-item { position: relative; margin-bottom: 40px; width: 100%; display: flex; cursor: grab; /* 增加抓取游標 */ }
-        .timeline-item.dragging { opacity: 0.5; } /* 拖曳時半透明 */
+        .timeline-item { position: relative; margin-bottom: 40px; width: 100%; display: flex; cursor: grab; }
+        .timeline-item.dragging { opacity: 0.5; }
         .timeline-item.hidden-by-filter { display: none !important; } 
-        
         .timeline-item:nth-child(odd) { justify-content: flex-start; padding-right: 50%; }
         .timeline-item:nth-child(even) { justify-content: flex-end; padding-left: 50%; }
         .timeline-item.force-left { justify-content: flex-start !important; padding-right: 50% !important; padding-left: 0 !important; }
         .timeline-item.force-right { justify-content: flex-end !important; padding-left: 50% !important; padding-right: 0 !important; }
         .timeline-item .card { width: 90%; margin: 0 auto; max-width: 100%; }
 
-        /* 卡片設計 */
         .card { display: flex; flex-direction: column; background: white; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); position: relative; z-index: 10; overflow: visible; border-top: 5px solid var(--primary); min-height: 200px; }
         .card.memo-mode { border-top-style: dashed; background-color: #fcfcfc; }
-        .card[data-color="blue"] { border-top-color: #4f46e5; }
-        .card[data-color="green"] { border-top-color: #10b981; background: #f0fdf4; }
-        .card[data-color="red"] { border-top-color: #ef4444; background: #fef2f2; }
-        .card[data-color="yellow"] { border-top-color: #f59e0b; background: #fffbeb; }
-        .card.memo-mode[data-color="green"] { background: #f7fee7; }
-        .card.memo-mode[data-color="red"] { background: #fff1f2; }
-        .card.memo-mode[data-color="yellow"] { background: #fffbeb; }
+        .card[data-color="blue"] { border-top-color: #4f46e5; } .card[data-color="green"] { border-top-color: #10b981; background: #f0fdf4; }
+        .card[data-color="red"] { border-top-color: #ef4444; background: #fef2f2; } .card[data-color="yellow"] { border-top-color: #f59e0b; background: #fffbeb; }
+        .card.memo-mode[data-color="green"] { background: #f7fee7; } .card.memo-mode[data-color="red"] { background: #fff1f2; } .card.memo-mode[data-color="yellow"] { background: #fffbeb; }
 
         .card-top-area { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; border-bottom: 1px dashed #e2e8f0; flex-shrink: 0; background: rgba(255,255,255,0.5); }
         .card-top-left { display: flex; align-items: center; gap: 8px; flex: 1; }
@@ -187,12 +168,9 @@
         .card-body { padding: 12px 40px 15px 20px; flex: 1; display: flex; flex-direction: column; }
         .header-row { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
         .header-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-
         .project-footer { width: 100%; height: 36px; display: flex; align-items: center; justify-content: flex-end; padding: 0 15px; background: #cbd5e1; margin-top: auto; flex-shrink: 0; }
-        .card[data-color="blue"] .project-footer { background: #4f46e5; }
-        .card[data-color="green"] .project-footer { background: #10b981; }
-        .card[data-color="red"] .project-footer { background: #ef4444; }
-        .card[data-color="yellow"] .project-footer { background: #f59e0b; }
+        .card[data-color="blue"] .project-footer { background: #4f46e5; } .card[data-color="green"] .project-footer { background: #10b981; }
+        .card[data-color="red"] .project-footer { background: #ef4444; } .card[data-color="yellow"] .project-footer { background: #f59e0b; }
         .footer-project-input { background: transparent; border: none; color: white; font-weight: bold; font-size: 0.95rem; text-align: right; width: 100%; outline: none; text-shadow: 0 1px 1px rgba(0,0,0,0.1); }
         .footer-project-input::placeholder { color: rgba(255,255,255,0.7); }
 
@@ -206,9 +184,7 @@
         .select-chk { width: 18px; height: 18px; margin-right: 8px; cursor: pointer; display: none; }
         body.ai-selecting .select-chk { display: inline-block; }
         .mode-toggle-btn { font-size: 12px; border: 1px solid #94a3b8; border-radius: 4px; padding: 4px 8px; cursor: pointer; background: #f1f5f9; color: #64748b; margin-right: 5px; height: 28px; white-space: nowrap; }
-        
         .date-input { border: 1px solid #cbd5e1; background: #f8fafc; padding: 4px 2px; border-radius: 4px; font-family: inherit; font-size: 0.9rem; color: #334155; outline: none; cursor: pointer; width: 138px; height: 28px; }
-        
         .card.memo-mode .date-input, .card.memo-mode .today-btn, .card.memo-mode .range-container { display: none !important; }
         .today-btn { background: #e0e7ff; color: #4338ca; border: none; border-radius: 4px; padding: 0 8px; font-size: 0.8rem; cursor: pointer; font-weight: bold; margin-left: 3px; height: 28px; }
         .label-input { border: none; border-bottom: 1px dashed #cbd5e1; padding: 5px 0; font-weight: bold; color: var(--primary); font-size: 1.25rem; outline: none; width: 100%; display: block; margin-top: 5px; background: transparent; }
@@ -220,7 +196,6 @@
         .content img { max-width: 100%; height: auto; border-radius: 4px; margin: 5px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: block; }
         .todo-box { display: inline-block; width: 1.2em; text-align: center; cursor: pointer; color: #4f46e5; }
         .dot { position: absolute; left: 50%; top: 30px; width: 16px; height: 16px; background: white; border: 4px solid #cbd5e1; border-radius: 50%; transform: translateX(-50%); z-index: 20; }
-
         .add-main { display: block; margin: 30px auto 60px auto; padding: 12px 30px; background: white; color: #64748b; border: 2px dashed #cbd5e1; border-radius: 12px; font-size: 1rem; font-weight: bold; cursor: pointer; transition: 0.2s; width: 100%; max-width: 300px; }
         .add-main:hover { border-color: #3b82f6; color: #3b82f6; background: #eff6ff; }
 
@@ -236,10 +211,8 @@
         .chronicle-dot { width: 14px; height: 14px; border-radius: 50%; background: white; border: 3px solid #cbd5e1; z-index: 2; margin-top: 10px; box-shadow: 0 0 0 3px white; }
         .chronicle-content-col { flex: 1; padding: 0 0 0 10px; display: flex; flex-direction: column; gap: 15px; }
         .chronicle-item-card { border-left: 4px solid #cbd5e1; padding-left: 12px; position: relative; }
-        .chronicle-item-card[data-color="blue"] { border-left-color: #4f46e5; }
-        .chronicle-item-card[data-color="green"] { border-left-color: #10b981; }
-        .chronicle-item-card[data-color="red"] { border-left-color: #ef4444; }
-        .chronicle-item-card[data-color="yellow"] { border-left-color: #f59e0b; }
+        .chronicle-item-card[data-color="blue"] { border-left-color: #4f46e5; } .chronicle-item-card[data-color="green"] { border-left-color: #10b981; }
+        .chronicle-item-card[data-color="red"] { border-left-color: #ef4444; } .chronicle-item-card[data-color="yellow"] { border-left-color: #f59e0b; }
         .proj-tag-clean { font-size: 0.75rem; color: #64748b; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-bottom: 4px; margin-right: 5px; }
         .range-end-badge { display: inline-block; background: #fce7f3; color: #9d174d; font-size: 0.75rem; padding: 2px 8px; border-radius: 12px; font-weight: bold; vertical-align: middle; margin-left: 5px; }
         .overlap-badge { display: inline-block; background: #fee2e2; color: #ef4444; font-size: 0.75rem; padding: 2px 8px; border-radius: 12px; font-weight: bold; vertical-align: middle; margin-left: 5px; border: 1px solid #fecaca; }
@@ -247,7 +220,10 @@
         .duration-bar-fill { height: 100%; border-radius: 3px; opacity: 0.7; }
         .duration-text { font-size: 0.7rem; color: #94a3b8; margin-top: 2px; }
         .chronicle-title { font-size: 1.1rem; font-weight: 800; color: #1e293b; margin-bottom: 4px; line-height: 1.4; display: flex; align-items: center; flex-wrap: wrap; }
-        .chronicle-desc { font-size: 0.95rem; color: #475569; white-space: pre-wrap; line-height: 1.6; }
+        
+        /* [修正] 大事記內文可編輯樣式 */
+        .chronicle-desc { font-size: 0.95rem; color: #475569; white-space: pre-wrap; line-height: 1.6; outline: none; padding: 2px; border: 1px solid transparent; border-radius: 4px; transition: border 0.2s; }
+        .chronicle-desc:focus { border-color: #cbd5e1; background: white; }
 
         #gantt-view { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); overflow-x: auto; border: 1px solid #e2e8f0; }
         .gantt-container { position: relative; min-width: 100%; padding-bottom: 20px; }
@@ -274,7 +250,7 @@
         body.presentation-mode .content { font-size: 1.2rem; }
         
         @media screen and (max-width: 768px) {
-            body.has-tab-bar .main-area { margin-left: 50px !important; } /* 手機版左邊距小一點 */
+            body.has-tab-bar .main-area { margin-left: 50px !important; }
             .main-area { margin-top: 60px; padding: 10px; } body.has-proj-bar .main-area { margin-top: 150px; }
             .toolbox-container { display: none !important; } .timeline-item { flex-direction: column; width: 100%; padding: 0 !important; }
             .timeline-item .card { width: 100% !important; margin: 0 0 20px 0 !important; } .timeline::before { left: 10px; } .dot { left: 10px; }
@@ -291,18 +267,15 @@
 
     <div id="save-light" title="綠燈:已儲存 / 紅燈:編輯中"></div>
     <input type="file" id="sticker-upload" hidden accept="image/*" onchange="handleImageUpload(this)">
+    <input type="file" id="ics-upload" hidden accept=".ics" onchange="handleICSUpload(this)">
 
     <div id="paste-dialog">
         <div class="paste-modal">
             <div class="paste-title">🖼️ 偵測到圖片貼上</div>
             <div class="paste-desc">請問您希望將此圖片貼到哪裡？</div>
             <div class="paste-btn-group">
-                <button class="paste-btn" id="btn-paste-card" onclick="processPaste('card')">
-                    📄 貼入卡片文字框中
-                </button>
-                <button class="paste-btn" id="btn-paste-sticker" onclick="processPaste('sticker')">
-                    🖼️ 貼成背景移動貼紙
-                </button>
+                <button class="paste-btn" id="btn-paste-card" onclick="processPaste('card')">📄 貼入卡片文字框中</button>
+                <button class="paste-btn" id="btn-paste-sticker" onclick="processPaste('sticker')">🖼️ 貼成背景移動貼紙</button>
             </div>
             <button class="paste-cancel" onclick="closePasteDialog()">取消</button>
         </div>
@@ -326,6 +299,7 @@
                 <button class="tool-btn camera-btn" onclick="downloadAsImage()">📸 存成圖片</button>
                 <button class="tool-btn" onclick="downloadJSON()">📥 備份</button>
                 <button class="tool-btn" onclick="document.getElementById('fileInput').click()">📤 讀取</button>
+                <button class="tool-btn" onclick="document.getElementById('ics-upload').click()">📥 匯入日曆 (.ics)</button>
                 <button class="tool-btn danger-btn" onclick="resetAllData()">💥 重置</button>
                 <input type="file" id="fileInput" hidden onchange="loadJSON(this)">
             </div>
@@ -348,8 +322,7 @@
     <div id="project-bar"></div>
 
     <div id="tab-bar-container">
-        <div id="tab-list">
-            </div>
+        <div id="tab-list"></div>
         <button class="new-tab-btn" onclick="createNewTab()">＋</button>
     </div>
 
@@ -390,12 +363,9 @@
 
     <script>
         // --- 🔌 分頁系統變數 ---
-        let currentTabId = 'main'; // 預設主分頁
+        let currentTabId = 'main'; 
         let allTabs = JSON.parse(localStorage.getItem('timeline_tabs_meta')) || [{id: 'main', name: '主工作區'}];
-
-        if (!localStorage.getItem('timeline_tabs_meta')) {
-            localStorage.setItem('timeline_tabs_meta', JSON.stringify(allTabs));
-        }
+        if (!localStorage.getItem('timeline_tabs_meta')) { localStorage.setItem('timeline_tabs_meta', JSON.stringify(allTabs)); }
         document.body.classList.add('has-tab-bar');
 
         const container = document.getElementById('container');
@@ -406,31 +376,22 @@
         let currentView = 'timeline';
         let currentScale = 'day'; 
         
-        // --- 🖱️ Drag & Drop Logic (新功能) ---
+        // --- 🖱️ Drag & Drop Logic ---
         function enableDragAndDrop() {
             container.addEventListener('dragover', e => {
                 e.preventDefault();
                 const afterElement = getDragAfterElement(container, e.clientY);
                 const draggable = document.querySelector('.dragging');
                 if (!draggable) return;
-                if (afterElement == null) {
-                    container.appendChild(draggable);
-                } else {
-                    container.insertBefore(draggable, afterElement);
-                }
+                if (afterElement == null) { container.appendChild(draggable); } else { container.insertBefore(draggable, afterElement); }
             });
         }
-
         function getDragAfterElement(container, y) {
             const draggableElements = [...container.querySelectorAll('.timeline-item:not(.dragging)')];
             return draggableElements.reduce((closest, child) => {
                 const box = child.getBoundingClientRect();
                 const offset = y - box.top - box.height / 2;
-                if (offset < 0 && offset > closest.offset) {
-                    return { offset: offset, element: child };
-                } else {
-                    return closest;
-                }
+                if (offset < 0 && offset > closest.offset) { return { offset: offset, element: child }; } else { return closest; }
             }, { offset: Number.NEGATIVE_INFINITY }).element;
         }
 
@@ -445,92 +406,49 @@
             setTimeout(() => { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 100);
         };
 
-        // ... [圖片下載/貼上邏輯保持不變, 略過以節省篇幅, 功能皆保留] ...
-        // --- 📸 截圖功能 (支援全頁面) ---
         function downloadAsImage() {
             const bodyWidth = document.documentElement.scrollWidth;
             const bodyHeight = document.documentElement.scrollHeight;
             const node = document.body;
-            
             node.classList.add('presentation-mode'); 
-            document.getElementById('save-light').style.display = 'none'; 
-            document.getElementById('exit-pres-btn').style.display = 'none'; 
-            
-            const originalBg = node.style.backgroundColor;
-            node.style.backgroundColor = '#ffffff';
-
-            const mainBtn = document.getElementById('mainAddBtn');
-            const originalBtnText = mainBtn.innerText;
-            mainBtn.innerText = '🖼️ 處理中...';
+            document.getElementById('save-light').style.display = 'none'; document.getElementById('exit-pres-btn').style.display = 'none'; 
+            const originalBg = node.style.backgroundColor; node.style.backgroundColor = '#ffffff';
+            const mainBtn = document.getElementById('mainAddBtn'); const originalBtnText = mainBtn.innerText; mainBtn.innerText = '🖼️ 處理中...';
             
             setTimeout(() => {
                 htmlToImage.toPng(node, { 
-                    quality: 1.0, 
-                    backgroundColor: '#ffffff',
-                    width: bodyWidth,
-                    height: bodyHeight,
+                    quality: 1.0, backgroundColor: '#ffffff', width: bodyWidth, height: bodyHeight,
                     style: { transform: 'none', margin: 0 },
                     filter: (domNode) => {
-                        if (domNode.classList && 
-                           (domNode.classList.contains('toolbar') || 
-                            domNode.classList.contains('toolbox-container') ||
-                            domNode.id === 'project-bar' || 
-                            domNode.id === 'tab-bar-container')) {
-                            return false;
-                        }
+                        if (domNode.classList && (domNode.classList.contains('toolbar') || domNode.classList.contains('toolbox-container') || domNode.id === 'project-bar' || domNode.id === 'tab-bar-container')) { return false; }
                         return true;
                     }
-                })
-                .then(function (dataUrl) {
-                    const link = document.createElement('a');
-                    link.download = `report_image_${getTodayString()}.png`;
-                    link.href = dataUrl;
-                    link.click();
-                    cleanupUI();
-                })
-                .catch(function (error) {
-                    console.error('圖片生成失敗:', error);
-                    alert('圖片生成失敗，可能是內容過長。');
-                    cleanupUI();
-                });
+                }).then(function (dataUrl) {
+                    const link = document.createElement('a'); link.download = `report_image_${getTodayString()}.png`;
+                    link.href = dataUrl; link.click(); cleanupUI();
+                }).catch(function (error) { console.error('圖片生成失敗:', error); alert('圖片生成失敗，可能是內容過長。'); cleanupUI(); });
             }, 100);
-
             function cleanupUI() {
-                node.classList.remove('presentation-mode');
-                document.getElementById('save-light').style.display = '';
-                document.getElementById('exit-pres-btn').style.display = '';
-                node.style.backgroundColor = originalBg;
-                mainBtn.innerText = originalBtnText;
+                node.classList.remove('presentation-mode'); document.getElementById('save-light').style.display = ''; document.getElementById('exit-pres-btn').style.display = '';
+                node.style.backgroundColor = originalBg; mainBtn.innerText = originalBtnText;
             }
         }
 
-        // --- 📋 貼上選擇邏輯 ---
-        let pendingPasteBlob = null;
-        let pendingPasteTarget = null; 
-
+        let pendingPasteBlob = null; let pendingPasteTarget = null; 
         document.addEventListener('paste', function(e) {
             const items = (e.clipboardData || e.originalEvent.clipboardData).items;
-            let hasImage = false;
-            let blob = null;
-            for (let i = 0; i < items.length; i++) {
-                if (items[i].type.indexOf("image") === 0) { blob = items[i].getAsFile(); hasImage = true; break; }
-            }
+            let hasImage = false; let blob = null;
+            for (let i = 0; i < items.length; i++) { if (items[i].type.indexOf("image") === 0) { blob = items[i].getAsFile(); hasImage = true; break; } }
             if (hasImage && blob) {
-                e.preventDefault(); e.stopPropagation();
-                pendingPasteBlob = blob; pendingPasteTarget = document.activeElement;
+                e.preventDefault(); e.stopPropagation(); pendingPasteBlob = blob; pendingPasteTarget = document.activeElement;
                 const isEditingCard = pendingPasteTarget && pendingPasteTarget.classList.contains('content');
                 const btnCard = document.getElementById('btn-paste-card');
-                if (isEditingCard) {
-                    btnCard.classList.remove('disabled'); btnCard.innerHTML = '📄 貼入卡片文字框中'; btnCard.disabled = false;
-                } else {
-                    btnCard.classList.add('disabled'); btnCard.innerHTML = '📄 貼入卡片 (請先點選文字框)'; btnCard.disabled = true;
-                }
+                if (isEditingCard) { btnCard.classList.remove('disabled'); btnCard.innerHTML = '📄 貼入卡片文字框中'; btnCard.disabled = false; } 
+                else { btnCard.classList.add('disabled'); btnCard.innerHTML = '📄 貼入卡片 (請先點選文字框)'; btnCard.disabled = true; }
                 document.getElementById('paste-dialog').style.display = 'flex';
             }
         });
-
         function closePasteDialog() { document.getElementById('paste-dialog').style.display = 'none'; pendingPasteBlob = null; pendingPasteTarget = null; }
-
         function processPaste(type) {
             if (!pendingPasteBlob) return;
             const reader = new FileReader();
@@ -539,9 +457,7 @@
                 if (type === 'card' && pendingPasteTarget) {
                     const img = document.createElement("img"); img.src = imgData; pendingPasteTarget.focus();
                     const selection = window.getSelection();
-                    if (selection.rangeCount > 0) {
-                        const range = selection.getRangeAt(0); range.deleteContents(); range.insertNode(img); range.collapse(false);
-                    } else { pendingPasteTarget.appendChild(img); }
+                    if (selection.rangeCount > 0) { const range = selection.getRangeAt(0); range.deleteContents(); range.insertNode(img); range.collapse(false); } else { pendingPasteTarget.appendChild(img); }
                 } else {
                     createStickerElement({ id: 'sticker-' + Date.now(), type: 'image', x: window.scrollX + window.innerWidth / 2 - 150, y: window.scrollY + window.innerHeight / 2 - 150, content: imgData });
                 }
@@ -549,179 +465,92 @@
             };
             reader.readAsDataURL(pendingPasteBlob);
         }
-        
         function getTodayString() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }
 
-        // [Init] 整合分頁與拖曳功能
         function init() {
             renderTabs(); 
             const dataKey = currentTabId === 'main' ? 'timeline_v47_data' : `timeline_v47_data_${currentTabId}`;
             const notesKey = currentTabId === 'main' ? 'timeline_v47_notes' : `timeline_v47_notes_${currentTabId}`;
             const stickersKey = currentTabId === 'main' ? 'timeline_v47_stickers' : `timeline_v47_stickers_${currentTabId}`;
-
-            const savedData = localStorage.getItem(dataKey); 
-            const savedNotes = localStorage.getItem(notesKey);
-            const savedStickers = localStorage.getItem(stickersKey);
-
-            container.innerHTML = '';
-            document.querySelectorAll('.sticky-note, .sticker').forEach(el => el.remove());
-
+            const savedData = localStorage.getItem(dataKey); const savedNotes = localStorage.getItem(notesKey); const savedStickers = localStorage.getItem(stickersKey);
+            container.innerHTML = ''; document.querySelectorAll('.sticky-note, .sticker').forEach(el => el.remove());
             let hasData = false;
-            if (savedData) {
-                try {
-                    const parsed = JSON.parse(savedData);
-                    if (Array.isArray(parsed) && parsed.length > 0) { renderFromData(parsed); hasData = true; }
-                } catch (e) { console.error("資料讀取失敗:", e); }
-            }
-            
+            if (savedData) { try { const parsed = JSON.parse(savedData); if (Array.isArray(parsed) && parsed.length > 0) { renderFromData(parsed); hasData = true; } } catch (e) { console.error("資料讀取失敗:", e); } }
             if (!hasData && currentTabId === 'main') {
-                const defaultItem = {
-                    id: Date.now(), pos: 'left', mode: 'normal', color: 'blue', status: 0, isMemo: false,
-                    project: '報告工具', label: '系統初始化', date_single: getTodayString(), date_start: '', date_end: '', content: '歡迎使用報告整理工具。'
-                };
+                const defaultItem = { id: Date.now(), pos: 'left', mode: 'normal', color: 'blue', status: 0, isMemo: false, project: '報告工具', label: '系統初始化', date_single: getTodayString(), date_start: '', date_end: '', content: '歡迎使用報告整理工具。' };
                 container.appendChild(createNodeElement(defaultItem));
             }
-
             if (savedNotes) { try { renderNotes(JSON.parse(savedNotes)); } catch(e){} }
             if (savedStickers) { try { renderStickers(JSON.parse(savedStickers)); } catch(e){} }
-            
-            refreshProjectBar();
-            enableDragAndDrop(); // 啟動拖曳排序
-
-            // 便利貼升級邏輯 (Textarea -> Div)
+            refreshProjectBar(); enableDragAndDrop();
             document.querySelectorAll('.sticky-note').forEach(note => {
                 const textarea = note.querySelector('textarea.note-content');
                 if (textarea) {
-                    const text = textarea.value;
-                    const rect = note.getBoundingClientRect();
-                    note.remove(); 
-                    createStickyElement({
-                        id: note.id, x: rect.left + window.scrollX, y: rect.top + window.scrollY, w: rect.width, h: rect.height,
-                        content: text.replace(/\n/g, '<br>') 
-                    });
+                    const text = textarea.value; const rect = note.getBoundingClientRect(); note.remove(); 
+                    createStickyElement({ id: note.id, x: rect.left + window.scrollX, y: rect.top + window.scrollY, w: rect.width, h: rect.height, content: text.replace(/\n/g, '<br>') });
                 }
             });
         }
 
         let saveTimer = null;
-        function autoSave() {
-            const light = document.getElementById('save-light');
-            light.classList.add('unsaved');
-            if (saveTimer) clearTimeout(saveTimer);
-            saveTimer = setTimeout(() => { performActualSave(); }, 1000);
-        }
-
+        function autoSave() { const light = document.getElementById('save-light'); light.classList.add('unsaved'); if (saveTimer) clearTimeout(saveTimer); saveTimer = setTimeout(() => { performActualSave(); }, 1000); }
         function performActualSave() {
-            const data = gatherData();
-            const notes = gatherNotes();
-            const stickers = gatherStickers();
+            const data = gatherData(); const notes = gatherNotes(); const stickers = gatherStickers();
             const dataKey = currentTabId === 'main' ? 'timeline_v47_data' : `timeline_v47_data_${currentTabId}`;
             const notesKey = currentTabId === 'main' ? 'timeline_v47_notes' : `timeline_v47_notes_${currentTabId}`;
             const stickersKey = currentTabId === 'main' ? 'timeline_v47_stickers' : `timeline_v47_stickers_${currentTabId}`;
-            localStorage.setItem(dataKey, JSON.stringify(data));
-            localStorage.setItem(notesKey, JSON.stringify(notes));
-            localStorage.setItem(stickersKey, JSON.stringify(stickers));
-            const light = document.getElementById('save-light');
-            if(light) light.classList.remove('unsaved');
+            localStorage.setItem(dataKey, JSON.stringify(data)); localStorage.setItem(notesKey, JSON.stringify(notes)); localStorage.setItem(stickersKey, JSON.stringify(stickers));
+            const light = document.getElementById('save-light'); if(light) light.classList.remove('unsaved');
         }
 
         function deleteNode(btn) { if(confirm('刪除此節點？')) { btn.closest('.timeline-item').remove(); autoSave(); refreshProjectBar(); } }
-        function changeColor(btn) {
-            const card = btn.closest('.card'); const colors = ['blue', 'green', 'red', 'yellow'];
-            let current = card.dataset.color || 'blue';
-            let nextIndex = (colors.indexOf(current) + 1) % colors.length;
-            card.dataset.color = colors[nextIndex]; autoSave();
-        }
+        function changeColor(btn) { const card = btn.closest('.card'); const colors = ['blue', 'green', 'red', 'yellow']; let current = card.dataset.color || 'blue'; let nextIndex = (colors.indexOf(current) + 1) % colors.length; card.dataset.color = colors[nextIndex]; autoSave(); }
         function moveNode(btn, dir) {
             const item = btn.closest('.timeline-item');
             if (dir === 'up') { const prev = item.previousElementSibling; if (prev) { item.parentNode.insertBefore(item, prev); autoSave(); } }
             else if (dir === 'down') { const next = item.nextElementSibling; if (next) { item.parentNode.insertBefore(next, item); autoSave(); } }
         }
-        function togglePos(btn, pos) {
-            const item = btn.closest('.timeline-item'); item.classList.remove('force-left', 'force-right');
-            if(pos === 'left') item.classList.add('force-left'); if(pos === 'right') item.classList.add('force-right'); autoSave();
-        }
-        function toggleRange(btn) {
-            const item = btn.closest('.timeline-item'); const isRange = item.classList.toggle('range-mode');
-            if(isRange && !item.querySelector('.date-start').value) item.querySelector('.date-start').value = item.querySelector('.single-date').value;
-            autoSave();
-        }
-        function cycleStatus(dot) {
-            const classes = ['status-0', 'status-1', 'status-2', 'status-3'];
-            let currentClass = classes.find(c => dot.classList.contains(c));
-            let nextIdx = (classes.indexOf(currentClass) + 1) % classes.length;
-            dot.classList.remove(currentClass); dot.classList.add(classes[nextIdx]); autoSave();
-        }
+        function togglePos(btn, pos) { const item = btn.closest('.timeline-item'); item.classList.remove('force-left', 'force-right'); if(pos === 'left') item.classList.add('force-left'); if(pos === 'right') item.classList.add('force-right'); autoSave(); }
+        function toggleRange(btn) { const item = btn.closest('.timeline-item'); const isRange = item.classList.toggle('range-mode'); if(isRange && !item.querySelector('.date-start').value) item.querySelector('.date-start').value = item.querySelector('.single-date').value; autoSave(); }
+        function cycleStatus(dot) { const classes = ['status-0', 'status-1', 'status-2', 'status-3']; let currentClass = classes.find(c => dot.classList.contains(c)); let nextIdx = (classes.indexOf(currentClass) + 1) % classes.length; dot.classList.remove(currentClass); dot.classList.add(classes[nextIdx]); autoSave(); }
         function sortByDate() {
             if(!confirm('重新排序？')) return;
             const items = Array.from(document.querySelectorAll('.timeline-item'));
             items.sort((a, b) => (a.querySelector('.single-date').value || '9999').localeCompare(b.querySelector('.single-date').value || '9999'));
             items.forEach(item => container.appendChild(item)); autoSave();
         }
-        function resetAllData() {
-            if (confirm('警告：這將會刪除所有資料（卡片、便利貼、圖片）且無法復原！\n\n您確定要清空整個專案嗎？')) {
-                if (confirm('再次確認：真的要全部刪除嗎？')) {
-                    localStorage.removeItem('timeline_v47_data'); localStorage.removeItem('timeline_v47_notes'); localStorage.removeItem('timeline_v47_stickers');
-                    location.reload(); 
-                }
-            }
-        }
+        function resetAllData() { if (confirm('警告：這將會刪除所有資料且無法復原！')) { if (confirm('再次確認刪除？')) { localStorage.removeItem('timeline_v47_data'); localStorage.removeItem('timeline_v47_notes'); localStorage.removeItem('timeline_v47_stickers'); location.reload(); } } }
 
         function gatherData() {
             return Array.from(document.querySelectorAll('.timeline-item')).map(item => {
-                const card = item.querySelector('.card');
-                const dot = item.querySelector('.status-dot');
-                let status = 0;
-                if(dot.classList.contains('status-1')) status = 1; else if(dot.classList.contains('status-2')) status = 2; else if(dot.classList.contains('status-3')) status = 3;
+                const card = item.querySelector('.card'); const dot = item.querySelector('.status-dot');
+                // 關鍵修正：將 item 的 dataset.id 存回去，確保同步功能正常
+                const id = item.dataset.id || Date.now(); 
+                let status = 0; if(dot.classList.contains('status-1')) status = 1; else if(dot.classList.contains('status-2')) status = 2; else if(dot.classList.contains('status-3')) status = 3;
                 return {
+                    id: id, // 保存 ID
                     pos: item.classList.contains('force-left')?'left':(item.classList.contains('force-right')?'right':'auto'),
                     mode: item.classList.contains('range-mode')?'range':'normal',
                     color: card.dataset.color || 'blue', status: status, isMemo: card.classList.contains('memo-mode'),
-                    project: item.querySelector('.footer-project-input').value,
-                    label: item.querySelector('.label-input').value,
-                    date_single: item.querySelector('.single-date').value,
-                    date_start: item.querySelector('.date-start').value, date_end: item.querySelector('.date-end').value,
-                    content: item.querySelector('.content').innerHTML,
-                    card_w: card.style.width,
-                    card_h: card.style.minHeight
+                    project: item.querySelector('.footer-project-input').value, label: item.querySelector('.label-input').value,
+                    date_single: item.querySelector('.single-date').value, date_start: item.querySelector('.date-start').value, date_end: item.querySelector('.date-end').value,
+                    content: item.querySelector('.content').innerHTML, card_w: card.style.width, card_h: card.style.minHeight
                 };
             });
         }
-        function gatherNotes() { 
-            return Array.from(document.querySelectorAll('.sticky-note')).map(n => ({ 
-                id: n.id, x: parseInt(n.style.left), y: parseInt(n.style.top), 
-                w: n.style.width ? parseInt(n.style.width) : null, h: n.style.height ? parseInt(n.style.height) : null,
-                content: n.querySelector('.note-content').innerHTML 
-            })); 
-        }
-        function gatherStickers() { 
-            return Array.from(document.querySelectorAll('.sticker')).map(s => ({ 
-                id: s.id, type: s.dataset.type, x: parseInt(s.style.left), y: parseInt(s.style.top),
-                w: s.style.width ? parseInt(s.style.width) : null, h: s.style.height ? parseInt(s.style.height) : null,
-                content: s.dataset.type === 'image' ? s.querySelector('img').src : null
-            })); 
-        }
+        function gatherNotes() { return Array.from(document.querySelectorAll('.sticky-note')).map(n => ({ id: n.id, x: parseInt(n.style.left), y: parseInt(n.style.top), w: n.style.width ? parseInt(n.style.width) : null, h: n.style.height ? parseInt(n.style.height) : null, content: n.querySelector('.note-content').innerHTML })); }
+        function gatherStickers() { return Array.from(document.querySelectorAll('.sticker')).map(s => ({ id: s.id, type: s.dataset.type, x: parseInt(s.style.left), y: parseInt(s.style.top), w: s.style.width ? parseInt(s.style.width) : null, h: s.style.height ? parseInt(s.style.height) : null, content: s.dataset.type === 'image' ? s.querySelector('img').src : null })); }
 
-        // [Element] 建立節點 (新增 draggable)
+        // [Element] 建立卡片 (ID 綁定)
         function createNodeElement(item) {
             const div = document.createElement('div');
             div.className = `timeline-item ${item.pos==='left'?'force-left':item.pos==='right'?'force-right':''} ${item.mode==='range'?'range-mode':''}`;
+            // 綁定 ID 以便同步
+            div.dataset.id = item.id || Date.now(); 
             
-            // 啟用拖曳
             div.setAttribute('draggable', 'true');
-            div.addEventListener('dragstart', (e) => {
-                // 如果正在編輯文字，不要拖曳
-                if (e.target.isContentEditable || e.target.tagName === 'INPUT') {
-                    e.preventDefault();
-                    return;
-                }
-                div.classList.add('dragging');
-            });
-            div.addEventListener('dragend', () => {
-                div.classList.remove('dragging');
-                autoSave();
-            });
-
+            div.addEventListener('dragstart', (e) => { if (e.target.isContentEditable || e.target.tagName === 'INPUT') { e.preventDefault(); return; } div.classList.add('dragging'); });
+            div.addEventListener('dragend', () => { div.classList.remove('dragging'); autoSave(); });
             const isMemo = item.isMemo ? 'memo-mode' : '';
             div.innerHTML = `
                 <div class="dot"></div>
@@ -735,10 +564,7 @@
                         <button class="btn-icon side-btn mobile-hidden" onclick="togglePos(this,'right')">➡️</button>
                     </div>
                     <div class="card-top-area">
-                        <div class="card-top-left">
-                            <input type="checkbox" class="select-chk">
-                            <div class="status-dot status-${item.status}" onclick="cycleStatus(this)"></div>
-                        </div>
+                        <div class="card-top-left"><input type="checkbox" class="select-chk"><div class="status-dot status-${item.status}" onclick="cycleStatus(this)"></div></div>
                         <div class="card-top-right">
                             <button class="btn-icon btn-move-tab" onclick="moveCardToTab(this)" title="移動到其他分頁">📦</button>
                             <button class="btn-icon" onclick="addToGoogleCalendar(this)" title="加入 Google Calendar">📆</button>
@@ -757,192 +583,81 @@
                                 <button class="mode-toggle-btn" onclick="toggleCardMode(this)">${item.isMemo?'♾️':'📅'}</button>
                                 <input type="date" class="date-input single-date" value="${item.date_single}" onchange="autoSave()">
                                 <button class="today-btn single-date" onclick="setToday(this)">今</button>
-                                <div class="range-container">
-                                    <span>起</span><input type="date" class="date-input date-start" value="${item.date_start}" onchange="autoSave()">
-                                    <button class="today-btn" onclick="setToday(this)">今</button>
-                                    <span>迄</span><input type="date" class="date-input date-end" value="${item.date_end}" onchange="autoSave()">
-                                    <button class="today-btn" onclick="setToday(this)">今</button>
-                                </div>
+                                <div class="range-container"><span>起</span><input type="date" class="date-input date-start" value="${item.date_start}" onchange="autoSave()"><button class="today-btn" onclick="setToday(this)">今</button><span>迄</span><input type="date" class="date-input date-end" value="${item.date_end}" onchange="autoSave()"><button class="today-btn" onclick="setToday(this)">今</button></div>
                             </div>
                             <input type="text" class="label-input" value="${item.label}" placeholder="標題" oninput="autoSave()">
                         </div>
                         <div class="content" contenteditable="true" oninput="handleCardInput(event)">${item.content}</div>
                     </div>
-                    <div class="project-footer">
-                        <input type="text" class="footer-project-input" autocomplete="off" value="${item.project || ''}" placeholder="🏷️ 專案名稱..." oninput="autoSave(); refreshProjectBar();">
-                    </div>
+                    <div class="project-footer"><input type="text" class="footer-project-input" autocomplete="off" value="${item.project || ''}" placeholder="🏷️ 專案名稱..." oninput="autoSave(); refreshProjectBar();"></div>
                 </div>`;
-            const card = div.querySelector('.card');
-            if(item.card_w) card.style.width = item.card_w;
-            if(item.card_h) card.style.minHeight = item.card_h;
+            const card = div.querySelector('.card'); if(item.card_w) card.style.width = item.card_w; if(item.card_h) card.style.minHeight = item.card_h;
             return div;
         }
 
-        function resizeCard(e) {
-            e.stopPropagation(); const card = e.target.parentElement;
-            const startX = e.clientX, startY = e.clientY, startW = card.offsetWidth, startH = card.offsetHeight;
-            function doDrag(ev) {
-                const newW = startW + (ev.clientX - startX), newH = startH + (ev.clientY - startY);
-                if (newW > 200) card.style.width = newW + 'px';
-                if (newH > 100) card.style.minHeight = newH + 'px';
-            }
-            function stopDrag() {
-                document.documentElement.removeEventListener('mousemove', doDrag);
-                document.documentElement.removeEventListener('mouseup', stopDrag);
-                autoSave();
-            }
-            document.documentElement.addEventListener('mousemove', doDrag);
-            document.documentElement.addEventListener('mouseup', stopDrag);
-        }
-
-        function addStickyNote() {
-            createStickyElement({ id: 'note-' + Date.now(), x: window.scrollX + 100, y: window.scrollY + 100, content: '' });
-            autoSave(); if(window.innerWidth < 768) toggleToolbox();
-        }
-
-        // [Element] 建立便利貼 (修正版: div + contenteditable)
+        function resizeCard(e) { e.stopPropagation(); const card = e.target.parentElement; const startX = e.clientX, startY = e.clientY, startW = card.offsetWidth, startH = card.offsetHeight; function doDrag(ev) { const newW = startW + (ev.clientX - startX), newH = startH + (ev.clientY - startY); if (newW > 200) card.style.width = newW + 'px'; if (newH > 100) card.style.minHeight = newH + 'px'; } function stopDrag() { document.documentElement.removeEventListener('mousemove', doDrag); document.documentElement.removeEventListener('mouseup', stopDrag); autoSave(); } document.documentElement.addEventListener('mousemove', doDrag); document.documentElement.addEventListener('mouseup', stopDrag); }
+        function addStickyNote() { createStickyElement({ id: 'note-' + Date.now(), x: window.scrollX + 100, y: window.scrollY + 100, content: '' }); autoSave(); if(window.innerWidth < 768) toggleToolbox(); }
         function createStickyElement(data) {
-            const div = document.createElement('div'); div.className = 'sticky-note'; div.id = data.id;
-            div.style.left = data.x + 'px'; div.style.top = data.y + 'px';
-            if (data.w) div.style.width = data.w + 'px'; if (data.h) div.style.height = data.h + 'px';
+            const div = document.createElement('div'); div.className = 'sticky-note'; div.id = data.id; div.style.left = data.x + 'px'; div.style.top = data.y + 'px'; if (data.w) div.style.width = data.w + 'px'; if (data.h) div.style.height = data.h + 'px';
             const initialContent = data.content || '';
-
-            div.innerHTML = `
-                <div class="note-header">
-                    <div class="note-tools">
-                        <span class="note-btn" onclick="toggleNoteHighlight(this)" title="螢光筆">🖍️</span>
-                        <span class="note-btn" onclick="clearNoteFormat(this)" title="清除">🧹</span>
-                    </div>
-                    <span class="note-close" onclick="deleteSticky(this)">×</span>
-                </div>
-                <div class="note-content" contenteditable="true" oninput="autoSave()">${initialContent}</div>
-                <div class="resize-handle" onmousedown="resizeNote(event)">↘</div>
-            `;
+            div.innerHTML = `<div class="note-header"><div class="note-tools"><span class="note-btn" onclick="toggleNoteHighlight(this)" title="螢光筆">🖍️</span><span class="note-btn" onclick="clearNoteFormat(this)" title="清除">🧹</span></div><span class="note-close" onclick="deleteSticky(this)">×</span></div><div class="note-content" contenteditable="true" oninput="autoSave()">${initialContent}</div><div class="resize-handle" onmousedown="resizeNote(event)">↘</div>`;
             document.body.appendChild(div); makeDraggable(div, div.querySelector('.note-header'));
         }
-        
-        function toggleNoteHighlight(btn) {
-            const noteContent = btn.closest('.sticky-note').querySelector('.note-content');
-            noteContent.focus();
-            document.execCommand('styleWithCSS', false, true);
-            document.execCommand('hiliteColor', false, '#fef08a'); 
-            autoSave();
-        }
-        function clearNoteFormat(btn) {
-            const noteContent = btn.closest('.sticky-note').querySelector('.note-content');
-            noteContent.focus();
-            document.execCommand('removeFormat');
-            autoSave();
-        }
-
-        function resizeNote(e) {
-            e.stopPropagation(); const note = e.target.parentElement;
-            const startX = e.clientX, startY = e.clientY, startW = note.offsetWidth, startH = note.offsetHeight;
-            function doDrag(ev) {
-                const newW = startW + (ev.clientX - startX), newH = startH + (ev.clientY - startY);
-                if (newW > 100) note.style.width = newW + 'px'; if (newH > 100) note.style.height = newH + 'px';
-            }
-            function stopDrag() {
-                document.documentElement.removeEventListener('mousemove', doDrag);
-                document.documentElement.removeEventListener('mouseup', stopDrag);
-                autoSave();
-            }
-            document.documentElement.addEventListener('mousemove', doDrag);
-            document.documentElement.addEventListener('mouseup', stopDrag);
-        }
-
+        function toggleNoteHighlight(btn) { const noteContent = btn.closest('.sticky-note').querySelector('.note-content'); noteContent.focus(); document.execCommand('styleWithCSS', false, true); document.execCommand('hiliteColor', false, '#fef08a'); autoSave(); }
+        function clearNoteFormat(btn) { const noteContent = btn.closest('.sticky-note').querySelector('.note-content'); noteContent.focus(); document.execCommand('removeFormat'); autoSave(); }
+        function resizeNote(e) { e.stopPropagation(); const note = e.target.parentElement; const startX = e.clientX, startY = e.clientY, startW = note.offsetWidth, startH = note.offsetHeight; function doDrag(ev) { const newW = startW + (ev.clientX - startX), newH = startH + (ev.clientY - startY); if (newW > 100) note.style.width = newW + 'px'; if (newH > 100) note.style.height = newH + 'px'; } function stopDrag() { document.documentElement.removeEventListener('mousemove', doDrag); document.documentElement.removeEventListener('mouseup', stopDrag); autoSave(); } document.documentElement.addEventListener('mousemove', doDrag); document.documentElement.addEventListener('mouseup', stopDrag); }
         function triggerImageUpload() { if (document.activeElement) document.activeElement.blur(); document.getElementById('sticker-upload').click(); }
-        function handleImageUpload(input) {
-            const file = input.files[0]; if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(event) {
-                createStickerElement({ id: 'sticker-' + Date.now(), type: 'image', x: window.scrollX + window.innerWidth / 2 - 100, y: window.scrollY + window.innerHeight / 2 - 100, content: event.target.result });
-                autoSave();
-            }; reader.readAsDataURL(file); input.value = '';
-        }
-        function addSticker(type) {
-            createStickerElement({ id: 'sticker-' + Date.now(), type: type, x: window.scrollX + window.innerWidth/2 - 50, y: window.scrollY + window.innerHeight/2 - 50, content: null });
-            autoSave(); if(window.innerWidth < 768) toggleToolbox();
-        }
+        function handleImageUpload(input) { const file = input.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = function(event) { createStickerElement({ id: 'sticker-' + Date.now(), type: 'image', x: window.scrollX + window.innerWidth / 2 - 100, y: window.scrollY + window.innerHeight / 2 - 100, content: event.target.result }); autoSave(); }; reader.readAsDataURL(file); input.value = ''; }
+        function addSticker(type) { createStickerElement({ id: 'sticker-' + Date.now(), type: type, x: window.scrollX + window.innerWidth/2 - 50, y: window.scrollY + window.innerHeight/2 - 50, content: null }); autoSave(); if(window.innerWidth < 768) toggleToolbox(); }
         function createStickerElement(data) {
-            const div = document.createElement('div'); div.className = 'sticker'; div.id = data.id; div.dataset.type = data.type;
-            div.style.left = data.x + 'px'; div.style.top = data.y + 'px';
-            if (data.w) div.style.width = data.w + 'px'; if (data.h) div.style.height = data.h + 'px';
-            let content = '';
-            if (data.type === 'arrow-up') content = '<svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><path d="M12 19V5M5 12l7-7 7 7"/></svg>';
-            else if (data.type === 'arrow-right') content = '<svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>';
-            else if (data.type === 'arrow-down') content = '<svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg>';
-            else if (data.type === 'arrow-left') content = '<svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>';
-            else if (data.type === 'circle-red') content = '<svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="3"><circle cx="12" cy="12" r="10"/></svg>';
-            else if (data.type === 'rect-blue') content = '<svg viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="3"><rect x="2" y="4" width="20" height="16" rx="2"/></svg>';
-            else if (data.type === 'image') content = `<img src="${data.content}">`;
-            let resizeHandle = (data.type === 'circle-red' || data.type === 'rect-blue') ? '<div class="resize-handle" onmousedown="resizeSticker(event)">↘</div>' : '';
-            div.innerHTML = `<div class="sticker-del" onclick="deleteSticky(this)">×</div>${content}${resizeHandle}`;
-            document.body.appendChild(div); makeDraggable(div);
+            const div = document.createElement('div'); div.className = 'sticker'; div.id = data.id; div.dataset.type = data.type; div.style.left = data.x + 'px'; div.style.top = data.y + 'px'; if (data.w) div.style.width = data.w + 'px'; if (data.h) div.style.height = data.h + 'px';
+            let content = ''; if (data.type === 'arrow-up') content = '<svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><path d="M12 19V5M5 12l7-7 7 7"/></svg>'; else if (data.type === 'arrow-right') content = '<svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>'; else if (data.type === 'arrow-down') content = '<svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg>'; else if (data.type === 'arrow-left') content = '<svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>'; else if (data.type === 'circle-red') content = '<svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="3"><circle cx="12" cy="12" r="10"/></svg>'; else if (data.type === 'rect-blue') content = '<svg viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="3"><rect x="2" y="4" width="20" height="16" rx="2"/></svg>'; else if (data.type === 'image') content = `<img src="${data.content}">`;
+            let resizeHandle = (data.type === 'circle-red' || data.type === 'rect-blue') ? '<div class="resize-handle" onmousedown="resizeSticker(event)">↘</div>' : ''; div.innerHTML = `<div class="sticker-del" onclick="deleteSticky(this)">×</div>${content}${resizeHandle}`; document.body.appendChild(div); makeDraggable(div);
         }
-        function resizeSticker(e) {
-            e.stopPropagation(); const sticker = e.target.parentElement;
-            const startX = e.clientX, startY = e.clientY, startW = sticker.offsetWidth, startH = sticker.offsetHeight;
-            function doDrag(ev) { const newW = startW + (ev.clientX - startX), newH = startH + (ev.clientY - startY); if (newW > 20) sticker.style.width = newW + 'px'; if (newH > 20) sticker.style.height = newH + 'px'; }
-            function stopDrag() { document.documentElement.removeEventListener('mousemove', doDrag); document.documentElement.removeEventListener('mouseup', stopDrag); autoSave(); }
-            document.documentElement.addEventListener('mousemove', doDrag); document.documentElement.addEventListener('mouseup', stopDrag);
-        }
-        function deleteSticky(btn) {
-            if(confirm('移除此物件？')) {
-                const note = btn.closest('.sticky-note'); const sticker = btn.closest('.sticker');
-                if(note) note.remove(); else if(sticker) sticker.remove();
-                autoSave();
-            }
-        }
-        function makeDraggable(elmnt, handle) {
-            let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
-            const dragHandle = handle || elmnt;
-            dragHandle.onmousedown = dragMouseDown;
-            function dragMouseDown(e) {
-                e = e || window.event;
-                if (e.target.classList.contains('resize-handle') || e.target.classList.contains('sticker-del') || e.target.classList.contains('note-btn')) return;
-                e.preventDefault(); pos3 = e.clientX; pos4 = e.clientY;
-                document.onmouseup = closeDragElement; document.onmousemove = elementDrag;
-                document.querySelectorAll('.sticky-note, .sticker').forEach(el => el.style.zIndex = 1500); elmnt.style.zIndex = 1501;
-            }
-            function elementDrag(e) {
-                e = e || window.event; e.preventDefault();
-                pos1 = pos3 - e.clientX; pos2 = pos4 - e.clientY; pos3 = e.clientX; pos4 = e.clientY;
-                elmnt.style.top = (elmnt.offsetTop - pos2) + "px"; elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
-            }
-            function closeDragElement() { document.onmouseup = null; document.onmousemove = null; autoSave(); }
-        }
+        function resizeSticker(e) { e.stopPropagation(); const sticker = e.target.parentElement; const startX = e.clientX, startY = e.clientY, startW = sticker.offsetWidth, startH = sticker.offsetHeight; function doDrag(ev) { const newW = startW + (ev.clientX - startX), newH = startH + (ev.clientY - startY); if (newW > 20) sticker.style.width = newW + 'px'; if (newH > 20) sticker.style.height = newH + 'px'; } function stopDrag() { document.documentElement.removeEventListener('mousemove', doDrag); document.documentElement.removeEventListener('mouseup', stopDrag); autoSave(); } document.documentElement.addEventListener('mousemove', doDrag); document.documentElement.addEventListener('mouseup', stopDrag); }
+        function deleteSticky(btn) { if(confirm('移除此物件？')) { const note = btn.closest('.sticky-note'); const sticker = btn.closest('.sticker'); if(note) note.remove(); else if(sticker) sticker.remove(); autoSave(); } }
+        function makeDraggable(elmnt, handle) { let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0; const dragHandle = handle || elmnt; dragHandle.onmousedown = dragMouseDown; function dragMouseDown(e) { e = e || window.event; if (e.target.classList.contains('resize-handle') || e.target.classList.contains('sticker-del') || e.target.classList.contains('note-btn')) return; e.preventDefault(); pos3 = e.clientX; pos4 = e.clientY; document.onmouseup = closeDragElement; document.onmousemove = elementDrag; document.querySelectorAll('.sticky-note, .sticker').forEach(el => el.style.zIndex = 1500); elmnt.style.zIndex = 1501; } function elementDrag(e) { e = e || window.event; e.preventDefault(); pos1 = pos3 - e.clientX; pos2 = pos4 - e.clientY; pos3 = e.clientX; pos4 = e.clientY; elmnt.style.top = (elmnt.offsetTop - pos2) + "px"; elmnt.style.left = (elmnt.offsetLeft - pos1) + "px"; } function closeDragElement() { document.onmouseup = null; document.onmousemove = null; autoSave(); } }
 
         function toggleCardMode(btn) { const card = btn.closest('.card'); const isMemo = card.classList.toggle('memo-mode'); btn.innerText = isMemo ? '♾️' : '📅'; autoSave(); }
         function setToday(btn) { btn.previousElementSibling.value = getTodayString(); autoSave(); }
         function insertBullet(btn) { btn.closest('.timeline-item').querySelector('.content').innerHTML += '<div>&nbsp;•&nbsp;內容</div>'; autoSave(); }
         function addHighlight(btn) { document.execCommand('styleWithCSS', false, true); document.execCommand('hiliteColor', false, '#fef08a'); autoSave(); }
         function clearFormatting(btn) { document.execCommand('removeFormat'); document.execCommand('hiliteColor', false, 'transparent'); autoSave(); }
-        function copyForTasks(btn) {
-            const item = btn.closest('.timeline-item');
-            const text = `【${item.querySelector('.footer-project-input').value}】${item.querySelector('.label-input').value}\n${item.querySelector('.content').innerText}`;
-            navigator.clipboard.writeText(text).then(()=>alert('已複製'));
-        }
+        function copyForTasks(btn) { const item = btn.closest('.timeline-item'); const text = `【${item.querySelector('.footer-project-input').value}】${item.querySelector('.label-input').value}\n${item.querySelector('.content').innerText}`; navigator.clipboard.writeText(text).then(()=>alert('已複製')); }
         function insertTodoLine(btn) { btn.closest('.timeline-item').querySelector('.content').innerHTML += '<div><span class="todo-box" onclick="toggleTodo(this)">☐</span>&nbsp;新項目</div>'; autoSave(); }
         window.toggleTodo = function(span) { span.innerText = span.innerText==='☐'?'☑':'☐'; autoSave(); event.stopPropagation(); }
         function handleCardInput(e) { autoSave(); }
-        function clearAllImages() {
-            if(!confirm('清除卡片內的圖片（不含貼紙）？')) return;
-            const data = gatherData();
-            const newData = data.map(item => ({...item, content: item.content.replace(/<img[^>]*>/g, '[圖]')}));
-            renderFromData(newData); autoSave();
-        }
-
+        function clearAllImages() { if(!confirm('清除卡片內的圖片（不含貼紙）？')) return; const data = gatherData(); const newData = data.map(item => ({...item, content: item.content.replace(/<img[^>]*>/g, '[圖]')})); renderFromData(newData); autoSave(); }
         function showTooltip(e, text) { tooltip.innerText = text; tooltip.style.display = 'block'; updateTooltipPos(e); }
         function hideTooltip() { tooltip.style.display = 'none'; }
-        function updateTooltipPos(e) {
-            const offset = 15; let left = e.clientX + offset; let top = e.clientY + offset;
-            if (left + tooltip.offsetWidth > window.innerWidth) left = e.clientX - tooltip.offsetWidth - offset;
-            if (top + tooltip.offsetHeight > window.innerHeight) top = e.clientY - tooltip.offsetHeight - offset;
-            tooltip.style.left = left + 'px'; tooltip.style.top = top + 'px';
+        function updateTooltipPos(e) { const offset = 15; let left = e.clientX + offset; let top = e.clientY + offset; if (left + tooltip.offsetWidth > window.innerWidth) left = e.clientX - tooltip.offsetWidth - offset; if (top + tooltip.offsetHeight > window.innerHeight) top = e.clientY - tooltip.offsetHeight - offset; tooltip.style.left = left + 'px'; tooltip.style.top = top + 'px'; }
+
+        // --- 🤖 大事記增強：同步編輯與工具列 ---
+        function syncFromChronicle(id, element) {
+            const originalItem = document.querySelector(`.timeline-item[data-id="${id}"] .content`);
+            if (originalItem) {
+                originalItem.innerHTML = element.innerHTML; // 同步內容
+                autoSave();
+            }
+        }
+        function calendarFromId(id) {
+            const btn = document.querySelector(`.timeline-item[data-id="${id}"] .btn-icon[onclick*="addToGoogleCalendar"]`);
+            if (btn) addToGoogleCalendar(btn);
+        }
+        function highlightChronicle(btn) {
+            const contentDiv = btn.closest('.chronicle-item-card').querySelector('.chronicle-desc');
+            contentDiv.focus();
+            document.execCommand('styleWithCSS', false, true);
+            document.execCommand('hiliteColor', false, '#fef08a');
+            contentDiv.dispatchEvent(new Event('input')); // 觸發同步
+        }
+        function clearChronicleFormat(btn) {
+            const contentDiv = btn.closest('.chronicle-item-card').querySelector('.chronicle-desc');
+            contentDiv.focus();
+            document.execCommand('removeFormat');
+            contentDiv.dispatchEvent(new Event('input')); // 觸發同步
         }
 
-        // --- 渲染與檢視功能 (Chronicle & Gantt) 保持原樣 ---
         function renderChronicle() {
             const container = document.getElementById('vTimeline'); container.innerHTML = '';
             let data = gatherData().filter(i => !i.isMemo && (i.date_single || i.date_start));
@@ -989,12 +704,19 @@
 
                     contentHtml += `
                         <div class="chronicle-item-card" data-color="${item.color}">
+                            <div class="chronicle-tool-header">
+                                <div class="chronicle-tools">
+                                    <span class="note-btn" onclick="calendarFromId('${item.id}')" title="加入 Google Calendar">📆</span>
+                                    <span class="note-btn" onclick="highlightChronicle(this)" title="畫重點">🖍️</span>
+                                    <span class="note-btn" onclick="clearChronicleFormat(this)" title="清除格式">🧹</span>
+                                </div>
+                            </div>
                             <div>${projTag}</div>
                             <div style="display:flex; align-items:center; margin-bottom:4px;">
                                 ${statusLightHtml}
                                 <span class="chronicle-title" style="margin:0;">${item.label}${rangeBadge}${conflictBadge}</span>
                             </div>
-                            <div class="chronicle-desc">${item.content}</div>
+                            <div class="chronicle-desc" contenteditable="true" oninput="syncFromChronicle('${item.id}', this)">${item.content}</div>
                             <div class="duration-bar-container">
                                 <div class="duration-bar-fill" style="width:${barWidthPct}%; background:${colorMap[item.color]||'#4f46e5'}"></div>
                             </div>
@@ -1117,186 +839,169 @@
             window.open(url, '_blank');
         }
 
-        function downloadJSON() {
-            const exportData = { data: gatherData(), notes: gatherNotes(), stickers: gatherStickers() };
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportData));
-            const downloadAnchorNode = document.createElement('a');
-            downloadAnchorNode.setAttribute("href", dataStr);
-            downloadAnchorNode.setAttribute("download", "report_backup_" + getTodayString() + ".json");
-            document.body.appendChild(downloadAnchorNode); downloadAnchorNode.click(); downloadAnchorNode.remove();
-        }
-
-        function loadJSON(input) {
-            const file = input.files[0]; if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(e) {
+        // --- 🔌 分頁功能擴充 ---
+        function renderTabs() { const bar = document.getElementById('tab-list'); bar.innerHTML = allTabs.map(t => `<div class="tab-item ${t.id === currentTabId ? 'active' : ''}" onclick="switchTab('${t.id}')" oncontextmenu="renameTab(event, '${t.id}')">${t.name}</div>`).join(''); }
+        function createNewTab() { const name = prompt("請輸入新分頁名稱 (建議 4 個字以內)："); if (!name) return; const newId = 'tab_' + Date.now(); allTabs.push({ id: newId, name: name }); localStorage.setItem('timeline_tabs_meta', JSON.stringify(allTabs)); renderTabs(); switchTab(newId); }
+        function switchTab(id) { if (currentTabId === id) return; performActualSave(); currentTabId = id; init(); }
+        function renameTab(e, id) { e.preventDefault(); if (id === 'main') { alert('主工作區不能改名或刪除'); return; } if (confirm('確定要刪除這個分頁嗎？(裡面的資料也會消失)')) { if (confirm('再次確認刪除？無法復原！')) { localStorage.removeItem(`timeline_v47_data_${id}`); localStorage.removeItem(`timeline_v47_notes_${id}`); localStorage.removeItem(`timeline_v47_stickers_${id}`); allTabs = allTabs.filter(t => t.id !== id); localStorage.setItem('timeline_tabs_meta', JSON.stringify(allTabs)); currentTabId = 'main'; init(); } } }
+        function moveCardToTab(btn) {
+            const item = btn.closest('.timeline-item'); if (!item) { alert('找不到卡片物件，請刷新頁面再試。'); return; }
+            const otherTabs = allTabs.filter(t => t.id !== currentTabId); if (otherTabs.length === 0) { alert('❌ 無處可去！\n\n請先按左下方的「＋」建立一個新分頁 (例如: 歸檔區)，才能進行移動。'); return; }
+            let msg = "請輸入要移動到的「目標分頁編號」：\n------------------\n"; otherTabs.forEach((t, index) => { msg += `[ ${index + 1} ]  ${t.name}\n`; });
+            const choice = prompt(msg); if (choice === null) return; 
+            const index = parseInt(choice) - 1;
+            if (!isNaN(index) && otherTabs[index]) {
+                const targetTab = otherTabs[index]; const targetId = targetTab.id;
                 try {
-                    const json = JSON.parse(e.target.result);
-                    const dataKey = currentTabId === 'main' ? 'timeline_v47_data' : `timeline_v47_data_${currentTabId}`;
-                    const notesKey = currentTabId === 'main' ? 'timeline_v47_notes' : `timeline_v47_notes_${currentTabId}`;
-                    const stickersKey = currentTabId === 'main' ? 'timeline_v47_stickers' : `timeline_v47_stickers_${currentTabId}`;
-                    if (json.data) localStorage.setItem(dataKey, JSON.stringify(json.data));
-                    if (json.notes) localStorage.setItem(notesKey, JSON.stringify(json.notes));
-                    if (json.stickers) localStorage.setItem(stickersKey, JSON.stringify(json.stickers));
-                    alert('讀取成功！頁面將重新整理以載入資料。'); location.reload(); 
-                } catch (err) { console.error(err); alert('檔案格式錯誤，無法讀取。'); }
-            };
-            reader.readAsText(file); input.value = ''; 
+                    const cardData = {
+                        id: item.dataset.id, // 保留 ID
+                        pos: item.classList.contains('force-left')?'left':(item.classList.contains('force-right')?'right':'auto'), mode: item.classList.contains('range-mode')?'range':'normal', color: item.querySelector('.card').dataset.color || 'blue', status: 0, isMemo: item.querySelector('.card').classList.contains('memo-mode'),
+                        project: item.querySelector('.footer-project-input').value, label: item.querySelector('.label-input').value, date_single: item.querySelector('.single-date').value, date_start: item.querySelector('.date-start').value, date_end: item.querySelector('.date-end').value, content: item.querySelector('.content').innerHTML
+                    };
+                    const targetKey = targetId === 'main' ? 'timeline_v47_data' : `timeline_v47_data_${targetId}`; const targetRaw = localStorage.getItem(targetKey); let targetData = targetRaw ? JSON.parse(targetRaw) : [];
+                    targetData.push(cardData); localStorage.setItem(targetKey, JSON.stringify(targetData));
+                    item.remove(); autoSave(); alert(`✅ 成功！\n\n這張卡片已經移動到「${targetTab.name}」了。`);
+                } catch (error) { console.error(error); alert('移動失敗：發生未預期的錯誤，請查看 Console (F12)。'); }
+            } else { alert(`❌ 移動失敗\n\n您輸入的編號 "${choice}" 無效。\n請輸入清單上顯示的數字 (例如 1)。`); }
         }
 
-        function renderFromData(items) { container.innerHTML = ''; items.forEach(item => { const el = createNodeElement(item); container.appendChild(el); }); }
-        function renderNotes(items) { document.querySelectorAll('.sticky-note').forEach(el => el.remove()); items.forEach(item => createStickyElement(item)); }
-        function renderStickers(items) { document.querySelectorAll('.sticker').forEach(el => el.remove()); items.forEach(item => createStickerElement(item)); }
-        function toggleProjectBar() { projectBar.classList.toggle('show'); document.body.classList.toggle('has-proj-bar'); }
-
-        function filterNodes(keyword) {
-            currentSearchKeyword = keyword;
-            const items = document.querySelectorAll('.timeline-item');
-            items.forEach(item => {
-                const text = item.innerText.toLowerCase();
-                if (text.includes(keyword.toLowerCase())) { item.style.display = ''; } else { item.style.display = 'none'; }
-            });
-            if(currentView === 'chronicle') renderChronicle();
-            if(currentView === 'gantt') renderGantt();
-        }
-
-        function refreshProjectBar() {
-            const data = gatherData();
-            const projects = [...new Set(data.map(i => i.project).filter(p => p))];
-            projectBar.innerHTML = projects.map(p => `<div class="proj-badge ${activeProjectFilters.has(p) ? 'active' : ''}" onclick="toggleProjectFilter(this, '${p}')">${p}</div>`).join('');
-            if (projects.length === 0) { projectBar.innerHTML = '<span style="color:#999; font-size:0.8rem;">尚無專案標籤 (請在卡片右下角輸入)</span>'; }
-        }
-
-        window.toggleProjectFilter = function(btn, projName) {
-            if (activeProjectFilters.has(projName)) { activeProjectFilters.delete(projName); btn.classList.remove('active'); } 
-            else { activeProjectFilters.add(projName); btn.classList.add('active'); }
-            const items = document.querySelectorAll('.timeline-item');
-            items.forEach(item => {
-                const p = item.querySelector('.footer-project-input').value;
-                if (activeProjectFilters.size === 0 || activeProjectFilters.has(p)) { item.classList.remove('hidden-by-filter'); } else { item.classList.add('hidden-by-filter'); }
-            });
-            if(currentView === 'chronicle') renderChronicle();
-            if(currentView === 'gantt') renderGantt();
-        };
-
-        function toggleToolbox() {
-            document.getElementById('toolboxContainer').classList.toggle('closed');
-            const btn = document.querySelector('.toolbox-toggle-btn');
-            btn.innerText = btn.innerText === '◀' ? '▶' : '◀';
-        }
-        
-        function enterAIMode() { document.body.classList.add('ai-selecting'); alert('請勾選想要讓 AI 處理的卡片，然後點擊「確認」。'); }
-        function exitAIMode() { document.body.classList.remove('ai-selecting'); document.querySelectorAll('.select-chk').forEach(c => c.checked = false); }
-        function selectAllAI() { document.querySelectorAll('.select-chk').forEach(c => c.checked = true); }
+        // --- 🤖 AI 智能助理 (提示詞生成模式) ---
         function confirmAIOutput() {
+            // 1. 蒐集被勾選的卡片
             const selected = [];
             document.querySelectorAll('.timeline-item').forEach(item => {
                 if(item.querySelector('.select-chk').checked) {
-                    selected.push({ label: item.querySelector('.label-input').value, content: item.querySelector('.content').innerText });
+                    selected.push({
+                        date: item.querySelector('.single-date').value || item.querySelector('.date-start').value || '未壓日期',
+                        project: item.querySelector('.footer-project-input').value || '未分類',
+                        label: item.querySelector('.label-input').value || '無標題',
+                        content: item.querySelector('.content').innerText.replace(/\n/g, ' ') // 去除多餘換行
+                    });
                 }
             });
-            if(selected.length === 0) { alert('未選擇任何卡片'); return; }
-            console.log('AI Selected Data:', selected);
-            alert('已收集 ' + selected.length + ' 張卡片資料 (功能開發中)');
-            exitAIMode();
-        }
 
-        function togglePresentation() { document.body.classList.toggle('presentation-mode'); }
-        
-        function exportToCSV() {
-            const data = gatherData();
-            let csvContent = "\uFEFFProject,Date,Label,Content\n";
-            data.forEach(item => {
-                let row = [ `"${item.project || ''}"`, `"${item.date_single || item.date_start}"`, `"${item.label || ''}"`, `"${item.content.replace(/"/g, '""').replace(/\n/g, ' ')}"` ];
-                csvContent += row.join(",") + "\n";
+            if(selected.length === 0) { alert('請先勾選卡片 (點選卡片左上角的方框)'); return; }
+
+            // 2. 詢問使用者意圖
+            const intent = prompt(
+                `已選取 ${selected.length} 個項目。\n請問您希望 AI 協助做什麼？\n\n` +
+                `1. 📝 撰寫週報 (整理成條列式匯報)\n` +
+                `2. 🔍 重點摘要 (歸納核心結論)\n` +
+                `3. 🧠 尋找關聯 (分析項目間的因果)\n` +
+                `4. 📋 僅複製資料 (純文字備份)\n\n` +
+                `請輸入數字 (1-4)：`, "1"
+            );
+
+            if (!intent) return;
+
+            // 3. 生成提示詞
+            const promptText = generatePrompt(intent, selected);
+
+            // 4. 複製到剪貼簿
+            navigator.clipboard.writeText(promptText).then(() => {
+                alert(`✅ AI 提示詞已複製！\n\n現在請打開 ChatGPT / Gemini / Claude，\n直接按 Ctrl+V (貼上) 即可獲得結果。`);
+                exitAIMode(); // 退出選取模式
+            }).catch(err => {
+                console.error('複製失敗:', err);
+                alert('複製失敗，請手動查看 Console');
             });
-            const encodedUri = encodeURI("data:text/csv;charset=utf-8," + csvContent);
-            const link = document.createElement("a");
-            link.setAttribute("href", encodedUri);
-            link.setAttribute("download", "report_data.csv");
-            document.body.appendChild(link); link.click(); link.remove();
         }
 
-        // --- 🔌 分頁功能擴充邏輯 ---
-        function renderTabs() {
-            const bar = document.getElementById('tab-list');
-            bar.innerHTML = allTabs.map(t => `<div class="tab-item ${t.id === currentTabId ? 'active' : ''}" onclick="switchTab('${t.id}')" oncontextmenu="renameTab(event, '${t.id}')">${t.name}</div>`).join('');
-        }
+        // 輔助：根據意圖組裝文字
+        function generatePrompt(type, data) {
+            let instructions = "";
+            let role = "";
 
-        function createNewTab() {
-            const name = prompt("請輸入新分頁名稱 (建議 4 個字以內)：");
-            if (!name) return;
-            const newId = 'tab_' + Date.now();
-            allTabs.push({ id: newId, name: name });
-            localStorage.setItem('timeline_tabs_meta', JSON.stringify(allTabs));
-            renderTabs();
-            switchTab(newId);
-        }
-
-        function switchTab(id) {
-            if (currentTabId === id) return;
-            performActualSave();
-            currentTabId = id;
-            init();
-        }
-
-        function renameTab(e, id) {
-            e.preventDefault(); 
-            if (id === 'main') { alert('主工作區不能改名或刪除'); return; }
-            if (confirm('確定要刪除這個分頁嗎？(裡面的資料也會消失)')) {
-                 if (confirm('再次確認刪除？無法復原！')) {
-                     localStorage.removeItem(`timeline_v47_data_${id}`);
-                     localStorage.removeItem(`timeline_v47_notes_${id}`);
-                     localStorage.removeItem(`timeline_v47_stickers_${id}`);
-                     allTabs = allTabs.filter(t => t.id !== id);
-                     localStorage.setItem('timeline_tabs_meta', JSON.stringify(allTabs));
-                     currentTabId = 'main';
-                     init();
-                 }
+            switch(type) {
+                case "1": // 週報
+                    role = "你是一位專業的專案經理，擅長撰寫清晰、有條理的進度報告。";
+                    instructions = "請根據以下資料，為我撰寫一份「工作週報」。請將內容依專案分類，並標註進度與關鍵產出。語氣要專業且精簡。";
+                    break;
+                case "2": // 摘要
+                    role = "你是一位邏輯清晰的分析師。";
+                    instructions = "請閱讀以下資料，幫我歸納出 3-5 個最重要的「核心重點」。";
+                    break;
+                case "3": // 關聯
+                    role = "你是一位善於洞察趨勢的顧問。";
+                    instructions = "請分析以下資料，告訴我這些事件之間是否有因果關係？或者有哪些潛在的風險需要注意？";
+                    break;
+                case "4": // 純複製
+                    return JSON.stringify(data, null, 2);
+                default:
+                    role = "你是一個有用的助手。";
+                    instructions = "請處理以下資料：";
             }
+
+            // 蒐集所有便利貼作為「參考備忘」
+            const allNotes = Array.from(document.querySelectorAll('.sticky-note .note-content')).map(div => div.innerText.replace(/\n/g, ' ')).filter(text => text.trim() !== "");
+            
+            // 組裝卡片資料區塊
+            let dataBlock = "【主要時間軸項目】：\n\n" + data.map((item, idx) => {
+                return `[項目 ${idx+1}] (${item.date}) 【${item.project}】${item.label}\n內容：${item.content}`;
+            }).join('\n\n----------------\n\n');
+
+            // 如果有便利貼，加到資料塊後面
+            if (allNotes.length > 0) {
+                dataBlock += "\n\n================\n\n【參考備忘錄 (Sticky Notes)】：\n\n" + allNotes.map((note, idx) => `[備忘 ${idx+1}] ${note}`).join('\n\n');
+            }
+
+            // 最終提示詞格式
+            return `${role}\n\n${instructions}\n\n【原始資料如下】：\n\n${dataBlock}`;
         }
 
-        // [移動卡片邏輯修正版]
-        function moveCardToTab(btn) {
-            const item = btn.closest('.timeline-item');
-            if (!item) { alert('找不到卡片物件，請刷新頁面再試。'); return; }
-            const otherTabs = allTabs.filter(t => t.id !== currentTabId);
-            if (otherTabs.length === 0) { alert('❌ 無處可去！\n\n請先按左下方的「＋」建立一個新分頁 (例如: 歸檔區)，才能進行移動。'); return; }
-            
-            let msg = "請輸入要移動到的「目標分頁編號」：\n------------------\n";
-            otherTabs.forEach((t, index) => { msg += `[ ${index + 1} ]  ${t.name}\n`; });
-
-            const choice = prompt(msg);
-            if (choice === null) return; 
-
-            const index = parseInt(choice) - 1;
-            if (!isNaN(index) && otherTabs[index]) {
-                const targetTab = otherTabs[index];
-                const targetId = targetTab.id;
+        // --- 📅 ICS 匯入功能 (新) ---
+        function handleICSUpload(input) {
+            const file = input.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
                 try {
-                    const cardData = {
-                        pos: item.classList.contains('force-left')?'left':(item.classList.contains('force-right')?'right':'auto'),
-                        mode: item.classList.contains('range-mode')?'range':'normal',
-                        color: item.querySelector('.card').dataset.color || 'blue',
-                        status: 0, 
-                        isMemo: item.querySelector('.card').classList.contains('memo-mode'),
-                        project: item.querySelector('.footer-project-input').value,
-                        label: item.querySelector('.label-input').value,
-                        date_single: item.querySelector('.single-date').value,
-                        date_start: item.querySelector('.date-start').value,
-                        date_end: item.querySelector('.date-end').value,
-                        content: item.querySelector('.content').innerHTML
+                    const icsData = e.target.result;
+                    parseICS(icsData);
+                } catch (err) {
+                    console.error(err);
+                    alert('ICS 檔案解析失敗');
+                }
+                input.value = '';
+            };
+            reader.readAsText(file);
+        }
+
+        function parseICS(icsData) {
+            // 簡單正則解析
+            const events = icsData.match(/BEGIN:VEVENT[\s\S]*?END:VEVENT/g);
+            if (!events) { alert('檔案中找不到任何活動'); return; }
+            
+            let count = 0;
+            events.forEach(eventBlock => {
+                const summaryMatch = eventBlock.match(/SUMMARY:(.*)/);
+                const descMatch = eventBlock.match(/DESCRIPTION:([\s\S]*?)(?=\n[A-Z]+:)/); // 粗略抓取描述
+                const dtStartMatch = eventBlock.match(/DTSTART(?:;VALUE=DATE)?:(\d{8}(?:T\d{6}Z?)?)/);
+                
+                if (summaryMatch && dtStartMatch) {
+                    let title = summaryMatch[1].trim();
+                    let dateRaw = dtStartMatch[1];
+                    // 格式轉換: 20250101 -> 2025-01-01
+                    let y = dateRaw.substring(0, 4);
+                    let m = dateRaw.substring(4, 6);
+                    let d = dateRaw.substring(6, 8);
+                    let formattedDate = `${y}-${m}-${d}`;
+                    
+                    let content = descMatch ? descMatch[1].replace(/\\n/g, '<br>').trim() : '';
+                    
+                    const newItem = {
+                        id: Date.now() + Math.random(), 
+                        pos: 'auto', mode: 'normal', color: 'blue', status: 0, isMemo: false,
+                        project: '日曆匯入', label: title, date_single: formattedDate, date_start: '', date_end: '', 
+                        content: content
                     };
-                    const targetKey = targetId === 'main' ? 'timeline_v47_data' : `timeline_v47_data_${targetId}`;
-                    const targetRaw = localStorage.getItem(targetKey);
-                    let targetData = targetRaw ? JSON.parse(targetRaw) : [];
-                    targetData.push(cardData);
-                    localStorage.setItem(targetKey, JSON.stringify(targetData));
-                    item.remove();
-                    autoSave(); 
-                    alert(`✅ 成功！\n\n這張卡片已經移動到「${targetTab.name}」了。`);
-                } catch (error) { console.error(error); alert('移動失敗：發生未預期的錯誤，請查看 Console (F12)。'); }
-            } else { alert(`❌ 移動失敗\n\n您輸入的編號 "${choice}" 無效。\n請輸入清單上顯示的數字 (例如 1)。`); }
+                    const el = createNodeElement(newItem);
+                    container.appendChild(el);
+                    count++;
+                }
+            });
+            autoSave();
+            alert(`成功匯入 ${count} 個活動！`);
         }
         
         init();
