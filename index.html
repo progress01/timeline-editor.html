@@ -15,7 +15,7 @@
         #save-light.unsaved { background-color: #ef4444; box-shadow: 0 0 8px #ef4444; animation: pulse-red 1s infinite; }
         @keyframes pulse-red { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.9); } 100% { opacity: 1; transform: scale(1); } }
 
-        /* --- 📋 貼上與彈窗通用樣式 --- */
+        /* --- 📋 彈窗通用樣式 --- */
         #paste-dialog, #pomo-dialog, #notebook-dialog { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 8000; align-items: center; justify-content: center; backdrop-filter: blur(2px); }
         .paste-modal { background: white; padding: 25px; border-radius: 12px; width: 340px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); text-align: center; border: 1px solid #e2e8f0; animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         @keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
@@ -29,8 +29,8 @@
 
         /* --- 工具列 --- */
         .toolbar { position: fixed; top: 0; left: 0; right: 0; background: #1e293b; color: white; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; z-index: 2000; height: 60px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
-        .tool-left { display: flex; align-items: center; gap: 15px; flex-shrink: 0; overflow-x: auto; }
-        .tool-right { display: flex; align-items: center; gap: 10px; margin-left: auto; }
+        .tool-left { display: flex; align-items: center; gap: 15px; flex-shrink: 0; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        .tool-right { display: flex; align-items: center; gap: 10px; margin-left: auto; flex-shrink: 0; }
         .tool-title { font-weight: bold; font-size: 1.1rem; display: flex; align-items: center; gap: 10px; white-space: nowrap; }
         .search-box { position: relative; display: flex; align-items: center; gap: 10px; }
         .search-input { background: #334155; border: 1px solid #475569; color: white; padding: 6px 10px 6px 30px; border-radius: 20px; font-size: 0.9rem; width: 120px; transition: width 0.3s; outline: none; }
@@ -230,6 +230,8 @@
         .duration-bar-fill { height: 100%; border-radius: 3px; opacity: 0.7; }
         .duration-text { font-size: 0.7rem; color: #94a3b8; margin-top: 2px; }
         .chronicle-title { font-size: 1.1rem; font-weight: 800; color: #1e293b; margin-bottom: 4px; line-height: 1.4; display: flex; align-items: center; flex-wrap: wrap; }
+        
+        /* [修正] 大事記內文可編輯樣式 */
         .chronicle-desc { font-size: 0.95rem; color: #475569; white-space: pre-wrap; line-height: 1.6; outline: none; padding: 2px; border: 1px solid transparent; border-radius: 4px; transition: border 0.2s; }
         .chronicle-desc:focus { border-color: #cbd5e1; background: white; }
 
@@ -266,8 +268,8 @@
             .timeline-item .card { width: 100% !important; margin: 0 0 20px 0 !important; } .timeline::before { left: 10px; } .dot { left: 10px; }
             
             /* 手機版優化: 隱藏甘特圖與檢視切換，但保留番茄鐘與筆記本 */
-            .tool-right .view-select, .tool-right .gantt-switch-btn { display: none; }
-            .tool-right { gap: 5px; }
+            .tool-right .view-select, .tool-right .gantt-switch-btn { display: none !important; }
+            .tool-right { gap: 5px; margin-left: 0; }
             
             .chronicle-line { left: 20px; } .chronicle-date-col { display: none; } .chronicle-content-col { margin-left: 30px; border-left: 2px solid #e2e8f0; padding-left: 15px; } .chronicle-dot-col { display: none; }
         }
@@ -559,7 +561,7 @@
                         createStickyElement({ id: note.id, x: rect.left + window.scrollX, y: rect.top + window.scrollY, w: rect.width, h: rect.height, content: text.replace(/\n/g, '<br>') });
                     }
                 });
-            } catch (e) { console.error("Critical Error during init:", e); alert("資料讀取發生錯誤，請檢查 Console 或嘗試匯入備份。"); } finally { isLoading = false; }
+            } catch (e) { console.error("Init Error:", e); } finally { isLoading = false; }
         }
 
         // [核心] 存檔邏輯 (含防呆)
@@ -601,6 +603,7 @@
         function gatherData() {
             return Array.from(document.querySelectorAll('.timeline-item')).map(item => {
                 const card = item.querySelector('.card'); const dot = item.querySelector('.status-dot');
+                if (!card || !dot) return null; // Null Check
                 const id = item.dataset.id || Date.now(); 
                 let status = 0; if(dot.classList.contains('status-1')) status = 1; else if(dot.classList.contains('status-2')) status = 2; else if(dot.classList.contains('status-3')) status = 3;
                 return {
@@ -612,7 +615,7 @@
                     date_single: item.querySelector('.single-date').value, date_start: item.querySelector('.date-start').value, date_end: item.querySelector('.date-end').value,
                     content: item.querySelector('.content').innerHTML, card_w: card.style.width, card_h: card.style.minHeight
                 };
-            });
+            }).filter(i => i !== null);
         }
         function gatherNotes() { return Array.from(document.querySelectorAll('.sticky-note')).map(n => ({ id: n.id, x: parseInt(n.style.left), y: parseInt(n.style.top), w: n.style.width ? parseInt(n.style.width) : null, h: n.style.height ? parseInt(n.style.height) : null, content: n.querySelector('.note-content').innerHTML })); }
         function gatherStickers() { return Array.from(document.querySelectorAll('.sticker')).map(s => ({ id: s.id, type: s.dataset.type, x: parseInt(s.style.left), y: parseInt(s.style.top), w: s.style.width ? parseInt(s.style.width) : null, h: s.style.height ? parseInt(s.style.height) : null, content: s.dataset.type === 'image' ? s.querySelector('img').src : null })); }
@@ -633,8 +636,8 @@
                     <div class="resize-handle" onmousedown="resizeCard(event)">↘</div>
                     <div class="card-side-tools">
                         <button class="btn-icon side-btn" onclick="changeColor(this)" title="換色">🎨</button>
-                        <button class="btn-icon side-btn" onclick="moveNode(this,'up')">⬆️</button>
-                        <button class="btn-icon side-btn" onclick="moveNode(this,'down')">⬇️</button>
+                        <button class="btn-icon side-btn mobile-hidden" onclick="moveNode(this,'up')">⬆️</button>
+                        <button class="btn-icon side-btn mobile-hidden" onclick="moveNode(this,'down')">⬇️</button>
                         <button class="btn-icon side-btn mobile-hidden" onclick="togglePos(this,'left')">⬅️</button>
                         <button class="btn-icon side-btn mobile-hidden" onclick="togglePos(this,'right')">➡️</button>
                     </div>
