@@ -1236,542 +1236,535 @@
         // 🚀 啟動
         init();
     </script>
+
     <style>
-    /* --- 外掛樣式區 --- */
-    .plugin-link-area { border-top: 1px dashed #cbd5e1; margin-top: 10px; padding-top: 10px; background: #f8fafc; padding: 10px; border-radius: 8px; }
-    .plugin-link-title { font-size: 0.85rem; font-weight: bold; color: #64748b; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
-    .plugin-link-list { display: flex; flex-wrap: wrap; gap: 8px; max-height: 100px; overflow-y: auto; }
-    .plugin-link-tag { background: white; border: 1px solid #e2e8f0; color: #4f46e5; font-size: 0.8rem; padding: 4px 10px; border-radius: 20px; cursor: pointer; display: flex; align-items: center; gap: 5px; transition: 0.2s; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
-    .plugin-link-tag:hover { background: #eff6ff; border-color: #4f46e5; }
-    .plugin-link-del { color: #ef4444; font-weight: bold; margin-left: 5px; padding: 0 4px; border-radius: 50%; }
-    .plugin-link-del:hover { background: #fee2e2; }
-    .plugin-paste-btn { background: #4f46e5; color: white; border: none; padding: 2px 8px; border-radius: 4px; cursor: pointer; font-size: 0.75rem; }
-    .plugin-paste-btn:disabled { background: #cbd5e1; cursor: not-allowed; }
-    .btn-link-copy { color: #0ea5e9; }
-</style>
+        /* --- 外掛樣式區 --- */
+        .plugin-link-area { border-top: 1px dashed #cbd5e1; margin-top: 10px; padding-top: 10px; background: #f8fafc; padding: 10px; border-radius: 8px; }
+        .plugin-link-title { font-size: 0.85rem; font-weight: bold; color: #64748b; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+        .plugin-link-list { display: flex; flex-wrap: wrap; gap: 8px; max-height: 100px; overflow-y: auto; }
+        .plugin-link-tag { background: white; border: 1px solid #e2e8f0; color: #4f46e5; font-size: 0.8rem; padding: 4px 10px; border-radius: 20px; cursor: pointer; display: flex; align-items: center; gap: 5px; transition: 0.2s; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+        .plugin-link-tag:hover { background: #eff6ff; border-color: #4f46e5; }
+        .plugin-link-del { color: #ef4444; font-weight: bold; margin-left: 5px; padding: 0 4px; border-radius: 50%; }
+        .plugin-link-del:hover { background: #fee2e2; }
+        .plugin-paste-btn { background: #4f46e5; color: white; border: none; padding: 2px 8px; border-radius: 4px; cursor: pointer; font-size: 0.75rem; }
+        .plugin-paste-btn:disabled { background: #cbd5e1; cursor: not-allowed; }
+        .btn-link-copy { color: #0ea5e9; }
+    </style>
 
-<script>
-(function() {
-    console.log('🔧 正在載入整合修補包...');
+    <script>
+    (function() {
+        console.log('🔧 正在載入整合修補包...');
 
-    // ============================================================
-    // 1. 🏹 修復箭頭縮放 (覆寫 createStickerElement)
-    // ============================================================
-    window.createStickerElement = function(data) {
-        const div = document.createElement('div'); 
-        div.className = 'sticker'; 
-        div.id = data.id; 
-        div.dataset.type = data.type; 
-        div.style.left = data.x + 'px'; 
-        div.style.top = data.y + 'px'; 
-        if (data.w) div.style.width = data.w + 'px'; 
-        if (data.h) div.style.height = data.h + 'px';
-        
-        let content = ''; 
-        if (data.type === 'arrow-up') content = '<svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><path d="M12 19V5M5 12l7-7 7 7"/></svg>'; 
-        else if (data.type === 'arrow-right') content = '<svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>'; 
-        else if (data.type === 'arrow-down') content = '<svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg>'; 
-        else if (data.type === 'arrow-left') content = '<svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>'; 
-        else if (data.type === 'circle-red') content = '<svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="3"><circle cx="12" cy="12" r="10"/></svg>'; 
-        else if (data.type === 'rect-blue') content = '<svg viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="3"><rect x="2" y="4" width="20" height="16" rx="2"/></svg>'; 
-        else if (data.type === 'image') content = `<img src="${data.content}">`;
+        // ============================================================
+        // 1. 🏹 修復箭頭縮放 (覆寫 createStickerElement)
+        // ============================================================
+        window.createStickerElement = function(data) {
+            const div = document.createElement('div'); 
+            div.className = 'sticker'; 
+            div.id = data.id; 
+            div.dataset.type = data.type; 
+            div.style.left = data.x + 'px'; 
+            div.style.top = data.y + 'px'; 
+            if (data.w) div.style.width = data.w + 'px'; 
+            if (data.h) div.style.height = data.h + 'px';
+            
+            let content = ''; 
+            if (data.type === 'arrow-up') content = '<svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><path d="M12 19V5M5 12l7-7 7 7"/></svg>'; 
+            else if (data.type === 'arrow-right') content = '<svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>'; 
+            else if (data.type === 'arrow-down') content = '<svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg>'; 
+            else if (data.type === 'arrow-left') content = '<svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>'; 
+            else if (data.type === 'circle-red') content = '<svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="3"><circle cx="12" cy="12" r="10"/></svg>'; 
+            else if (data.type === 'rect-blue') content = '<svg viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="3"><rect x="2" y="4" width="20" height="16" rx="2"/></svg>'; 
+            else if (data.type === 'image') content = `<img src="${data.content}">`;
 
-        // [關鍵修復]：加入 data.type.startsWith('arrow') 判斷
-        let allowResize = (data.type.startsWith('arrow') || data.type === 'circle-red' || data.type === 'rect-blue' || data.type === 'image');
-        let resizeHandle = allowResize ? '<div class="resize-handle" onmousedown="resizeSticker(event)">↘</div>' : ''; 
-        
-        div.innerHTML = `<div class="sticker-del" onclick="deleteSticky(this)">×</div>${content}${resizeHandle}`; 
-        document.body.appendChild(div); 
-        makeDraggable(div);
-    };
-
-
-    // ============================================================
-    // 2. 🔗 全域筆記連結外掛 (Monkey Patching)
-    // ============================================================
-    let pendingLink = null;
-
-    // 擴充 createNodeElement：加入連結按鈕
-    const originalCreateNode = window.createNodeElement;
-    window.createNodeElement = function(item) {
-        const div = originalCreateNode(item);
-        const toolGroup = div.querySelector('.card-top-right');
-        if (toolGroup) {
-            const linkBtn = document.createElement('button');
-            linkBtn.className = 'btn-icon btn-link-copy';
-            linkBtn.innerHTML = '🔗';
-            linkBtn.title = '複製連結';
-            linkBtn.onclick = function() {
-                const proj = div.querySelector('.footer-project-input').value;
-                const label = div.querySelector('.label-input').value || '未命名卡片';
-                const tabId = window.currentTabId || 'main'; 
-                const tabName = window.allTabs.find(t => t.id === tabId)?.name || '主分頁';
-                pendingLink = { id: item.id, tabId: tabId, title: `[${tabName}] ${label}` };
-                
-                const originalText = linkBtn.innerHTML;
-                linkBtn.innerHTML = '✅';
-                setTimeout(() => linkBtn.innerHTML = originalText, 1000);
-            };
-            toolGroup.prepend(linkBtn);
-        }
-        return div;
-    };
-
-    // 擴充 renderNotebook：顯示連結區塊
-    const originalRenderNotebook = window.renderNotebook;
-    window.renderNotebook = function() {
-        originalRenderNotebook();
-        const contentArea = document.getElementById('nb-content-area');
-        if (!contentArea) return;
-        if (!window.notebookData._links) window.notebookData._links = [];
-        
-        const pluginArea = document.createElement('div');
-        pluginArea.className = 'plugin-link-area';
-        const header = document.createElement('div');
-        header.className = 'plugin-link-title';
-        header.innerHTML = `<span>🔗 關聯卡片</span><button class="plugin-paste-btn" id="plugin-paste-btn">＋ 貼上連結</button>`;
-        const list = document.createElement('div');
-        list.className = 'plugin-link-list';
-        
-        window.notebookData._links.forEach((link, index) => {
-            const tag = document.createElement('div');
-            tag.className = 'plugin-link-tag';
-            tag.innerHTML = `<span onclick="pluginJumpTo('${link.tabId}', '${link.id}')">${link.title}</span>`;
-            const delBtn = document.createElement('span');
-            delBtn.className = 'plugin-link-del';
-            delBtn.innerHTML = '×';
-            delBtn.onclick = function(e) {
-                e.stopPropagation();
-                window.notebookData._links.splice(index, 1);
-                window.saveNotebook();
-                window.renderNotebook();
-            };
-            tag.appendChild(delBtn);
-            list.appendChild(tag);
-        });
-
-        pluginArea.appendChild(header);
-        pluginArea.appendChild(list);
-        const dialogContainer = document.querySelector('#notebook-dialog > div');
-        const oldPlugin = dialogContainer.querySelector('.plugin-link-area');
-        if (oldPlugin) oldPlugin.remove();
-        const hintDiv = dialogContainer.querySelector('div[style*="text-align:right"]');
-        dialogContainer.insertBefore(pluginArea, hintDiv);
-
-        const pasteBtn = document.getElementById('plugin-paste-btn');
-        if (!pendingLink) { pasteBtn.disabled = true; pasteBtn.innerText = '請先在卡片點擊 🔗'; } 
-        else {
-            pasteBtn.onclick = function() {
-                window.notebookData._links.push(pendingLink);
-                window.saveNotebook();
-                window.renderNotebook();
-                pendingLink = null;
-            };
-        }
-    };
-
-    // 連結跳轉邏輯
-    window.pluginJumpTo = function(targetTabId, cardId) {
-        window.closeNotebook();
-        if (window.currentTabId !== targetTabId) {
-            window.switchTab(targetTabId);
-            setTimeout(() => { scrollToCard(cardId); }, 300);
-        } else { scrollToCard(cardId); }
-    };
-
-    function scrollToCard(cardId) {
-        const targetCard = document.querySelector(`.timeline-item[data-id="${cardId}"]`);
-        if (targetCard) {
-            targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            targetCard.style.transition = '0.5s';
-            targetCard.style.boxShadow = '0 0 20px #f59e0b';
-            setTimeout(() => { targetCard.style.boxShadow = ''; }, 1000);
-        } else { alert('找不到該卡片。'); }
-    }
-
-
-    // ============================================================
-    // 3. 💾 全站備份與還原 (Override)
-    // ============================================================
-    window.downloadJSON = function() {
-        const allTabsMeta = window.allTabs || [{id: 'main', name: '主工作區'}];
-        const fullBackup = {
-            version: "2.0_full_site",
-            timestamp: new Date().toISOString(),
-            tabs_meta: allTabsMeta,
-            notebook: JSON.parse(localStorage.getItem('timeline_global_notebook') || '{}'),
-            workspaces: {}
+            // [關鍵修復]：加入 data.type.startsWith('arrow') 判斷
+            let allowResize = (data.type.startsWith('arrow') || data.type === 'circle-red' || data.type === 'rect-blue' || data.type === 'image');
+            let resizeHandle = allowResize ? '<div class="resize-handle" onmousedown="resizeSticker(event)">↘</div>' : ''; 
+            
+            div.innerHTML = `<div class="sticker-del" onclick="deleteSticky(this)">×</div>${content}${resizeHandle}`; 
+            document.body.appendChild(div); 
+            makeDraggable(div);
         };
 
-        allTabsMeta.forEach(tab => {
-            const id = tab.id;
-            const dKey = id === 'main' ? 'timeline_v47_data' : `timeline_v47_data_${id}`;
-            const nKey = id === 'main' ? 'timeline_v47_notes' : `timeline_v47_notes_${id}`;
-            const sKey = id === 'main' ? 'timeline_v47_stickers' : `timeline_v47_stickers_${id}`;
-            fullBackup.workspaces[id] = {
-                data: JSON.parse(localStorage.getItem(dKey) || '[]'),
-                notes: JSON.parse(localStorage.getItem(nKey) || '[]'),
-                stickers: JSON.parse(localStorage.getItem(sKey) || '[]')
-            };
-        });
 
-        const blob = new Blob([JSON.stringify(fullBackup, null, 2)], { type: 'application/json' });
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        const d = new Date(); 
-        const dateStr = `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
-        link.download = `backup_FULL_${dateStr}.json`;
-        link.click();
-    };
+        // ============================================================
+        // 2. 🔗 全域筆記連結外掛 (Monkey Patching)
+        // ============================================================
+        let pendingLink = null;
 
-    window.loadJSON = function(input) {
-        const file = input.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            try {
-                const json = JSON.parse(e.target.result);
-                if (json.version === "2.0_full_site" && json.workspaces) {
-                    if (confirm('⚠️ 偵測到【全站完整備份】\n\n這將覆蓋「所有分頁」資料。\n確定要還原嗎？')) {
-                        localStorage.setItem('timeline_tabs_meta', JSON.stringify(json.tabs_meta));
-                        localStorage.setItem('timeline_global_notebook', JSON.stringify(json.notebook));
-                        Object.keys(json.workspaces).forEach(id => {
-                            const ws = json.workspaces[id];
-                            const dKey = id === 'main' ? 'timeline_v47_data' : `timeline_v47_data_${id}`;
-                            const nKey = id === 'main' ? 'timeline_v47_notes' : `timeline_v47_notes_${id}`;
-                            const sKey = id === 'main' ? 'timeline_v47_stickers' : `timeline_v47_stickers_${id}`;
-                            localStorage.setItem(dKey, JSON.stringify(ws.data));
-                            localStorage.setItem(nKey, JSON.stringify(ws.notes));
-                            localStorage.setItem(sKey, JSON.stringify(ws.stickers));
-                        });
-                        alert('✅ 全站還原成功！');
-                        location.reload();
-                    }
-                } else {
-                    if (confirm('偵測到【單頁備份】\n\n這只會覆蓋「目前分頁」資料。\n確定要還原嗎？')) {
-                        const currentTabId = window.currentTabId || 'main';
-                        const dKey = currentTabId === 'main' ? 'timeline_v47_data' : `timeline_v47_data_${currentTabId}`;
-                        const nKey = currentTabId === 'main' ? 'timeline_v47_notes' : `timeline_v47_notes_${currentTabId}`;
-                        const sKey = currentTabId === 'main' ? 'timeline_v47_stickers' : `timeline_v47_stickers_${currentTabId}`;
-                        localStorage.setItem(dKey, JSON.stringify(json.data || []));
-                        localStorage.setItem(nKey, JSON.stringify(json.notes || []));
-                        localStorage.setItem(sKey, JSON.stringify(json.stickers || []));
-                        if(json.notebook) localStorage.setItem('timeline_global_notebook', JSON.stringify(json.notebook));
-                        alert('✅ 單頁還原成功！');
-                        location.reload();
-                    }
-                }
-            } catch (err) { console.error(err); alert('檔案格式錯誤。'); }
+        // 擴充 createNodeElement：加入連結按鈕
+        const originalCreateNode = window.createNodeElement;
+        window.createNodeElement = function(item) {
+            const div = originalCreateNode(item);
+            const toolGroup = div.querySelector('.card-top-right');
+            if (toolGroup) {
+                const linkBtn = document.createElement('button');
+                linkBtn.className = 'btn-icon btn-link-copy';
+                linkBtn.innerHTML = '🔗';
+                linkBtn.title = '複製連結';
+                linkBtn.onclick = function() {
+                    const proj = div.querySelector('.footer-project-input').value;
+                    const label = div.querySelector('.label-input').value || '未命名卡片';
+                    const tabId = window.currentTabId || 'main'; 
+                    const tabName = window.allTabs.find(t => t.id === tabId)?.name || '主分頁';
+                    pendingLink = { id: item.id, tabId: tabId, title: `[${tabName}] ${label}` };
+                    
+                    const originalText = linkBtn.innerHTML;
+                    linkBtn.innerHTML = '✅';
+                    setTimeout(() => linkBtn.innerHTML = originalText, 1000);
+                };
+                toolGroup.prepend(linkBtn);
+            }
+            return div;
         };
-        reader.readAsText(file);
-        input.value = '';
-    };
 
-    console.log('✅ 整合修補包載入完成');
-})();
-</script>
+        // 擴充 renderNotebook：顯示連結區塊
+        const originalRenderNotebook = window.renderNotebook;
+        window.renderNotebook = function() {
+            originalRenderNotebook();
+            const contentArea = document.getElementById('nb-content-area');
+            if (!contentArea) return;
+            if (!window.notebookData._links) window.notebookData._links = [];
+            
+            const pluginArea = document.createElement('div');
+            pluginArea.className = 'plugin-link-area';
+            const header = document.createElement('div');
+            header.className = 'plugin-link-title';
+            header.innerHTML = `<span>🔗 關聯卡片</span><button class="plugin-paste-btn" id="plugin-paste-btn">＋ 貼上連結</button>`;
+            const list = document.createElement('div');
+            list.className = 'plugin-link-list';
+            
+            window.notebookData._links.forEach((link, index) => {
+                const tag = document.createElement('div');
+                tag.className = 'plugin-link-tag';
+                tag.innerHTML = `<span onclick="pluginJumpTo('${link.tabId}', '${link.id}')">${link.title}</span>`;
+                const delBtn = document.createElement('span');
+                delBtn.className = 'plugin-link-del';
+                delBtn.innerHTML = '×';
+                delBtn.onclick = function(e) {
+                    e.stopPropagation();
+                    window.notebookData._links.splice(index, 1);
+                    window.saveNotebook();
+                    window.renderNotebook();
+                };
+                tag.appendChild(delBtn);
+                list.appendChild(tag);
+            });
+
+            pluginArea.appendChild(header);
+            pluginArea.appendChild(list);
+            const dialogContainer = document.querySelector('#notebook-dialog > div');
+            const oldPlugin = dialogContainer.querySelector('.plugin-link-area');
+            if (oldPlugin) oldPlugin.remove();
+            const hintDiv = dialogContainer.querySelector('div[style*="text-align:right"]');
+            dialogContainer.insertBefore(pluginArea, hintDiv);
+
+            const pasteBtn = document.getElementById('plugin-paste-btn');
+            if (!pendingLink) { pasteBtn.disabled = true; pasteBtn.innerText = '請先在卡片點擊 🔗'; } 
+            else {
+                pasteBtn.onclick = function() {
+                    window.notebookData._links.push(pendingLink);
+                    window.saveNotebook();
+                    window.renderNotebook();
+                    pendingLink = null;
+                };
+            }
+        };
+
+        // 連結跳轉邏輯
+        window.pluginJumpTo = function(targetTabId, cardId) {
+            window.closeNotebook();
+            if (window.currentTabId !== targetTabId) {
+                window.switchTab(targetTabId);
+                setTimeout(() => { scrollToCard(cardId); }, 300);
+            } else { scrollToCard(cardId); }
+        };
+
+        function scrollToCard(cardId) {
+            const targetCard = document.querySelector(`.timeline-item[data-id="${cardId}"]`);
+            if (targetCard) {
+                targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                targetCard.style.transition = '0.5s';
+                targetCard.style.boxShadow = '0 0 20px #f59e0b';
+                setTimeout(() => { targetCard.style.boxShadow = ''; }, 1000);
+            } else { alert('找不到該卡片。'); }
+        }
+
+
+        // ============================================================
+        // 3. 💾 全站備份與還原 (Override)
+        // ============================================================
+        window.downloadJSON = function() {
+            const allTabsMeta = window.allTabs || [{id: 'main', name: '主工作區'}];
+            const fullBackup = {
+                version: "2.0_full_site",
+                timestamp: new Date().toISOString(),
+                tabs_meta: allTabsMeta,
+                notebook: JSON.parse(localStorage.getItem('timeline_global_notebook') || '{}'),
+                workspaces: {}
+            };
+
+            allTabsMeta.forEach(tab => {
+                const id = tab.id;
+                const dKey = id === 'main' ? 'timeline_v47_data' : `timeline_v47_data_${id}`;
+                const nKey = id === 'main' ? 'timeline_v47_notes' : `timeline_v47_notes_${id}`;
+                const sKey = id === 'main' ? 'timeline_v47_stickers' : `timeline_v47_stickers_${id}`;
+                fullBackup.workspaces[id] = {
+                    data: JSON.parse(localStorage.getItem(dKey) || '[]'),
+                    notes: JSON.parse(localStorage.getItem(nKey) || '[]'),
+                    stickers: JSON.parse(localStorage.getItem(sKey) || '[]')
+                };
+            });
+
+            const blob = new Blob([JSON.stringify(fullBackup, null, 2)], { type: 'application/json' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            const d = new Date(); 
+            const dateStr = `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
+            link.download = `backup_FULL_${dateStr}.json`;
+            link.click();
+        };
+
+        window.loadJSON = function(input) {
+            const file = input.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const json = JSON.parse(e.target.result);
+                    if (json.version === "2.0_full_site" && json.workspaces) {
+                        if (confirm('⚠️ 偵測到【全站完整備份】\n\n這將覆蓋「所有分頁」資料。\n確定要還原嗎？')) {
+                            localStorage.setItem('timeline_tabs_meta', JSON.stringify(json.tabs_meta));
+                            localStorage.setItem('timeline_global_notebook', JSON.stringify(json.notebook));
+                            Object.keys(json.workspaces).forEach(id => {
+                                const ws = json.workspaces[id];
+                                const dKey = id === 'main' ? 'timeline_v47_data' : `timeline_v47_data_${id}`;
+                                const nKey = id === 'main' ? 'timeline_v47_notes' : `timeline_v47_notes_${id}`;
+                                const sKey = id === 'main' ? 'timeline_v47_stickers' : `timeline_v47_stickers_${id}`;
+                                localStorage.setItem(dKey, JSON.stringify(ws.data));
+                                localStorage.setItem(nKey, JSON.stringify(ws.notes));
+                                localStorage.setItem(sKey, JSON.stringify(ws.stickers));
+                            });
+                            alert('✅ 全站還原成功！');
+                            location.reload();
+                        }
+                    } else {
+                        if (confirm('偵測到【單頁備份】\n\n這只會覆蓋「目前分頁」資料。\n確定要還原嗎？')) {
+                            const currentTabId = window.currentTabId || 'main';
+                            const dKey = currentTabId === 'main' ? 'timeline_v47_data' : `timeline_v47_data_${currentTabId}`;
+                            const nKey = currentTabId === 'main' ? 'timeline_v47_notes' : `timeline_v47_notes_${currentTabId}`;
+                            const sKey = currentTabId === 'main' ? 'timeline_v47_stickers' : `timeline_v47_stickers_${currentTabId}`;
+                            localStorage.setItem(dKey, JSON.stringify(json.data || []));
+                            localStorage.setItem(nKey, JSON.stringify(json.notes || []));
+                            localStorage.setItem(sKey, JSON.stringify(json.stickers || []));
+                            if(json.notebook) localStorage.setItem('timeline_global_notebook', JSON.stringify(json.notebook));
+                            alert('✅ 單頁還原成功！');
+                            location.reload();
+                        }
+                    }
+                } catch (err) { console.error(err); alert('檔案格式錯誤。'); }
+            };
+            reader.readAsText(file);
+            input.value = '';
+        };
+
+        console.log('✅ 整合修補包載入完成');
+    })();
+    </script>
+
     <style>
-    /* 右鍵選單樣式 */
-    #context-menu {
-        display: none;
-        position: fixed;
-        z-index: 9999;
-        background: white;
-        border: 1px solid #cbd5e1;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        border-radius: 8px;
-        padding: 5px 0;
-        min-width: 150px;
-        animation: fadeIn 0.1s ease;
-    }
-    .ctx-item {
-        padding: 8px 15px;
-        font-size: 0.9rem;
-        color: #334155;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        transition: 0.1s;
-    }
-    .ctx-item:hover { background: #eff6ff; color: #4f46e5; }
-    .ctx-divider { height: 1px; background: #e2e8f0; margin: 4px 0; }
-    .ctx-danger { color: #ef4444; }
-    .ctx-danger:hover { background: #fef2f2; color: #dc2626; }
-    
-    /* 垃圾桶視窗樣式 */
-    #trash-dialog { display: none; position: fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:9500; align-items:center; justify-content:center; }
-    .trash-modal { background: white; width: 500px; max-height: 80vh; border-radius: 12px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
-    .trash-header { padding: 15px; border-bottom: 1px solid #e2e8f0; font-weight: bold; display: flex; justify-content: space-between; background: #f8fafc; }
-    .trash-list { flex: 1; overflow-y: auto; padding: 10px; }
-    .trash-item { padding: 10px; border-bottom: 1px dashed #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
-    .trash-item:last-child { border-bottom: none; }
-    .trash-info { font-size: 0.85rem; color: #64748b; }
-    .trash-title { font-weight: bold; color: #1e293b; display: block; margin-bottom: 2px; }
-    .trash-actions button { padding: 4px 8px; border-radius: 4px; border: 1px solid #cbd5e1; cursor: pointer; background: white; font-size: 0.8rem; margin-left: 5px; }
-    .trash-actions button:hover { background: #f1f5f9; }
+        /* --- 右鍵選單樣式 --- */
+        #context-menu { display: none; position: fixed; z-index: 9999; background: white; border: 1px solid #cbd5e1; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border-radius: 8px; padding: 5px 0; min-width: 160px; animation: fadeIn 0.1s ease; }
+        .ctx-item { padding: 8px 15px; font-size: 0.9rem; color: #334155; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: 0.1s; }
+        .ctx-item:hover { background: #eff6ff; color: #4f46e5; }
+        .ctx-divider { height: 1px; background: #e2e8f0; margin: 4px 0; }
+        .ctx-danger { color: #ef4444; }
+        .ctx-danger:hover { background: #fef2f2; color: #dc2626; }
+        
+        /* --- 垃圾桶樣式 --- */
+        #trash-dialog { display: none; position: fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:9500; align-items:center; justify-content:center; }
+        .trash-modal { background: white; width: 500px; max-height: 80vh; border-radius: 12px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+        .trash-header { padding: 15px; border-bottom: 1px solid #e2e8f0; font-weight: bold; display: flex; justify-content: space-between; background: #f8fafc; }
+        .trash-list { flex: 1; overflow-y: auto; padding: 10px; }
+        .trash-item { padding: 10px; border-bottom: 1px dashed #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
+        .trash-item:last-child { border-bottom: none; }
+        .trash-info { font-size: 0.85rem; color: #64748b; }
+        .trash-title { font-weight: bold; color: #1e293b; display: block; margin-bottom: 2px; }
+        .trash-actions button { padding: 4px 8px; border-radius: 4px; border: 1px solid #cbd5e1; cursor: pointer; background: white; font-size: 0.8rem; margin-left: 5px; }
+        .trash-actions button:hover { background: #f1f5f9; }
+        .trash-toggle-btn { border-color: #94a3b8; color: #64748b; }
 
-    /* 新增垃圾桶按鈕到工具列 */
-    .trash-toggle-btn { border-color: #94a3b8; color: #64748b; }
-</style>
+        /* --- 🔗 美化後的連結卡片樣式 --- */
+        .link-box {
+            display: inline-flex; align-items: center; gap: 8px;
+            background: #f8fafc; border: 1px solid #e2e8f0;
+            border-radius: 6px; padding: 6px 12px; margin: 4px 0;
+            text-decoration: none; color: #334155; font-size: 0.9rem;
+            max-width: 100%; transition: all 0.2s; box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            user-select: none; cursor: pointer;
+        }
+        .link-box:hover { background: #fff; border-color: #3b82f6; color: #2563eb; box-shadow: 0 2px 5px rgba(59, 130, 246, 0.15); transform: translateY(-1px); }
+        .link-icon { font-size: 1.1rem; }
+        .link-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 250px; font-weight: 500; }
+        .link-url { font-size: 0.75rem; color: #94a3b8; margin-left: auto; max-width: 100px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: none; }
+        /* 卡片夠寬時才顯示縮網址 */
+        @media (min-width: 400px) { .link-url { display: block; } }
+    </style>
 
-<div id="context-menu">
-    <div class="ctx-item" onclick="ctxAction('color', 'blue')"><span style="color:#4f46e5">●</span> 藍色</div>
-    <div class="ctx-item" onclick="ctxAction('color', 'green')"><span style="color:#10b981">●</span> 綠色</div>
-    <div class="ctx-item" onclick="ctxAction('color', 'red')"><span style="color:#ef4444">●</span> 紅色</div>
-    <div class="ctx-item" onclick="ctxAction('color', 'yellow')"><span style="color:#f59e0b">●</span> 黃色</div>
-    <div class="ctx-divider"></div>
-    <div class="ctx-item" onclick="ctxAction('copy')">📋 複製內容</div>
-    <div class="ctx-item" onclick="ctxAction('link')">🔗 複製連結</div>
-    <div class="ctx-divider"></div>
-    <div class="ctx-item ctx-danger" onclick="ctxAction('delete')">🗑️ 刪除卡片</div>
-</div>
+    <div id="context-menu">
+        <div class="ctx-item" onclick="ctxAction('color', 'blue')"><span style="color:#4f46e5">●</span> 藍色</div>
+        <div class="ctx-item" onclick="ctxAction('color', 'green')"><span style="color:#10b981">●</span> 綠色</div>
+        <div class="ctx-item" onclick="ctxAction('color', 'red')"><span style="color:#ef4444">●</span> 紅色</div>
+        <div class="ctx-item" onclick="ctxAction('color', 'yellow')"><span style="color:#f59e0b">●</span> 黃色</div>
+        <div class="ctx-divider"></div>
+        <div class="ctx-item" onclick="ctxAction('beautify')">✨ 美化連結 (轉為框框)</div>
+        <div class="ctx-item" onclick="ctxAction('copy')">📋 複製內容</div>
+        <div class="ctx-item" onclick="ctxAction('link')">🔗 複製全域連結</div>
+        <div class="ctx-divider"></div>
+        <div class="ctx-item ctx-danger" onclick="ctxAction('delete')">🗑️ 刪除卡片</div>
+    </div>
 
-<div id="trash-dialog">
-    <div class="trash-modal">
-        <div class="trash-header">
-            <span>🗑️ 垃圾桶 (最近刪除的項目)</span>
-            <span style="cursor:pointer" onclick="closeTrash()">×</span>
-        </div>
-        <div class="trash-list" id="trash-list-content">
-            <div style="text-align:center; padding:20px; color:#94a3b8;">垃圾桶是空的</div>
-        </div>
-        <div style="padding:10px; background:#f8fafc; text-align:right;">
-            <button onclick="emptyTrash()" style="color:#ef4444; border:none; background:transparent; cursor:pointer; font-weight:bold;">清空垃圾桶</button>
+    <div id="trash-dialog">
+        <div class="trash-modal">
+            <div class="trash-header"><span>🗑️ 垃圾桶</span><span style="cursor:pointer" onclick="closeTrash()">×</span></div>
+            <div class="trash-list" id="trash-list-content"></div>
+            <div style="padding:10px; background:#f8fafc; text-align:right;">
+                <button onclick="emptyTrash()" style="color:#ef4444; border:none; background:transparent; cursor:pointer; font-weight:bold;">清空垃圾桶</button>
+            </div>
         </div>
     </div>
-</div>
 
-<script>
-(function() {
-    console.log('🚀 操作體驗增強包載入中...');
+    <script>
+    (function() {
+        console.log('🚀 操作體驗增強包 V3.1 (含連結還原功能) 載入中...');
 
-    // ============================================================
-    // 1. ⌨️ Markdown 快速輸入監聽 (Monkey Patch handleCardInput)
-    // ============================================================
-    const originalHandleCardInput = window.handleCardInput;
-    window.handleCardInput = function(e) {
-        // 先執行原本的存檔邏輯
-        originalHandleCardInput(e);
-
-        // 檢查輸入內容
-        if (e.inputType === 'insertText' && e.data === ' ') {
-            const selection = window.getSelection();
-            if (!selection.rangeCount) return;
-            const range = selection.getRangeAt(0);
-            const node = range.startContainer;
+        // ============================================================
+        // 1. 🔗 連結美化核心邏輯 (加入 title 屬性以便 hover 查看)
+        // ============================================================
+        window.beautifyLinks = function(cardElement) {
+            if (!cardElement) return;
+            const contentDiv = cardElement.querySelector('.content');
+            if (!contentDiv) return;
             
-            // 確保是在文字節點操作
-            if (node.nodeType === Node.TEXT_NODE) {
-                const text = node.textContent;
-                // 偵測 "- "
-                if (text.endsWith('- ')) {
-                    document.execCommand('delete', false, null); // 刪除空白
-                    document.execCommand('delete', false, null); // 刪除減號
-                    document.execCommand('insertUnorderedList', false, null);
-                }
-                // 偵測 "[] "
-                else if (text.endsWith('[] ')) {
-                    // 刪除 "[] " (3個字元)
-                    range.setStart(node, text.length - 3);
-                    range.setEnd(node, text.length);
-                    range.deleteContents();
-                    
-                    // 插入 Checkbox HTML
-                    const span = document.createElement('span');
-                    span.innerHTML = '<span class="todo-box" onclick="toggleTodo(this)">☐</span>&nbsp;';
-                    range.insertNode(span);
-                    
-                    // 移動游標到後面
-                    range.setStartAfter(span);
-                    range.setEndAfter(span);
-                    selection.removeAllRanges();
-                    selection.addRange(range);
+            const walker = document.createTreeWalker(contentDiv, NodeFilter.SHOW_TEXT, null, false);
+            let node;
+            const nodesToReplace = [];
+
+            while(node = walker.nextNode()) {
+                if (node.parentElement.tagName === 'A') continue;
+                const text = node.nodeValue;
+                // 修正 Regex: 更精準抓取 http/https
+                const urlRegex = /(https?:\/\/[^\s<]+)/g;
+                if (urlRegex.test(text)) nodesToReplace.push({ node: node, text: text });
+            }
+
+            nodesToReplace.forEach(item => {
+                const fragment = document.createDocumentFragment();
+                const parts = item.text.split(/(https?:\/\/[^\s<]+)/g);
+                parts.forEach(part => {
+                    if (part.match(/^https?:\/\//)) {
+                        const linkInfo = getLinkInfo(part);
+                        const a = document.createElement('a');
+                        a.href = part; 
+                        a.target = "_blank"; 
+                        a.className = "link-box"; 
+                        a.contentEditable = "false";
+                        a.title = part; // 💡 [新增] 讓滑鼠懸停時可以看到原網址
+                        a.innerHTML = `<span class="link-icon">${linkInfo.icon}</span><span class="link-text">${linkInfo.name}</span><span class="link-url">${linkInfo.shortUrl}</span>`;
+                        fragment.appendChild(a);
+                    } else if (part) fragment.appendChild(document.createTextNode(part));
+                });
+                item.node.parentNode.replaceChild(fragment, item.node);
+            });
+            window.autoSave();
+        };
+
+        function getLinkInfo(url) {
+            let icon = '🔗'; let name = '外部連結';
+            if (url.includes('docs.google.com/spreadsheets')) { icon = '📊'; name = 'Google Sheets'; }
+            else if (url.includes('docs.google.com/document')) { icon = '📄'; name = 'Google Docs'; }
+            else if (url.includes('docs.google.com/presentation')) { icon = '📽️'; name = 'Google Slides'; }
+            else if (url.includes('drive.google.com')) { icon = '📁'; name = 'Google Drive'; }
+            else if (url.includes('meet.google.com')) { icon = '📹'; name = 'Google Meet'; }
+            else if (url.includes('youtube.com') || url.includes('youtu.be')) { icon = '▶️'; name = 'YouTube'; }
+            else if (url.includes('github.com')) { icon = '💻'; name = 'GitHub'; }
+            else { try { name = new URL(url).hostname.replace('www.', ''); } catch(e) {} }
+            return { icon: icon, name: name, shortUrl: url.substring(0, 30) + '...' };
+        }
+
+        // ============================================================
+        // 2. ⌨️ Markdown 快速輸入
+        // ============================================================
+        const originalHandleCardInput = window.handleCardInput;
+        window.handleCardInput = function(e) {
+            originalHandleCardInput(e);
+            if (e.inputType === 'insertText' && e.data === ' ') {
+                const selection = window.getSelection();
+                if (!selection.rangeCount) return;
+                const range = selection.getRangeAt(0);
+                const node = range.startContainer;
+                if (node.nodeType === Node.TEXT_NODE) {
+                    const text = node.textContent;
+                    if (text.endsWith('- ')) {
+                        document.execCommand('delete', false, null); document.execCommand('delete', false, null);
+                        document.execCommand('insertUnorderedList', false, null);
+                    } else if (text.endsWith('[] ')) {
+                        range.setStart(node, text.length - 3); range.setEnd(node, text.length); range.deleteContents();
+                        const span = document.createElement('span');
+                        span.innerHTML = '<span class="todo-box" onclick="toggleTodo(this)">☐</span>&nbsp;';
+                        range.insertNode(span);
+                        range.setStartAfter(span); range.setEndAfter(span); selection.removeAllRanges(); selection.addRange(range);
+                    } else {
+                        const match = text.match(/(\d+)\.\s$/);
+                        if (match) {
+                            const charsToDelete = match[0].length;
+                            for(let i=0; i<charsToDelete; i++) document.execCommand('delete', false, null);
+                            document.execCommand('insertOrderedList', false, null);
+                        }
+                    }
                 }
             }
+        };
+
+        // ============================================================
+        // 3. 🖱️ 智慧右鍵選單 (💡 升級：偵測連結並提供還原選項)
+        // ============================================================
+        let currentCtxTarget = null;
+        let clickedLinkElement = null; // 暫存被右鍵點擊的連結
+        const menu = document.getElementById('context-menu');
+
+        // 擴充右鍵選單 HTML，加入針對連結的選項
+        const linkOptionsHtml = `
+            <div id="ctx-link-options" style="display:none; border-bottom:1px solid #e2e8f0; margin-bottom:5px; padding-bottom:5px;">
+                <div class="ctx-item" onclick="ctxAction('copyLinkUrl')">🔗 複製連結網址</div>
+                <div class="ctx-item" onclick="ctxAction('revertLink')">↩️ 還原成純文字</div>
+            </div>
+        `;
+        // 插入到選單最前面
+        if (!document.getElementById('ctx-link-options')) {
+            menu.insertAdjacentHTML('afterbegin', linkOptionsHtml);
         }
-    };
 
+        document.addEventListener('contextmenu', function(e) {
+            const card = e.target.closest('.card');
+            const timelineItem = e.target.closest('.timeline-item');
+            // 偵測是否點擊在連結框上
+            clickedLinkElement = e.target.closest('.link-box');
 
-    // ============================================================
-    // 2. 🖱️ 智慧右鍵選單 (Global Context Menu)
-    // ============================================================
-    let currentCtxTarget = null;
-    const menu = document.getElementById('context-menu');
+            if (card && timelineItem) {
+                e.preventDefault();
+                currentCtxTarget = timelineItem;
+                
+                // 顯示或隱藏連結專用選項
+                const linkOpts = document.getElementById('ctx-link-options');
+                if (clickedLinkElement) {
+                    linkOpts.style.display = 'block';
+                } else {
+                    linkOpts.style.display = 'none';
+                }
 
-    document.addEventListener('contextmenu', function(e) {
-        // 檢查是否點擊在卡片內部
-        const card = e.target.closest('.card');
-        const timelineItem = e.target.closest('.timeline-item');
-        
-        if (card && timelineItem) {
-            e.preventDefault(); // 阻止瀏覽器預設選單
-            currentCtxTarget = timelineItem;
+                let x = e.clientX; let y = e.clientY;
+                if (x + 160 > window.innerWidth) x -= 160;
+                if (y + 250 > window.innerHeight) y -= 250;
+                menu.style.left = x + 'px'; menu.style.top = y + 'px'; menu.style.display = 'block';
+            } else {
+                menu.style.display = 'none';
+            }
+        });
+
+        document.addEventListener('click', function(e) { if (!e.target.closest('#context-menu')) menu.style.display = 'none'; });
+
+        window.ctxAction = function(action, param) {
+            if (!currentCtxTarget) return;
+            const card = currentCtxTarget.querySelector('.card');
             
-            // 定位選單 (防止超出邊界)
-            let x = e.clientX;
-            let y = e.clientY;
-            if (x + 150 > window.innerWidth) x -= 150;
-            if (y + 200 > window.innerHeight) y -= 200;
-            
-            menu.style.left = x + 'px';
-            menu.style.top = y + 'px';
-            menu.style.display = 'block';
-        } else {
+            if (action === 'copyLinkUrl') {
+                if (clickedLinkElement) {
+                    navigator.clipboard.writeText(clickedLinkElement.href)
+                        .then(() => alert('已複製網址！'));
+                }
+            } 
+            else if (action === 'revertLink') {
+                if (clickedLinkElement) {
+                    // 還原邏輯：建立文字節點替換掉 <a> 標籤
+                    const textNode = document.createTextNode(clickedLinkElement.href);
+                    clickedLinkElement.parentNode.replaceChild(textNode, clickedLinkElement);
+                    window.autoSave();
+                }
+            }
+            else if (action === 'color') { card.dataset.color = param; window.autoSave(); } 
+            else if (action === 'delete') { window.deleteNode(currentCtxTarget.querySelector('.btn-icon')); } 
+            else if (action === 'copy') { const btn = currentCtxTarget.querySelector('.btn-icon[onclick*="copyForTasks"]'); if (btn) btn.click(); } 
+            else if (action === 'link') { const btn = currentCtxTarget.querySelector('.btn-link-copy'); if (btn) btn.click(); else alert('請先安裝「外掛2」以啟用連結功能'); } 
+            else if (action === 'beautify') { window.beautifyLinks(currentCtxTarget); }
             menu.style.display = 'none';
+        };
+
+        // ============================================================
+        // 4. 🗑️ 垃圾桶與軟刪除
+        // ============================================================
+        if (!window.trashBin) { try { window.trashBin = JSON.parse(localStorage.getItem('timeline_trash_bin') || '[]'); } catch(e) { window.trashBin = []; } }
+
+        const originalDeleteNode = window.deleteNode;
+        window.deleteNode = function(btn) {
+            const item = btn.closest('.timeline-item');
+            if (confirm('確定要移除此卡片嗎？\n(可至垃圾桶還原)')) {
+                const data = {
+                    id: item.dataset.id,
+                    project: item.querySelector('.footer-project-input').value,
+                    label: item.querySelector('.label-input').value || '未命名',
+                    content: item.querySelector('.content').innerHTML,
+                    color: item.querySelector('.card').dataset.color,
+                    delTime: new Date().toLocaleString(),
+                    fullData: window.gatherData().find(i => i.id == item.dataset.id) 
+                };
+                if (data.fullData) {
+                    window.trashBin.unshift(data);
+                    if (window.trashBin.length > 20) window.trashBin.pop();
+                    localStorage.setItem('timeline_trash_bin', JSON.stringify(window.trashBin));
+                }
+                item.remove(); window.autoSave(); window.refreshProjectBar();
+            }
+        };
+
+        if (!document.getElementById('trash-btn')) {
+            const toolbar = document.getElementById('normal-toolbar');
+            if (toolbar) {
+                const btn = document.createElement('button');
+                btn.id = 'trash-btn'; btn.className = 'tool-btn trash-toggle-btn'; btn.innerHTML = '🗑️'; btn.title = '垃圾桶'; btn.onclick = window.openTrash;
+                const resetBtn = toolbar.querySelector('.danger-btn[onclick*="resetAllData"]');
+                toolbar.insertBefore(btn, resetBtn);
+            }
         }
-    });
 
-    // 點擊其他地方關閉選單
-    document.addEventListener('click', function(e) {
-        if (!e.target.closest('#context-menu')) {
-            menu.style.display = 'none';
-        }
-    });
-
-    // 選單動作處理
-    window.ctxAction = function(action, param) {
-        if (!currentCtxTarget) return;
-        const card = currentCtxTarget.querySelector('.card');
-        
-        if (action === 'color') {
-            card.dataset.color = param;
-            window.autoSave();
-        } else if (action === 'delete') {
-            // 呼叫我們改寫過的刪除 (會進垃圾桶)
-            window.deleteNode(currentCtxTarget.querySelector('.btn-icon')); 
-        } else if (action === 'copy') {
-            const btn = currentCtxTarget.querySelector('.btn-icon[onclick*="copyForTasks"]');
-            if (btn) btn.click();
-        } else if (action === 'link') {
-            const btn = currentCtxTarget.querySelector('.btn-link-copy');
-            if (btn) btn.click(); // 觸發外掛2的連結按鈕
-            else alert('請先安裝「外掛2」以啟用連結功能');
-        }
-        menu.style.display = 'none';
-    };
-
-
-    // ============================================================
-    // 3. 🗑️ 垃圾桶與軟刪除 (Soft Delete)
-    // ============================================================
-    // 初始化垃圾桶
-    if (!window.trashBin) {
-        try {
-            window.trashBin = JSON.parse(localStorage.getItem('timeline_trash_bin') || '[]');
-        } catch(e) { window.trashBin = []; }
-    }
-
-    // 覆寫 deleteNode
-    const originalDeleteNode = window.deleteNode;
-    window.deleteNode = function(btn) {
-        const item = btn.closest('.timeline-item');
-        
-        // 詢問 (稍微溫柔一點的詢問)
-        if (confirm('確定要移除此卡片嗎？\n(可至垃圾桶還原)')) {
-            // 收集資料
-            const data = {
-                id: item.dataset.id,
-                project: item.querySelector('.footer-project-input').value,
-                label: item.querySelector('.label-input').value || '未命名',
-                content: item.querySelector('.content').innerHTML,
-                color: item.querySelector('.card').dataset.color,
-                delTime: new Date().toLocaleString(),
-                // 保存完整 HTML 以便完美還原
-                fullData: window.gatherData().find(i => i.id == item.dataset.id) 
-            };
-            
-            if (data.fullData) {
-                // 推入垃圾桶
-                window.trashBin.unshift(data);
-                // 限制垃圾桶大小 (例如保留最近 20 筆)
-                if (window.trashBin.length > 20) window.trashBin.pop();
+        window.openTrash = function() {
+            const list = document.getElementById('trash-list-content');
+            if (window.trashBin.length === 0) { list.innerHTML = '<div style="text-align:center; padding:20px; color:#94a3b8;">垃圾桶是空的</div>'; } 
+            else {
+                list.innerHTML = window.trashBin.map((item, idx) => `
+                    <div class="trash-item">
+                        <div><span class="trash-title" style="color:${item.color === 'red' ? '#ef4444' : item.color === 'green' ? '#10b981' : item.color === 'yellow' ? '#f59e0b' : '#4f46e5'}">● ${item.label}</span><span class="trash-info">刪除於: ${item.delTime}</span></div>
+                        <div class="trash-actions"><button onclick="restoreItem(${idx})">還原</button></div>
+                    </div>`).join('');
+            }
+            document.getElementById('trash-dialog').style.display = 'flex';
+        };
+        window.closeTrash = function() { document.getElementById('trash-dialog').style.display = 'none'; };
+        window.emptyTrash = function() { if (confirm('確定清空？')) { window.trashBin = []; localStorage.setItem('timeline_trash_bin', '[]'); window.openTrash(); } };
+        window.restoreItem = function(index) {
+            const item = window.trashBin[index];
+            if (item && item.fullData) {
+                const el = window.createNodeElement(item.fullData);
+                document.getElementById('container').appendChild(el);
+                window.trashBin.splice(index, 1);
                 localStorage.setItem('timeline_trash_bin', JSON.stringify(window.trashBin));
+                window.autoSave(); window.refreshProjectBar(); window.openTrash();
+                setTimeout(() => el.scrollIntoView({behavior:'smooth', block:'center'}), 100);
             }
+        };
 
-            // 移除 DOM
-            item.remove();
-            window.autoSave();
-            window.refreshProjectBar();
-        }
-    };
-
-    // 插入垃圾桶按鈕到工具列 (如果還沒插入)
-    if (!document.getElementById('trash-btn')) {
-        const toolbar = document.getElementById('normal-toolbar');
-        if (toolbar) {
-            const btn = document.createElement('button');
-            btn.id = 'trash-btn';
-            btn.className = 'tool-btn trash-toggle-btn';
-            btn.innerHTML = '🗑️';
-            btn.title = '垃圾桶 (還原刪除)';
-            btn.onclick = window.openTrash;
-            // 插在 "重置" 按鈕前面
-            const resetBtn = toolbar.querySelector('.danger-btn[onclick*="resetAllData"]');
-            toolbar.insertBefore(btn, resetBtn);
-        }
-    }
-
-    // 垃圾桶介面邏輯
-    window.openTrash = function() {
-        const list = document.getElementById('trash-list-content');
-        if (window.trashBin.length === 0) {
-            list.innerHTML = '<div style="text-align:center; padding:20px; color:#94a3b8;">垃圾桶是空的</div>';
-        } else {
-            list.innerHTML = window.trashBin.map((item, idx) => `
-                <div class="trash-item">
-                    <div>
-                        <span class="trash-title" style="color:${getColorCode(item.color)}">● ${item.label}</span>
-                        <span class="trash-info">專案: ${item.project || '無'} | 刪除於: ${item.delTime}</span>
-                    </div>
-                    <div class="trash-actions">
-                        <button onclick="restoreItem(${idx})">還原</button>
-                    </div>
-                </div>
-            `).join('');
-        }
-        document.getElementById('trash-dialog').style.display = 'flex';
-    };
-
-    window.closeTrash = function() {
-        document.getElementById('trash-dialog').style.display = 'none';
-    };
-
-    window.emptyTrash = function() {
-        if (confirm('確定清空垃圾桶？無法復原囉！')) {
-            window.trashBin = [];
-            localStorage.setItem('timeline_trash_bin', '[]');
-            window.openTrash(); // 重新渲染
-        }
-    };
-
-    window.restoreItem = function(index) {
-        const item = window.trashBin[index];
-        if (item && item.fullData) {
-            // 使用 createNodeElement 重建
-            const el = window.createNodeElement(item.fullData);
-            document.getElementById('container').appendChild(el);
-            
-            // 從垃圾桶移除
-            window.trashBin.splice(index, 1);
-            localStorage.setItem('timeline_trash_bin', JSON.stringify(window.trashBin));
-            
-            window.autoSave();
-            window.refreshProjectBar();
-            window.openTrash(); // 重新渲染列表
-            
-            // 捲動到還原的位置
-            setTimeout(() => el.scrollIntoView({behavior:'smooth', block:'center'}), 100);
-        }
-    };
-
-    function getColorCode(name) {
-        const map = {blue:'#4f46e5', green:'#10b981', red:'#ef4444', yellow:'#f59e0b'};
-        return map[name] || '#94a3b8';
-    }
-
-    console.log('✅ 操作體驗增強包載入完成');
-})();
-</script>
+        console.log('✅ 操作體驗增強包 V3.1 (含連結還原功能) 載入完成');
+    })();
+    </script>
 </body>
 </html>
