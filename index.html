@@ -417,8 +417,8 @@
 
     <script>
         // --- 🔌 分頁系統變數 (加入記憶功能) ---
-        let currentTabId = localStorage.getItem('timeline_last_tab_id') || 'main';
-        let allTabs = JSON.parse(localStorage.getItem('timeline_tabs_meta')) || [{id: 'main', name: '主工作區'}];
+        var currentTabId = localStorage.getItem('timeline_last_tab_id') || 'main';
+        var allTabs = JSON.parse(localStorage.getItem('timeline_tabs_meta')) || [{id: 'main', name: '主工作區'}];
         if (!allTabs.find(t => t.id === currentTabId)) { currentTabId = 'main'; }
         if (!localStorage.getItem('timeline_tabs_meta')) { localStorage.setItem('timeline_tabs_meta', JSON.stringify(allTabs)); }
         document.body.classList.add('has-tab-bar');
@@ -1205,7 +1205,7 @@
         const notebookDialog = document.getElementById('notebook-dialog');
         const nbContentArea = document.getElementById('nb-content-area');
         const nbSelector = document.getElementById('nb-template-select');
-        let notebookData = { currentTemplate: 'free', free: '', cornell: { cues: '', notes: '', summary: '' }, matrix: { q1: '', q2: '', q3: '', q4: '' } };
+        var notebookData = { currentTemplate: 'free', free: '', cornell: { cues: '', notes: '', summary: '' }, matrix: { q1: '', q2: '', q3: '', q4: '' } };
 
         function openNotebook() {
             const saved = localStorage.getItem('timeline_global_notebook');
@@ -1234,7 +1234,6 @@
         function saveNotebook() { localStorage.setItem('timeline_global_notebook', JSON.stringify(notebookData)); }
         
         // 🚀 啟動
-        init();
     </script>
 
     <style>
@@ -1765,6 +1764,10 @@
 
         console.log('✅ 操作體驗增強包 V3.1 (含連結還原功能) 載入完成');
     })();
+    // 🚀 延後啟動：確保所有外掛都覆寫完畢後，才開始渲染畫面
+    if (typeof window.init === 'function') {
+        window.init(); 
+        }
     </script>
 </body>
 </html>
