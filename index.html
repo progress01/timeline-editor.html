@@ -1468,7 +1468,154 @@
         };
 
         console.log('✅ 整合修補包載入完成');
+
+        // ============================================================
+        // 4. 🖱️ 智慧右鍵選單 (💡 升級：偵測連結並提供還原選項)
+        // ============================================================
+        let currentCtxTarget = null;
+        let clickedLinkElement = null; // 暫存被右鍵點擊的連結
+        const menu = document.getElementById('context-menu');
+
+        // 擴充右鍵選單 HTML，加入針對連結的選項
+        const linkOptionsHtml = `
+            <div id="ctx-link-options" style="display:none; border-bottom:1px solid #e2e8f0; margin-bottom:5px; padding-bottom:5px;">
+                <div class="ctx-item" onclick="ctxAction('copyLinkUrl')">🔗 複製連結網址</div>
+                <div class="ctx-item" onclick="ctxAction('revertLink')">↩️ 還原成純文字</div>
+            </div>
+        `;
+        // 插入到選單最前面
+        if (!document.getElementById('ctx-link-options')) {
+            menu.insertAdjacentHTML('afterbegin', linkOptionsHtml);
+        }
+
+        document.addEventListener('contextmenu', function(e) {
+            const card = e.target.closest('.card');
+            const timelineItem = e.target.closest('.timeline-item');
+            // 偵測是否點擊在連結框上
+            clickedLinkElement = e.target.closest('.link-box');
+
+            if (card && timelineItem) {
+                e.preventDefault();
+                currentCtxTarget = timelineItem;
+                
+                // 顯示或隱藏連結專用選項
+                const linkOpts = document.getElementById('ctx-link-options');
+                if (clickedLinkElement) {
+                    linkOpts.style.display = 'block';
+                } else {
+                    linkOpts.style.display = 'none';
+                }
+
+                let x = e.clientX; let y = e.clientY;
+                if (x + 160 > window.innerWidth) x -= 160;
+                if (y + 250 > window.innerHeight) y -= 250;
+                menu.style.left = x + 'px'; menu.style.top = y + 'px'; menu.style.display = 'block';
+            } else {
+                menu.style.display = 'none';
+            }
+        });
+
+        document.addEventListener('click', function(e) { if (!e.target.closest('#context-menu')) menu.style.display = 'none'; });
+
+        window.ctxAction = function(action, param) {
+            if (!currentCtxTarget) return;
+            const card = currentCtxTarget.querySelector('.card');
+            
+            if (action === 'copyLinkUrl') {
+                if (clickedLinkElement) {
+                    navigator.clipboard.writeText(clickedLinkElement.href)
+                        .then(() => alert('已複製網址！'));
+                }
+            } 
+            else if (action === 'revertLink') {
+                if (clickedLinkElement) {
+                    // 還原邏輯：建立文字節點替換掉 <a> 標籤
+                    const textNode = document.createTextNode(clickedLinkElement.href);
+                    clickedLinkElement.parentNode.replaceChild(textNode, clickedLinkElement);
+                    window.autoSave();
+                }
+            }
+            else if (action === 'color') { card.dataset.color = param; window.autoSave(); } 
+            else if (action === 'delete') { window.deleteNode(currentCtxTarget.querySelector('.btn-icon')); } 
+            else if (action === 'copy') { const btn = currentCtxTarget.querySelector('.btn-icon[onclick*="copyForTasks"]'); if (btn) btn.click(); } 
+            else if (action === 'link') { const btn = currentCtxTarget.querySelector('.btn-link-copy'); if (btn) btn.click(); else alert('請先安裝「外掛2」以啟用連結功能'); } 
+            else if (action === 'beautify') { window.beautifyLinks(currentCtxTarget); }
+            menu.style.display = 'none';
+        };
+
+        // ============================================================
+        // 5. 🗑️ 垃圾桶與軟刪除
+        // ============================================================
+        if (!window.trashBin) { try { window.trashBin = JSON.parse(localStorage.getItem('timeline_trash_bin') || '[]'); } catch(e) { window.trashBin = []; } }
+
+        window.deleteNode = function(btn) {
+            const item = btn.closest('.timeline-item');
+            if (confirm('確定要移除此卡片嗎？\n(可至垃圾桶還原)')) {
+                const data = {
+                    id: item.dataset.id,
+                    project: item.querySelector('.footer-project-input').value,
+                    label: item.querySelector('.label-input').value || '未命名',
+                    content: item.querySelector('.content').innerHTML,
+                    color: item.querySelector('.card').dataset.color,
+                    delTime: new Date().toLocaleString(),
+                    fullData: window.gatherData().find(i => i.id == item.dataset.id) 
+                };
+                if (data.fullData) {
+                    window.trashBin.unshift(data);
+                    if (window.trashBin.length > 20) window.trashBin.pop();
+                    localStorage.setItem('timeline_trash_bin', JSON.stringify(window.trashBin));
+                }
+                item.remove(); window.autoSave(); window.refreshProjectBar();
+            }
+        };
+
+        window.openTrash = function() {
+            const list = document.getElementById('trash-list-content');
+            if (window.trashBin.length === 0) { list.innerHTML = '<div style="text-align:center; padding:20px; color:#94a3b8;">垃圾桶是空的</div>'; } 
+            else {
+                list.innerHTML = window.trashBin.map((item, idx) => `
+                    <div class="trash-item">
+                        <div><span class="trash-title" style="color:${item.color === 'red' ? '#ef4444' : item.color === 'green' ? '#10b981' : item.color === 'yellow' ? '#f59e0b' : '#4f46e5'}">● ${item.label}</span><span class="trash-info">刪除於: ${item.delTime}</span></div>
+                        <div class="trash-actions"><button onclick="restoreItem(${idx})">還原</button></div>
+                    </div>`).join('');
+            }
+            document.getElementById('trash-dialog').style.display = 'flex';
+        };
+        window.closeTrash = function() { document.getElementById('trash-dialog').style.display = 'none'; };
+        window.emptyTrash = function() { if (confirm('確定清空？')) { window.trashBin = []; localStorage.setItem('timeline_trash_bin', '[]'); window.openTrash(); } };
+        window.restoreItem = function(index) {
+            const item = window.trashBin[index];
+            if (item && item.fullData) {
+                const el = window.createNodeElement(item.fullData);
+                document.getElementById('container').appendChild(el);
+                window.trashBin.splice(index, 1);
+                localStorage.setItem('timeline_trash_bin', JSON.stringify(window.trashBin));
+                window.autoSave(); window.refreshProjectBar(); window.openTrash();
+                setTimeout(() => el.scrollIntoView({behavior:'smooth', block:'center'}), 100);
+            }
+        };
+
+        // 💡 [修正重點]：將垃圾桶按鈕的建立邏輯移到最後面，確保 openTrash 已被定義
+        if (!document.getElementById('trash-btn')) {
+            const toolbar = document.getElementById('normal-toolbar');
+            if (toolbar) {
+                const btn = document.createElement('button');
+                btn.id = 'trash-btn'; 
+                btn.className = 'tool-btn trash-toggle-btn'; 
+                btn.innerHTML = '🗑️'; 
+                btn.title = '垃圾桶'; 
+                btn.onclick = window.openTrash; // 此時 window.openTrash 已經定義好了
+                const resetBtn = toolbar.querySelector('.danger-btn[onclick*="resetAllData"]');
+                toolbar.insertBefore(btn, resetBtn);
+            }
+        }
+
     })();
+
+    // 🚀 延後啟動：確保所有外掛都覆寫完畢後，才開始渲染畫面
+    if (typeof window.init === 'function') {
+        window.init(); 
+    }
     </script>
 
     <style>
