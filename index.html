@@ -8,7 +8,13 @@
     <style>
         :root { --primary: #4f46e5; --bg: #f8fafc; --text: #1f2937; --font-stack: "Microsoft JhengHei", "Heiti TC", sans-serif; }
         * { box-sizing: border-box; }
-        body { font-family: var(--font-stack); background-color: var(--bg); color: var(--text); margin: 0; padding: 0; min-height: 100vh; overflow-x: hidden; }
+        body { 
+            font-family: var(--font-stack); color: var(--text); margin: 0; padding: 0; min-height: 100vh; overflow-x: auto; min-width: 200vw; padding-bottom: 50px; 
+            /* 加上淡淡的點陣背景，讓 200vw 的無限畫布具有空間方向感 */
+            background-color: var(--bg);
+            background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
 
         /* --- 🚦 紅綠燈存檔指示 --- */
         #save-light { position: fixed; bottom: 20px; left: 20px; width: 14px; height: 14px; border-radius: 50%; background-color: #22c55e; box-shadow: 0 0 8px #22c55e; z-index: 9999; transition: all 0.3s ease; cursor: help; }
@@ -118,15 +124,16 @@
         .note-close { cursor: pointer; color: #78350f; font-weight: bold; font-size: 16px; padding: 0 5px; }
         .note-content { flex: 1; background: transparent; border: none; padding: 10px; font-family: inherit; outline: none; font-size: 1rem; color: #451a03; overflow-y: auto; white-space: pre-wrap; word-break: break-word; }
         
-        /* 貼紙與圖片 */
+      /* 貼紙與圖片 */
         .sticky-note { position: absolute; width: 180px; min-height: 160px; background: #fef3c7; border: 1px solid #d97706; box-shadow: 3px 3px 10px rgba(0,0,0,0.2); z-index: 1500; display: flex; flex-direction: column; transform: rotate(-1deg); border-radius: 2px; }
-        .sticker { position: absolute; z-index: 1500; cursor: move; display: inline-block; }
+        .sticker { position: absolute; z-index: 1500; cursor: move; display: inline-block; pointer-events: none; /* 👁️ 1. 讓整個隱形方形邊角不再擋住滑鼠，全部穿透 */ }
         .sticker[data-type^="arrow"], .sticker[data-type^="circle"], .sticker[data-type^="rect"] { width: 80px; height: 80px; }
         .sticker[data-type="image"] { width: auto; height: auto; max-width: 500px; }
-        .sticker img { max-width: 100%; height: auto; border-radius: 4px; box-shadow: 0 4px 8px rgba(0,0,0,0.3); pointer-events: none; }
-        .sticker svg { width: 100%; height: 100%; drop-shadow: 2px 2px 2px rgba(0,0,0,0.2); pointer-events: none; }
-        .sticker-del { position: absolute; top: -10px; right: -10px; width: 24px; height: 24px; background: #ef4444; color: white; font-size: 14px; border-radius: 50%; display: none; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.2); z-index: 1501; border: 2px solid white; }
-        .resize-handle { position: absolute; bottom: -5px; right: -5px; width: 16px; height: 16px; background: white; border: 1px solid #64748b; border-radius: 50%; cursor: se-resize; z-index: 1502; display: none; color: #64748b; font-size: 10px; line-height: 14px; text-align: center; }
+        .sticker img { max-width: 100%; height: auto; border-radius: 4px; box-shadow: 0 4px 8px rgba(0,0,0,0.3); pointer-events: auto; /* 👁️ 2. 恢復圖片實體點擊與拖曳 */ }
+        .sticker svg { width: 100%; height: 100%; filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.2)); pointer-events: none; /* 修正原本無效的陰影寫法 */ }
+        .sticker svg * { pointer-events: visiblePainted; /* 👁️ 3. 神奇魔法：只有「真正畫出實體線條/框線」的地方才能被點擊與拖曳 */ }
+        .sticker-del { position: absolute; top: -10px; right: -10px; width: 24px; height: 24px; background: #ef4444; color: white; font-size: 14px; border-radius: 50%; display: none; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.2); z-index: 1501; border: 2px solid white; pointer-events: auto; /* 👁️ 4. 恢復刪除按鈕點擊 */ }
+        .resize-handle { position: absolute; bottom: -8px; right: -8px; width: 24px; height: 24px; background: white; border: 2px solid #64748b; border-radius: 50%; cursor: se-resize; z-index: 1502; display: none; color: #64748b; font-size: 14px; line-height: 20px; text-align: center; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2); pointer-events: auto; /* 👁️ 5. 恢復縮放把手點擊 */ }
 
         .sticker:hover { outline: 2px dashed #3b82f6; }
         .sticker:hover .sticker-del { display: flex; }
@@ -139,6 +146,12 @@
         body.taking-screenshot .resize-handle, body.taking-screenshot .sticker-del, body.taking-screenshot .note-header, body.taking-screenshot .chronicle-tool-header { display: none !important; }
         .screenshot-clone-div { white-space: pre-wrap; word-break: break-word; overflow: visible; display: block; }
 
+        /* --- 👁️ 切換視圖時自動隱藏便利貼與貼紙 --- */
+        body.hide-floating-items .sticky-note, 
+        body.hide-floating-items .sticker { 
+            display: none !important; 
+        }
+
         /* --- 📖 筆記本樣式 --- */
         .nb-textarea { width: 100%; height: 100%; resize: none; border: 1px solid #e2e8f0; padding: 15px; font-size: 1rem; line-height: 1.6; outline: none; border-radius: 8px; color: #334155; background: #fafafa; transition: 0.2s; }
         .nb-textarea:focus { border-color: #4f46e5; background: #fff; box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
@@ -149,10 +162,27 @@
         .nb-label { font-size: 0.8rem; font-weight: bold; color: #94a3b8; margin-bottom: 5px; display: block; } .nb-box { display: flex; flex-direction: column; height: 100%; }
 
         /* --- 🎨 主區域佈局 --- */
-        .main-area { max-width: 900px; margin: 80px auto 0 auto; padding: 40px 20px; min-height: calc(100vh - 100px); background: var(--bg); transition: margin-left 0.3s ease; }
+        .main-area { max-width: 900px; margin: 80px auto 0 auto; padding: 40px 20px; min-height: calc(100vh - 100px); background: var(--bg); transition: margin-left 0.3s ease, max-width 0.3s ease; }
         body.has-tab-bar .main-area { margin-left: 140px !important; margin-top: 80px !important; }
         body.has-tab-bar.has-proj-bar .main-area { margin-top: 140px !important; }
         body.view-gantt .main-area { max-width: 98%; padding: 20px 5px; }
+
+        /* 新增：寬螢幕模式 (解鎖寬度限制) */
+        /* 將工作區限制在約一個螢幕寬(100vw扣除側邊欄)，把往右滑的剩餘空間全部留給白板便利貼 */
+        body.wide-mode .main-area { max-width: calc(100vw - 180px); }
+        body.wide-mode #chronicle-view { max-width: calc(100vw - 180px); }
+
+        /* --- 寬螢幕專屬：雙欄「互相參考」排版 --- */
+        body.wide-mode .timeline { display: flex; flex-wrap: wrap; gap: 20px; justify-content: space-between; }
+        body.wide-mode .timeline::before { display: none; } /* 隱藏原本中間的垂直線 */
+        
+        body.wide-mode .timeline-item { 
+            width: calc(50% - 10px) !important; /* 強制切成兩欄 */
+            padding: 0 !important; 
+            margin-bottom: 20px; 
+            justify-content: center !important; 
+        }
+        body.wide-mode .timeline-item .card { width: 100% !important; margin: 0 !important; }
 
         /* Timeline & Drag Drop */
         .timeline { position: relative; padding: 20px 0; }
@@ -230,6 +260,26 @@
         .duration-bar-fill { height: 100%; border-radius: 3px; opacity: 0.7; }
         .duration-text { font-size: 0.7rem; color: #94a3b8; margin-top: 2px; }
         .chronicle-title { font-size: 1.1rem; font-weight: 800; color: #1e293b; margin-bottom: 4px; line-height: 1.4; display: flex; align-items: center; flex-wrap: wrap; }
+
+        /* --- 📅 全域日曆視圖 --- */
+        #calendar-view { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); border: 1px solid #e2e8f0; width: 100%; }
+        .cal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .cal-btn-nav { background: #f8fafc; border: 1px solid #cbd5e1; padding: 6px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; color: #475569; transition: 0.2s; }
+        .cal-btn-nav:hover { background: #e2e8f0; color: #1e293b; }
+        .cal-title { font-size: 1.5rem; font-weight: 800; color: #1e293b; letter-spacing: 2px; }
+        .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
+        .cal-day-name { text-align: center; font-weight: bold; color: #64748b; padding: 8px 0; background: #f1f5f9; border-radius: 6px; font-size: 0.9rem; }
+        .cal-cell { border: 1px solid #e2e8f0; min-height: 120px; border-radius: 8px; padding: 6px; display: flex; flex-direction: column; gap: 4px; background: #fff; transition: 0.2s; }
+        .cal-cell:hover { border-color: #94a3b8; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .cal-cell.empty { background: transparent; border-color: transparent; }
+        .cal-cell.today { border: 2px solid #3b82f6; background: #eff6ff; }
+        .cal-date { font-weight: bold; color: #94a3b8; font-size: 0.9rem; margin-bottom: 5px; text-align: right; }
+        .cal-cell.today .cal-date { color: #3b82f6; }
+        .cal-event { font-size: 0.75rem; padding: 4px 6px; border-radius: 4px; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 4px; transition: transform 0.1s;}
+        .cal-event:hover { transform: scale(1.02); overflow: visible; z-index: 10; white-space: normal; word-break: break-all; }
+        .cal-event[data-color="blue"] { background: #4f46e5; } .cal-event[data-color="green"] { background: #10b981; }
+        .cal-event[data-color="red"] { background: #ef4444; } .cal-event[data-color="yellow"] { background: #f59e0b; }
+        .cal-tab-badge { font-size: 0.6rem; background: rgba(255,255,255,0.3); padding: 1px 4px; border-radius: 4px; flex-shrink: 0; text-shadow: 0 1px 1px rgba(0,0,0,0.2); }
         
         /* [修正] 大事記內文可編輯樣式 */
         .chronicle-desc { font-size: 0.95rem; color: #475569; white-space: pre-wrap; line-height: 1.6; outline: none; padding: 2px; border: 1px solid transparent; border-radius: 4px; transition: border 0.2s; }
@@ -250,7 +300,8 @@
 
         #custom-tooltip { position: fixed; background: rgba(0, 0, 0, 0.85); color: white; padding: 10px 14px; border-radius: 6px; font-size: 0.9rem; pointer-events: none; z-index: 9999; display: none; max-width: 300px; white-space: pre-wrap; box-shadow: 0 4px 10px rgba(0,0,0,0.3); backdrop-filter: blur(2px); line-height: 1.5; }
         #exit-pres-btn { display: none; position: fixed; top: 20px; right: 20px; z-index: 3000; padding: 10px 20px; background: #ef4444; color: white; border: none; border-radius: 30px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.3); font-weight: bold; }
-        body.presentation-mode { background-color: #ffffff; padding: 20px; }
+        /* 📸 截圖與簡報模式時，暫時收起無限畫布，避免拍出巨大空白邊緣 */
+        body.presentation-mode { background-color: #ffffff; padding: 20px; min-width: 100vw !important; overflow: hidden !important; background-image: none !important; }
         body.presentation-mode #exit-pres-btn { display: block; }
         body.presentation-mode .toolbar, body.presentation-mode .toolbox-container, body.presentation-mode .add-main, body.presentation-mode .sticker-del, body.presentation-mode .today-btn, body.presentation-mode .note-header, body.presentation-mode .select-chk, body.presentation-mode .footer-project-input::placeholder, body.presentation-mode #project-bar, body.presentation-mode .card-top-right, body.presentation-mode .card-side-tools, body.presentation-mode .mode-toggle-btn, body.presentation-mode #tab-bar-container { display: none !important; }
         body.presentation-mode .main-area { margin-top: 0 !important; max-width: 1200px; }
@@ -261,9 +312,13 @@
         
         /* 📱 手機版優化區塊 */
         @media screen and (max-width: 768px) {
+            /* 🛑 修正手機版 200vw 破版問題，隱藏網格並回歸單欄好讀模式 */
+            body { min-width: 100vw !important; overflow-x: hidden !important; background-image: none !important; }
+            body.wide-mode .timeline-item { width: 100% !important; }
+            
             body.has-tab-bar .main-area { margin-left: 50px !important; }
             .main-area { margin-top: 60px; padding: 10px; } body.has-proj-bar .main-area { margin-top: 150px; }
-            .toolbox-container { transition: transform 0.3s ease; } 
+            .toolbox-container { transition: transform 0.3s ease; }
             
             .timeline-item { flex-direction: column; width: 100%; padding: 0 !important; }
             .timeline-item .card { width: 100% !important; margin: 0 0 20px 0 !important; } .timeline::before { left: 10px; } .dot { left: 10px; }
@@ -339,7 +394,7 @@
             <div class="tool-btn-group" id="normal-toolbar">
                 <button class="tool-btn filter-btn" onclick="toggleProjectBar()" title="過濾">📁 專案</button>
                 <button class="tool-btn view-btn mobile-hidden" onclick="toggleChronicleView()" id="chronicleBtn">📜 大事記</button>
-                <button class="tool-btn pres-btn mobile-hidden" onclick="togglePresentation()">📽️ 簡報</button>
+                <button class="tool-btn view-btn mobile-hidden" onclick="toggleCalendarView()" id="calendarBtn">📅 總日曆</button> <button class="tool-btn pres-btn mobile-hidden" onclick="togglePresentation()">📽️ 簡報</button>
                 <button class="tool-btn ai-btn" onclick="enterAIMode()">🤖 AI</button>
                 <button class="tool-btn cal-btn mobile-hidden" onclick="exportToCSV()">📅 CSV</button>
                 <button class="tool-btn highlight" onclick="sortByDate()">📅 排序</button>
@@ -363,6 +418,7 @@
             </button>
             <div style="width:1px; height:20px; background:#475569; margin:0 10px;"></div>
             
+            <button class="tool-btn mobile-hidden" id="wideBtn" onclick="toggleWideMode()" title="切換寬螢幕模式">↔️ 寬螢幕</button>
             <button class="tool-btn" onclick="openNotebook()" title="全域筆記本">📖 筆記</button>
             <select class="view-select" id="scaleSelect" onchange="changeScale(this.value)">
                 <option value="day">📅 刻度: 日</option>
@@ -402,6 +458,17 @@
 
     <div class="main-area" id="captureArea">
         <div class="timeline" id="container"></div>
+        
+        <div id="calendar-view" class="view-container">
+            <div style="text-align:center; color:#888; margin-bottom:15px; font-size:0.8rem;">💡 全域日曆：此視圖彙整了您「所有分頁」中有壓日期的卡片 (唯讀模式)</div>
+            <div class="cal-header">
+                <button class="cal-btn-nav" onclick="changeCalMonth(-1)">◀ 上個月</button>
+                <div class="cal-title" id="cal-title">2026年 月</div>
+                <button class="cal-btn-nav" onclick="changeCalMonth(1)">下個月 ▶</button>
+            </div>
+            <div class="cal-grid" id="cal-grid"></div>
+        </div>
+
         <div id="chronicle-view" class="view-container">
             <div style="text-align:center; color:#888; margin-bottom:30px; font-size:0.8rem;">💡 大事記模式：包含衝突偵測 (⚡) 與時長視覺條</div>
             <div class="chronicle-container" id="vTimeline"></div>
@@ -433,6 +500,28 @@
         let currentView = 'timeline';
         let currentScale = 'day'; 
         let saveTimer = null; 
+
+        // --- ↔️ 寬螢幕模式邏輯 ---
+        let isWideMode = localStorage.getItem('timeline_wide_mode') === 'true';
+        if (isWideMode) {
+            document.body.classList.add('wide-mode');
+            setTimeout(() => { const btn = document.getElementById('wideBtn'); if(btn) btn.classList.add('highlight'); }, 100);
+        }
+
+        window.toggleWideMode = function() {
+            isWideMode = !isWideMode;
+            const btn = document.getElementById('wideBtn');
+            if (isWideMode) {
+                document.body.classList.add('wide-mode');
+                if(btn) btn.classList.add('highlight');
+            } else {
+                document.body.classList.remove('wide-mode');
+                if(btn) btn.classList.remove('highlight');
+            }
+            localStorage.setItem('timeline_wide_mode', isWideMode);
+            // 若在甘特圖模式，重新渲染以確保橫軸顯示正常
+            if (currentView === 'gantt') renderGantt();
+        };
 
         // --- 🖱️ Drag & Drop Logic ---
         function enableDragAndDrop() {
@@ -729,8 +818,27 @@
             const dataKey = currentTabId === 'main' ? 'timeline_v47_data' : `timeline_v47_data_${currentTabId}`;
             const notesKey = currentTabId === 'main' ? 'timeline_v47_notes' : `timeline_v47_notes_${currentTabId}`;
             const stickersKey = currentTabId === 'main' ? 'timeline_v47_stickers' : `timeline_v47_stickers_${currentTabId}`;
-            localStorage.setItem(dataKey, JSON.stringify(data)); localStorage.setItem(notesKey, JSON.stringify(notes)); localStorage.setItem(stickersKey, JSON.stringify(stickers));
-            const light = document.getElementById('save-light'); if(light) light.classList.remove('unsaved');
+            
+            try {
+                localStorage.setItem(dataKey, JSON.stringify(data)); 
+                localStorage.setItem(notesKey, JSON.stringify(notes)); 
+                localStorage.setItem(stickersKey, JSON.stringify(stickers));
+                const light = document.getElementById('save-light'); if(light) light.classList.remove('unsaved');
+                
+                // 🚨 容量警報檢測 (約 5MB 上限，設定 4.5MB 警告)
+                let totalSize = 0; 
+                for(let key in localStorage) { if(localStorage.hasOwnProperty(key)) { totalSize += localStorage[key].length || 0; } }
+                if (totalSize > 4500000) { 
+                    console.warn("儲存空間即將爆滿！");
+                    alert('⚠️ 警告：瀏覽器儲存空間即將爆滿！\n請盡快點擊「📥 備份」下載檔案，並使用「🧹 清圖」清理不必要的截圖，以免後續存檔失敗遺失資料。'); 
+                }
+            } catch (e) {
+                // 存檔失敗時的防呆機制
+                console.error("Save failed! LocalStorage is full.", e);
+                alert('❌ 存檔失敗！儲存空間已完全爆滿。\n請立刻點擊「📥 備份」下載現有資料（避免剛剛打的字消失），並重新整理頁面清理圖片！');
+                const light = document.getElementById('save-light'); 
+                if(light) { light.classList.add('unsaved'); light.style.backgroundColor = '#ef4444'; } // 紅燈長亮
+            }
         }
 
         function deleteNode(btn) { if(confirm('刪除此節點？')) { btn.closest('.timeline-item').remove(); autoSave(); refreshProjectBar(); } }
@@ -825,12 +933,23 @@
         }
 
         function resizeCard(e) { e.stopPropagation(); const card = e.target.parentElement; const startX = e.clientX, startY = e.clientY, startW = card.offsetWidth, startH = card.offsetHeight; function doDrag(ev) { const newW = startW + (ev.clientX - startX), newH = startH + (ev.clientY - startY); if (newW > 200) card.style.width = newW + 'px'; if (newH > 100) card.style.minHeight = newH + 'px'; } function stopDrag() { document.documentElement.removeEventListener('mousemove', doDrag); document.documentElement.removeEventListener('mouseup', stopDrag); autoSave(); } document.documentElement.addEventListener('mousemove', doDrag); document.documentElement.addEventListener('mouseup', stopDrag); }
-        function addStickyNote() { createStickyElement({ id: 'note-' + Date.now(), x: window.scrollX + 100, y: window.scrollY + 100, content: '' }); autoSave(); if(window.innerWidth < 768) toggleToolbox(); }
+        function addStickyNote() { 
+            const offsetX = Math.floor(Math.random() * 40) - 20;
+            const offsetY = Math.floor(Math.random() * 40) - 20;
+            createStickyElement({ id: 'note-' + Date.now(), x: window.scrollX + 100 + offsetX, y: window.scrollY + 100 + offsetY, content: '' }); 
+            autoSave(); if(window.innerWidth < 768) toggleToolbox(); 
+        }
         function createStickyElement(data) {
             const div = document.createElement('div'); div.className = 'sticky-note'; div.id = data.id; div.style.left = data.x + 'px'; div.style.top = data.y + 'px'; if (data.w) div.style.width = data.w + 'px'; if (data.h) div.style.height = data.h + 'px';
             const initialContent = data.content || '';
             div.innerHTML = `<div class="note-header"><div class="note-tools"><span class="note-btn" onclick="toggleNoteHighlight(this)" title="螢光筆">🖍️</span><span class="note-btn" onclick="clearNoteFormat(this)" title="清除">🧹</span></div><span class="note-close" onclick="deleteSticky(this)">×</span></div><div class="note-content" contenteditable="true" oninput="autoSave()">${initialContent}</div><div class="resize-handle" onmousedown="resizeNote(event)">↘</div>`;
             document.body.appendChild(div); makeDraggable(div, div.querySelector('.note-header'));
+            
+            // 新增：點擊內文時也會把這張便利貼浮到最上層
+            div.querySelector('.note-content').addEventListener('mousedown', function() {
+                document.querySelectorAll('.sticky-note, .sticker').forEach(el => el.style.zIndex = 1500);
+                div.style.zIndex = 1501;
+            });
         }
         function toggleNoteHighlight(btn) { const noteContent = btn.closest('.sticky-note').querySelector('.note-content'); noteContent.focus(); document.execCommand('styleWithCSS', false, true); document.execCommand('hiliteColor', false, '#fef08a'); autoSave(); }
         function clearNoteFormat(btn) { const noteContent = btn.closest('.sticky-note').querySelector('.note-content'); noteContent.focus(); document.execCommand('removeFormat'); autoSave(); }
@@ -849,7 +968,49 @@
         }
         function resizeSticker(e) { e.stopPropagation(); const sticker = e.target.parentElement; const startX = e.clientX, startY = e.clientY, startW = sticker.offsetWidth, startH = sticker.offsetHeight; function doDrag(ev) { const newW = startW + (ev.clientX - startX), newH = startH + (ev.clientY - startY); if (newW > 20) sticker.style.width = newW + 'px'; if (newH > 20) sticker.style.height = newH + 'px'; } function stopDrag() { document.documentElement.removeEventListener('mousemove', doDrag); document.documentElement.removeEventListener('mouseup', stopDrag); autoSave(); } document.documentElement.addEventListener('mousemove', doDrag); document.documentElement.addEventListener('mouseup', stopDrag); }
         function deleteSticky(btn) { if(confirm('移除此物件？')) { const note = btn.closest('.sticky-note'); const sticker = btn.closest('.sticker'); if(note) note.remove(); else if(sticker) sticker.remove(); autoSave(); } }
-        function makeDraggable(elmnt, handle) { let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0; const dragHandle = handle || elmnt; dragHandle.onmousedown = dragMouseDown; function dragMouseDown(e) { e = e || window.event; if (e.target.classList.contains('resize-handle') || e.target.classList.contains('sticker-del') || e.target.classList.contains('note-btn')) return; e.preventDefault(); pos3 = e.clientX; pos4 = e.clientY; document.onmouseup = closeDragElement; document.onmousemove = elementDrag; document.querySelectorAll('.sticky-note, .sticker').forEach(el => el.style.zIndex = 1500); elmnt.style.zIndex = 1501; } function elementDrag(e) { e = e || window.event; e.preventDefault(); pos1 = pos3 - e.clientX; pos2 = pos4 - e.clientY; pos3 = e.clientX; pos4 = e.clientY; elmnt.style.top = (elmnt.offsetTop - pos2) + "px"; elmnt.style.left = (elmnt.offsetLeft - pos1) + "px"; } function closeDragElement() { document.onmouseup = null; document.onmousemove = null; autoSave(); } }
+        function makeDraggable(elmnt, handle) { 
+            let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0; 
+            let scrollInterval = null; // 用於邊緣捲動的計時器
+            const dragHandle = handle || elmnt; 
+            dragHandle.onmousedown = dragMouseDown; 
+            
+            function dragMouseDown(e) { 
+                e = e || window.event; 
+                if (e.target.classList.contains('resize-handle') || e.target.classList.contains('sticker-del') || e.target.classList.contains('note-btn')) return; 
+                e.preventDefault(); pos3 = e.clientX; pos4 = e.clientY; 
+                document.onmouseup = closeDragElement; 
+                document.onmousemove = elementDrag; 
+                document.querySelectorAll('.sticky-note, .sticker').forEach(el => el.style.zIndex = 1500); 
+                elmnt.style.zIndex = 1501; 
+            } 
+            
+            function elementDrag(e) { 
+                e = e || window.event; e.preventDefault(); 
+                pos1 = pos3 - e.clientX; pos2 = pos4 - e.clientY; 
+                pos3 = e.clientX; pos4 = e.clientY; 
+                
+                // 🛑 防死角：防止物件被拖進頂部 60px 工具列的死角
+                let newTop = elmnt.offsetTop - pos2;
+                if (newTop < 65) newTop = 65; 
+                
+                elmnt.style.top = newTop + "px"; 
+                elmnt.style.left = (elmnt.offsetLeft - pos1) + "px"; 
+
+                // 🏃 邊緣捲動：偵測滑鼠是否靠近左右 50px 邊緣
+                clearInterval(scrollInterval);
+                if (e.clientX > window.innerWidth - 50) {
+                    scrollInterval = setInterval(() => { window.scrollBy(15, 0); elmnt.style.left = (elmnt.offsetLeft + 15) + "px"; }, 20);
+                } else if (e.clientX < 50) {
+                    scrollInterval = setInterval(() => { window.scrollBy(-15, 0); elmnt.style.left = (elmnt.offsetLeft - 15) + "px"; }, 20);
+                }
+            } 
+            
+            function closeDragElement() { 
+                document.onmouseup = null; document.onmousemove = null; 
+                clearInterval(scrollInterval); // 放開滑鼠時停止捲動
+                autoSave(); 
+            } 
+        }
 
         function toggleCardMode(btn) { const card = btn.closest('.card'); const isMemo = card.classList.toggle('memo-mode'); btn.innerText = isMemo ? '♾️' : '📅'; autoSave(); }
         function setToday(btn) { btn.previousElementSibling.value = getTodayString(); autoSave(); }
@@ -966,6 +1127,7 @@
             else {
                 if (currentView === 'gantt') document.getElementById('ganttBtn').classList.remove('active');
                 document.getElementById('container').style.display = 'none'; document.getElementById('chronicle-view').style.display = 'block'; document.getElementById('gantt-view').style.display = 'none'; document.getElementById('mainAddBtn').style.display = 'none'; document.body.classList.remove('view-gantt');
+                document.body.classList.add('hide-floating-items'); // 👁️ 切換時隱藏便利貼
                 renderChronicle(); currentView = 'chronicle'; document.getElementById('chronicleBtn').classList.add('highlight');
             }
         }
@@ -975,13 +1137,134 @@
             else {
                 if (currentView === 'chronicle') document.getElementById('chronicleBtn').classList.remove('highlight');
                 document.getElementById('container').style.display = 'none'; document.getElementById('chronicle-view').style.display = 'none'; document.getElementById('gantt-view').style.display = 'block'; document.getElementById('mainAddBtn').style.display = 'none'; document.body.classList.add('view-gantt');
+                document.body.classList.add('hide-floating-items'); // 👁️ 切換時隱藏便利貼
                 renderGantt(); currentView = 'gantt'; btn.classList.add('active');
             }
         }
         function resetToTimeline() {
-            document.getElementById('container').style.display = 'block'; document.getElementById('chronicle-view').style.display = 'none'; document.getElementById('gantt-view').style.display = 'none'; document.getElementById('mainAddBtn').style.display = 'block'; document.body.classList.remove('view-gantt');
-            document.getElementById('chronicleBtn').classList.remove('highlight'); document.getElementById('ganttBtn').classList.remove('active'); currentView = 'timeline';
+            document.getElementById('container').style.display = 'block'; 
+            document.getElementById('chronicle-view').style.display = 'none'; 
+            document.getElementById('gantt-view').style.display = 'none'; 
+            document.getElementById('calendar-view').style.display = 'none'; // 隱藏日曆
+            document.getElementById('mainAddBtn').style.display = 'block'; 
+            document.body.classList.remove('view-gantt');
+            document.body.classList.remove('hide-floating-items'); 
+            
+            document.getElementById('chronicleBtn').classList.remove('highlight'); 
+            document.getElementById('ganttBtn').classList.remove('active'); 
+            const calBtn = document.getElementById('calendarBtn'); if(calBtn) calBtn.classList.remove('highlight'); // 關閉日曆按鈕高光
+            currentView = 'timeline';
         }
+        // ============================================================
+        // 📅 全域日曆視圖邏輯 (跨工作區抓取資料)
+        // ============================================================
+        let currentCalDate = new Date();
+        let currentCalYear = currentCalDate.getFullYear();
+        let currentCalMonth = currentCalDate.getMonth();
+
+        function toggleCalendarView() {
+            if (currentView === 'calendar') resetToTimeline();
+            else {
+                resetToTimeline(); // 先重置全部
+                document.getElementById('container').style.display = 'none'; 
+                document.getElementById('mainAddBtn').style.display = 'none'; 
+                document.getElementById('calendar-view').style.display = 'block'; 
+                document.body.classList.add('hide-floating-items'); // 隱藏便利貼
+                
+                renderCalendar(); 
+                currentView = 'calendar'; 
+                document.getElementById('calendarBtn').classList.add('highlight');
+            }
+        }
+
+        function changeCalMonth(dir) {
+            currentCalMonth += dir;
+            if (currentCalMonth > 11) { currentCalMonth = 0; currentCalYear++; }
+            else if (currentCalMonth < 0) { currentCalMonth = 11; currentCalYear--; }
+            renderCalendar();
+        }
+
+        function gatherAllWorkspacesData() {
+            let allData = [];
+            // 抓取所有分頁清單
+            const tabs = JSON.parse(localStorage.getItem('timeline_tabs_meta')) || [{id: 'main', name: '主工作區'}];
+            
+            tabs.forEach(tab => {
+                const key = tab.id === 'main' ? 'timeline_v47_data' : `timeline_v47_data_${tab.id}`;
+                const tabData = JSON.parse(localStorage.getItem(key)) || [];
+                
+                // 如果是當前所在分頁，使用 gatherData() 來抓取畫面上的最新變更(可能尚未存檔)
+                const dataToUse = (tab.id === currentTabId) ? gatherData() : tabData;
+                
+                dataToUse.forEach(item => {
+                    // 過濾掉備忘錄模式，且一定要有日期的才進日曆
+                    if(!item.isMemo && (item.date_single || item.date_start)) {
+                        allData.push({ ...item, tabName: tab.name, tabId: tab.id }); // 👁️ 多存一個 tabId 用來做跳轉導航
+                    }
+                });
+            });
+            return allData;
+        }
+
+        function renderCalendar() {
+            const grid = document.getElementById('cal-grid');
+            const title = document.getElementById('cal-title');
+            title.innerText = `${currentCalYear}年 ${currentCalMonth + 1}月`;
+            
+            // 星期標題
+            grid.innerHTML = ['日','一','二','三','四','五','六'].map(d => `<div class="cal-day-name">${d}</div>`).join('');
+            
+            const firstDay = new Date(currentCalYear, currentCalMonth, 1).getDay();
+            const daysInMonth = new Date(currentCalYear, currentCalMonth + 1, 0).getDate();
+            
+            // 抓取全域資料
+            const allData = gatherAllWorkspacesData();
+            const todayStr = getTodayString();
+
+            // 填補上個月的空白天數
+            for(let i=0; i<firstDay; i++) { grid.innerHTML += `<div class="cal-cell empty"></div>`; }
+            
+            // 渲染這個月的天數
+            for(let d=1; d<=daysInMonth; d++) {
+                const dateStr = `${currentCalYear}-${String(currentCalMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+                let cellClass = "cal-cell";
+                if (dateStr === todayStr) cellClass += " today";
+                
+                let cellHtml = `<div class="${cellClass}"><div class="cal-date">${d}</div>`;
+                
+                // 找出落在這天的所有事件 (包含區間事件)
+                const dayEvents = allData.filter(item => {
+                    if (item.mode === 'range' && item.date_start && item.date_end) {
+                        return dateStr >= item.date_start && dateStr <= item.date_end;
+                    } else {
+                        return (item.date_single || item.date_start) === dateStr;
+                    }
+                });
+                
+                dayEvents.forEach(ev => {
+                    const projectName = ev.project ? `[${ev.project}] ` : '';
+                    const tooltip = `${ev.tabName} 👉 ${projectName}${ev.label}\n\n(點擊立即跳轉至該卡片)`;
+                    cellHtml += `
+                        <div class="cal-event" data-color="${ev.color}" title="${tooltip}" onclick="calendarJumpTo('${ev.tabId}', '${ev.id}')">
+                            <span class="cal-tab-badge">${ev.tabName}</span>
+                            ${projectName}${ev.label}
+                        </div>`;
+                });
+                
+                cellHtml += `</div>`;
+                grid.innerHTML += cellHtml;
+            }
+        }
+        // --- 📅 日曆點擊跳轉邏輯 ---
+        window.calendarJumpTo = function(targetTabId, cardId) {
+            resetToTimeline(); // 先關閉日曆，切回主畫面模式
+            if (currentTabId !== targetTabId) {
+                switchTab(targetTabId); // 如果不同分頁，先切換分頁
+                setTimeout(() => { scrollToCard(cardId); }, 300); // 等待渲染後捲動
+            } else { 
+                scrollToCard(cardId); // 同分頁直接捲動
+            }
+        };
         function changeScale(val) { currentScale = val; if (currentView === 'gantt') renderGantt(); }
         function getMidnightTime(dateStr) {
             if(!dateStr) return null; const parts = dateStr.split('-'); if (parts.length < 3) return null; 
