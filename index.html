@@ -169,10 +169,8 @@
         body.hide-floating-items .sticker { 
             display: none !important; 
         }
-        /* --- 📝 卡片專屬筆記樣式 --- */
-        .card-split-wrapper { display: flex; flex: 1; min-height: 0; }
-        .card-note-panel { width: 380px; border-left: 1px dashed #cbd5e1; background: #fafafa; flex-direction: column; padding: 10px; flex-shrink: 0; }
-        .card-note-header { display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; font-weight: bold; color: #64748b; margin-bottom: 8px; }
+        /* --- 📝 卡片專屬筆記樣式 (改為外部懸浮) --- */
+        .card-note-panel { position: absolute; left: calc(100% + 15px); top: 0; width: 380px; min-height: 100%; background: #fafafa; border: 1px solid #cbd5e1; border-radius: 12px; box-shadow: 4px 4px 15px rgba(0,0,0,0.1); flex-direction: column; padding: 15px; z-index: 100; cursor: default; }
         .card-note-template-select { padding: 4px 8px; border-radius: 4px; border: 1px solid #cbd5e1; outline: none; font-size: 0.85rem; font-weight: bold; color: #475569; background: white; cursor: pointer; }
         /* --- 📖 筆記本樣式 --- */
         .nb-textarea { width: 100%; height: 100%; resize: none; border: 1px solid #e2e8f0; padding: 15px; font-size: 1rem; line-height: 1.6; outline: none; border-radius: 8px; color: #334155; background: #fafafa; transition: 0.2s; }
@@ -963,55 +961,54 @@
                         </div>
                     </div>
                     
-                    <div class="card-split-wrapper">
-                        <div class="card-body">
-                            <div class="card-side-tools">
-                                <button class="btn-icon side-btn" onclick="changeColor(this)" title="換色">🎨</button>
-                                <button class="btn-icon side-btn mobile-hidden" onclick="moveNode(this,'up')">⬆️</button>
-                                <button class="btn-icon side-btn mobile-hidden" onclick="moveNode(this,'down')">⬇️</button>
-                                <button class="btn-icon side-btn mobile-hidden" onclick="togglePos(this,'left')">⬅️</button>
-                                <button class="btn-icon side-btn mobile-hidden" onclick="togglePos(this,'right')">➡️</button>
-                            </div>
-
-                            <div class="header-row">
-                                <div class="header-meta">
-                                    <button class="mode-toggle-btn" onclick="toggleCardMode(this)">${item.isMemo?'♾️':'📅'}</button>
-                                    <input type="date" class="date-input single-date" value="${item.date_single}" onchange="autoSave()">
-                                    <button class="today-btn single-date" onclick="setToday(this)">今</button>
-                                    <div class="range-container"><span>起</span><input type="date" class="date-input date-start" value="${item.date_start}" onchange="autoSave()"><button class="today-btn" onclick="setToday(this)">今</button><span>迄</span><input type="date" class="date-input date-end" value="${item.date_end}" onchange="autoSave()"><button class="today-btn" onclick="setToday(this)">今</button></div>
-                                </div>
-                                <input type="text" class="label-input" value="${item.label}" placeholder="標題" oninput="autoSave()">
-                            </div>
-                            <div class="content" contenteditable="true" oninput="handleCardInput(event)">${item.content}</div>
+                    <div class="card-body">
+                        <div class="card-side-tools">
+                            <button class="btn-icon side-btn" onclick="changeColor(this)" title="換色">🎨</button>
+                            <button class="btn-icon side-btn mobile-hidden" onclick="moveNode(this,'up')">⬆️</button>
+                            <button class="btn-icon side-btn mobile-hidden" onclick="moveNode(this,'down')">⬇️</button>
+                            <button class="btn-icon side-btn mobile-hidden" onclick="togglePos(this,'left')">⬅️</button>
+                            <button class="btn-icon side-btn mobile-hidden" onclick="togglePos(this,'right')">➡️</button>
                         </div>
-                        
-                        <div class="card-note-panel" style="${item.isNoteOpen ? 'display:flex;' : 'display:none;'}">
-                            <div class="card-note-header">
-                                <select class="card-note-template-select" onchange="switchCardTemplate(this)">
-                                    <option value="free" ${d.template==='free'?'selected':''}>📝 自由筆記</option>
-                                    <option value="cornell" ${d.template==='cornell'?'selected':''}>🎓 康乃爾</option>
-                                    <option value="matrix" ${d.template==='matrix'?'selected':''}>⚖️ 四象限</option>
-                                </select>
-                                <button class="btn-icon" onclick="toggleCardNote(this)" style="width:20px;height:20px;font-size:14px;border:none;background:transparent;">×</button>
-                            </div>
-                            <div style="flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:5px; padding-right:5px;">
-                                <textarea class="nb-textarea card-note-free" style="${d.template==='free'?'display:block;':'display:none;'}" placeholder="寫下這張卡片的細節或草稿..." oninput="autoSave()">${d.free || ''}</textarea>
-                                
-                                <div class="cornell-layout card-note-cornell" style="${d.template==='cornell'?'display:grid;':'display:none;'}">
-                                    <div class="nb-box cornell-cues"><span class="nb-label">💡 線索 (Cues)</span><textarea class="nb-textarea card-note-cues" oninput="autoSave()">${d.cornell.cues || ''}</textarea></div>
-                                    <div class="nb-box cornell-notes"><span class="nb-label">📝 筆記 (Notes)</span><textarea class="nb-textarea card-note-notes" oninput="autoSave()">${d.cornell.notes || ''}</textarea></div>
-                                    <div class="nb-box cornell-summary"><span class="nb-label">📌 總結 (Summary)</span><textarea class="nb-textarea card-note-summary" oninput="autoSave()">${d.cornell.summary || ''}</textarea></div>
-                                </div>
 
-                                <div class="matrix-layout card-note-matrix" style="${d.template==='matrix'?'display:grid;':'display:none;'}">
-                                    <div class="nb-box"><span class="nb-label" style="color:#ef4444">🔥 重要緊急</span><textarea class="nb-textarea card-note-q1" oninput="autoSave()">${d.matrix.q1 || ''}</textarea></div>
-                                    <div class="nb-box"><span class="nb-label" style="color:#3b82f6">📅 重要不急</span><textarea class="nb-textarea card-note-q2" oninput="autoSave()">${d.matrix.q2 || ''}</textarea></div>
-                                    <div class="nb-box"><span class="nb-label" style="color:#f59e0b">⚡ 緊急不重</span><textarea class="nb-textarea card-note-q3" oninput="autoSave()">${d.matrix.q3 || ''}</textarea></div>
-                                    <div class="nb-box"><span class="nb-label" style="color:#10b981">☕ 不重不急</span><textarea class="nb-textarea card-note-q4" oninput="autoSave()">${d.matrix.q4 || ''}</textarea></div>
-                                </div>
+                        <div class="header-row">
+                            <div class="header-meta">
+                                <button class="mode-toggle-btn" onclick="toggleCardMode(this)">${item.isMemo?'♾️':'📅'}</button>
+                                <input type="date" class="date-input single-date" value="${item.date_single}" onchange="autoSave()">
+                                <button class="today-btn single-date" onclick="setToday(this)">今</button>
+                                <div class="range-container"><span>起</span><input type="date" class="date-input date-start" value="${item.date_start}" onchange="autoSave()"><button class="today-btn" onclick="setToday(this)">今</button><span>迄</span><input type="date" class="date-input date-end" value="${item.date_end}" onchange="autoSave()"><button class="today-btn" onclick="setToday(this)">今</button></div>
+                            </div>
+                            <input type="text" class="label-input" value="${item.label}" placeholder="標題" oninput="autoSave()">
+                        </div>
+                        <div class="content" contenteditable="true" oninput="handleCardInput(event)">${item.content}</div>
+                    </div>
+                        
+                    <div class="card-note-panel" style="${item.isNoteOpen ? 'display:flex;' : 'display:none;'}">
+                        <div class="card-note-header">
+                            <select class="card-note-template-select" onchange="switchCardTemplate(this)">
+                                <option value="free" ${d.template==='free'?'selected':''}>📝 自由筆記</option>
+                                <option value="cornell" ${d.template==='cornell'?'selected':''}>🎓 康乃爾</option>
+                                <option value="matrix" ${d.template==='matrix'?'selected':''}>⚖️ 四象限</option>
+                            </select>
+                            <button class="btn-icon" onclick="toggleCardNote(this)" style="width:20px;height:20px;font-size:14px;border:none;background:transparent;">×</button>
+                        </div>
+                        <div style="flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:5px; padding-right:5px;">
+                            <textarea class="nb-textarea card-note-free" style="${d.template==='free'?'display:block;':'display:none;'}" placeholder="寫下這張卡片的細節或草稿..." oninput="autoSave()">${d.free || ''}</textarea>
+                            
+                            <div class="cornell-layout card-note-cornell" style="${d.template==='cornell'?'display:grid;':'display:none;'}">
+                                <div class="nb-box cornell-cues"><span class="nb-label">💡 線索 (Cues)</span><textarea class="nb-textarea card-note-cues" oninput="autoSave()">${d.cornell.cues || ''}</textarea></div>
+                                <div class="nb-box cornell-notes"><span class="nb-label">📝 筆記 (Notes)</span><textarea class="nb-textarea card-note-notes" oninput="autoSave()">${d.cornell.notes || ''}</textarea></div>
+                                <div class="nb-box cornell-summary"><span class="nb-label">📌 總結 (Summary)</span><textarea class="nb-textarea card-note-summary" oninput="autoSave()">${d.cornell.summary || ''}</textarea></div>
+                            </div>
+
+                            <div class="matrix-layout card-note-matrix" style="${d.template==='matrix'?'display:grid;':'display:none;'}">
+                                <div class="nb-box"><span class="nb-label" style="color:#ef4444">🔥 重要緊急</span><textarea class="nb-textarea card-note-q1" oninput="autoSave()">${d.matrix.q1 || ''}</textarea></div>
+                                <div class="nb-box"><span class="nb-label" style="color:#3b82f6">📅 重要不急</span><textarea class="nb-textarea card-note-q2" oninput="autoSave()">${d.matrix.q2 || ''}</textarea></div>
+                                <div class="nb-box"><span class="nb-label" style="color:#f59e0b">⚡ 緊急不重</span><textarea class="nb-textarea card-note-q3" oninput="autoSave()">${d.matrix.q3 || ''}</textarea></div>
+                                <div class="nb-box"><span class="nb-label" style="color:#10b981">☕ 不重不急</span><textarea class="nb-textarea card-note-q4" oninput="autoSave()">${d.matrix.q4 || ''}</textarea></div>
                             </div>
                         </div>
                     </div>
+                    
                     <div class="project-footer"><input type="text" class="footer-project-input" autocomplete="off" value="${item.project || ''}" placeholder="🏷️ 專案名稱..." oninput="autoSave(); refreshProjectBar();"></div>
                 </div>`;
             const card = div.querySelector('.card'); if(item.card_w) card.style.width = item.card_w; if(item.card_h) card.style.minHeight = item.card_h;
@@ -1098,12 +1095,9 @@
             } 
         }
         window.toggleCardNote = function(btn) {
-            const card = btn.closest('.card');
-            const panel = card.querySelector('.card-note-panel');
-            const isHidden = panel.style.display === 'none';
-            if (isHidden) {
+            const panel = btn.closest('.card').querySelector('.card-note-panel');
+            if (panel.style.display === 'none' || panel.style.display === '') {
                 panel.style.display = 'flex';
-                if (card.offsetWidth < 800) card.style.width = '850px'; 
             } else {
                 panel.style.display = 'none';
             }
