@@ -44,6 +44,24 @@
         .search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); opacity: 0.6; font-size: 12px; }
         .tool-btn-group { display: flex; gap: 8px; overflow-x: auto; padding-right: 10px; align-items: center; height: 100%; border-right: 1px solid #475569; margin-right: 10px; flex: 1 1 auto; scrollbar-width: none; }
         .tool-btn-group::-webkit-scrollbar { display: none; }
+        /* --- 🔽 下拉選單樣式 --- */
+        .dropdown { position: relative; display: inline-block; }
+        .dropdown-content {
+            display: none; position: absolute; background-color: #1e293b; min-width: 140px;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.3); z-index: 3000;
+            border-radius: 8px; overflow: hidden; top: 100%; left: 0; margin-top: 5px;
+            border: 1px solid #475569;
+        }
+        .dropdown-content .tool-btn {
+            width: 100%; text-align: left; border: none; border-radius: 0;
+            padding: 10px 15px; border-bottom: 1px solid #334155; justify-content: flex-start;
+        }
+        .dropdown-content .tool-btn:last-child { border-bottom: none; }
+        .dropdown-content .tool-btn:hover { background-color: #334155; transform: none; }
+        .dropdown:hover .dropdown-content { display: block; }
+        
+        /* 修正原本工具列會把下拉選單切斷的問題 */
+        .tool-btn-group { overflow: visible !important; }
         .tool-btn { background: transparent; border: 1px solid #475569; color: #e2e8f0; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; gap: 6px; transition: 0.2s; white-space: nowrap; flex-shrink: 0; }
         .tool-btn:hover { background: rgba(255,255,255,0.1); border-color: white; color: white; }
         .tool-btn.highlight { border-color: #a78bfa; color: #a78bfa; }
@@ -151,7 +169,11 @@
         body.hide-floating-items .sticker { 
             display: none !important; 
         }
-
+        /* --- 📝 卡片專屬筆記樣式 --- */
+        .card-split-wrapper { display: flex; flex: 1; min-height: 0; }
+        .card-note-panel { width: 380px; border-left: 1px dashed #cbd5e1; background: #fafafa; flex-direction: column; padding: 10px; flex-shrink: 0; }
+        .card-note-header { display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; font-weight: bold; color: #64748b; margin-bottom: 8px; }
+        .card-note-template-select { padding: 4px 8px; border-radius: 4px; border: 1px solid #cbd5e1; outline: none; font-size: 0.85rem; font-weight: bold; color: #475569; background: white; cursor: pointer; }
         /* --- 📖 筆記本樣式 --- */
         .nb-textarea { width: 100%; height: 100%; resize: none; border: 1px solid #e2e8f0; padding: 15px; font-size: 1rem; line-height: 1.6; outline: none; border-radius: 8px; color: #334155; background: #fafafa; transition: 0.2s; }
         .nb-textarea:focus { border-color: #4f46e5; background: #fff; box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
@@ -393,20 +415,37 @@
             </div>
             <div class="tool-btn-group" id="normal-toolbar">
                 <button class="tool-btn filter-btn" onclick="toggleProjectBar()" title="過濾">📁 專案</button>
-                <button class="tool-btn view-btn mobile-hidden" onclick="toggleChronicleView()" id="chronicleBtn">📜 大事記</button>
-                <button class="tool-btn view-btn mobile-hidden" onclick="toggleCalendarView()" id="calendarBtn">📅 總日曆</button> 
-                <button class="tool-btn pres-btn mobile-hidden" onclick="togglePresentation()">📽️ 簡報</button>
                 <button class="tool-btn ai-btn" onclick="enterAIMode()">🤖 AI</button>
-                <button class="tool-btn cal-btn mobile-hidden" onclick="exportToCSV()">📅 CSV</button>
-                <button class="tool-btn highlight" onclick="sortByDate()">📅 排序</button>
-                
-                <button class="tool-btn danger-btn" onclick="clearAllImages()">🧹 清圖</button>
-                <button class="tool-btn danger-btn" onclick="resetAllData()">💥 重置</button>
-                
-                <button class="tool-btn" onclick="downloadJSON()">📥 備份</button>
-                <button class="tool-btn" onclick="document.getElementById('fileInput').click()">📤 讀取</button>
-                <button class="tool-btn mobile-hidden" onclick="document.getElementById('ics-upload').click()">📥 ICS</button>
-                <input type="file" id="fileInput" hidden onchange="loadJSON(this)">
+
+                <div class="dropdown">
+                    <button class="tool-btn view-btn">👁️ 視圖 ▼</button>
+                    <div class="dropdown-content">
+                        <button class="tool-btn view-btn mobile-hidden" onclick="toggleChronicleView()" id="chronicleBtn">📜 大事記</button>
+                        <button class="tool-btn view-btn mobile-hidden" onclick="toggleCalendarView()" id="calendarBtn">📅 總日曆</button>
+                        <button class="tool-btn pres-btn mobile-hidden" onclick="togglePresentation()">📽️ 簡報</button>
+                    </div>
+                </div>
+
+                <div class="dropdown">
+                    <button class="tool-btn">💾 資料 ▼</button>
+                    <div class="dropdown-content">
+                        <button class="tool-btn" onclick="downloadJSON()">📥 下載備份</button>
+                        <button class="tool-btn" onclick="document.getElementById('fileInput').click()">📤 讀取備份</button>
+                        <button class="tool-btn cal-btn mobile-hidden" onclick="exportToCSV()">📅 匯出 CSV</button>
+                        <button class="tool-btn mobile-hidden" onclick="document.getElementById('ics-upload').click()">📥 匯入 ICS</button>
+                        <input type="file" id="fileInput" hidden onchange="loadJSON(this)">
+                    </div>
+                </div>
+
+                <div class="dropdown">
+                    <button class="tool-btn danger-btn" style="border-color:#94a3b8; color:#e2e8f0;">⚙️ 管理 ▼</button>
+                    <div class="dropdown-content">
+                        <button class="tool-btn highlight" onclick="sortByDate()">📅 依日期排序</button>
+                        <button class="tool-btn trash-toggle-btn" onclick="openTrash()">🗑️ 垃圾桶</button>
+                        <button class="tool-btn danger-btn" onclick="clearAllImages()">🧹 清除圖片</button>
+                        <button class="tool-btn danger-btn" onclick="resetAllData()">💥 重置全部</button>
+                    </div>
+                </div>
             </div>
             <div class="tool-btn-group" id="ai-toolbar">
                 <button class="tool-btn camera-btn" onclick="confirmAIOutput()">✅ 確認</button>
@@ -547,7 +586,8 @@
         window.addNewNode = function() {
             const newItem = {
                 id: Date.now(), pos: 'auto', mode: 'normal', color: 'blue', status: 0, isMemo: false,
-                project: '', label: '', date_single: getTodayString(), date_start: '', date_end: '', content: ''
+                project: '', label: '', date_single: getTodayString(), date_start: '', date_end: '', content: '',
+                cardNoteData: { template: 'free', free: '', cornell: {cues:'', notes:'', summary:''}, matrix: {q1:'',q2:'',q3:'',q4:''} }, isNoteOpen: false
             };
             const el = createNodeElement(newItem);
             container.appendChild(el);
@@ -874,7 +914,14 @@
                     color: card.dataset.color || 'blue', status: status, isMemo: card.classList.contains('memo-mode'),
                     project: item.querySelector('.footer-project-input').value, label: item.querySelector('.label-input').value,
                     date_single: item.querySelector('.single-date').value, date_start: item.querySelector('.date-start').value, date_end: item.querySelector('.date-end').value,
-                    content: item.querySelector('.content').innerHTML, card_w: card.style.width, card_h: card.style.minHeight
+                    content: item.querySelector('.content').innerHTML, card_w: card.style.width, card_h: card.style.minHeight,
+                    cardNoteData: item.querySelector('.card-note-panel') ? {
+                        template: item.querySelector('.card-note-template-select').value,
+                        free: item.querySelector('.card-note-free').value,
+                        cornell: { cues: item.querySelector('.card-note-cues').value, notes: item.querySelector('.card-note-notes').value, summary: item.querySelector('.card-note-summary').value },
+                        matrix: { q1: item.querySelector('.card-note-q1').value, q2: item.querySelector('.card-note-q2').value, q3: item.querySelector('.card-note-q3').value, q4: item.querySelector('.card-note-q4').value }
+                    } : { template: 'free', free: '', cornell: {}, matrix: {} },
+                    isNoteOpen: item.querySelector('.card-note-panel') ? (item.querySelector('.card-note-panel').style.display === 'flex') : false
                 };
             }).filter(i => i !== null);
         }
@@ -891,6 +938,10 @@
             div.addEventListener('dragstart', (e) => { if (e.target.isContentEditable || e.target.tagName === 'INPUT') { e.preventDefault(); return; } div.classList.add('dragging'); });
             div.addEventListener('dragend', () => { div.classList.remove('dragging'); autoSave(); });
             const isMemo = item.isMemo ? 'memo-mode' : '';
+            // 相容舊版資料
+            let d = item.cardNoteData || { template: 'free', free: item.cardNote || '', cornell: {}, matrix: {} };
+            d.cornell = d.cornell || {}; d.matrix = d.matrix || {};
+
             div.innerHTML = `
                 <div class="dot"></div>
                 <div class="card ${isMemo}" data-color="${item.color}">
@@ -907,6 +958,7 @@
                         <div class="card-top-right">
                             <button class="btn-icon btn-move-tab" onclick="moveCardToTab(this)" title="移動到其他分頁">📦</button>
                             <button class="btn-icon" onclick="addToGoogleCalendar(this)" title="加入 Google Calendar">📆</button>
+                            <button class="btn-icon" onclick="toggleCardNote(this)" title="卡片專屬筆記">📝</button>
                             <button class="btn-icon" onclick="toggleRange(this)">↔️</button>
                             <button class="btn-icon" onclick="insertTodoLine(this)">☑</button>
                             <button class="btn-icon mobile-hidden" onclick="insertBullet(this)">🔹</button>
@@ -916,17 +968,47 @@
                             <button class="btn-icon bg-red" style="color:red; border-color:red;" onclick="deleteNode(this)">×</button>
                         </div>
                     </div>
-                    <div class="card-body">
-                        <div class="header-row">
-                            <div class="header-meta">
-                                <button class="mode-toggle-btn" onclick="toggleCardMode(this)">${item.isMemo?'♾️':'📅'}</button>
-                                <input type="date" class="date-input single-date" value="${item.date_single}" onchange="autoSave()">
-                                <button class="today-btn single-date" onclick="setToday(this)">今</button>
-                                <div class="range-container"><span>起</span><input type="date" class="date-input date-start" value="${item.date_start}" onchange="autoSave()"><button class="today-btn" onclick="setToday(this)">今</button><span>迄</span><input type="date" class="date-input date-end" value="${item.date_end}" onchange="autoSave()"><button class="today-btn" onclick="setToday(this)">今</button></div>
+                    
+                    <div class="card-split-wrapper">
+                        <div class="card-body">
+                            <div class="header-row">
+                                <div class="header-meta">
+                                    <button class="mode-toggle-btn" onclick="toggleCardMode(this)">${item.isMemo?'♾️':'📅'}</button>
+                                    <input type="date" class="date-input single-date" value="${item.date_single}" onchange="autoSave()">
+                                    <button class="today-btn single-date" onclick="setToday(this)">今</button>
+                                    <div class="range-container"><span>起</span><input type="date" class="date-input date-start" value="${item.date_start}" onchange="autoSave()"><button class="today-btn" onclick="setToday(this)">今</button><span>迄</span><input type="date" class="date-input date-end" value="${item.date_end}" onchange="autoSave()"><button class="today-btn" onclick="setToday(this)">今</button></div>
+                                </div>
+                                <input type="text" class="label-input" value="${item.label}" placeholder="標題" oninput="autoSave()">
                             </div>
-                            <input type="text" class="label-input" value="${item.label}" placeholder="標題" oninput="autoSave()">
+                            <div class="content" contenteditable="true" oninput="handleCardInput(event)">${item.content}</div>
                         </div>
-                        <div class="content" contenteditable="true" oninput="handleCardInput(event)">${item.content}</div>
+                        
+                        <div class="card-note-panel" style="${item.isNoteOpen ? 'display:flex;' : 'display:none;'}">
+                            <div class="card-note-header">
+                                <select class="card-note-template-select" onchange="switchCardTemplate(this)">
+                                    <option value="free" ${d.template==='free'?'selected':''}>📝 自由筆記</option>
+                                    <option value="cornell" ${d.template==='cornell'?'selected':''}>🎓 康乃爾</option>
+                                    <option value="matrix" ${d.template==='matrix'?'selected':''}>⚖️ 四象限</option>
+                                </select>
+                                <button class="btn-icon" onclick="toggleCardNote(this)" style="width:20px;height:20px;font-size:14px;border:none;background:transparent;">×</button>
+                            </div>
+                            <div style="flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:5px; padding-right:5px;">
+                                <textarea class="nb-textarea card-note-free" style="${d.template==='free'?'display:block;':'display:none;'}" placeholder="寫下這張卡片的細節或草稿..." oninput="autoSave()">${d.free || ''}</textarea>
+                                
+                                <div class="cornell-layout card-note-cornell" style="${d.template==='cornell'?'display:grid;':'display:none;'}">
+                                    <div class="nb-box cornell-cues"><span class="nb-label">💡 線索 (Cues)</span><textarea class="nb-textarea card-note-cues" oninput="autoSave()">${d.cornell.cues || ''}</textarea></div>
+                                    <div class="nb-box cornell-notes"><span class="nb-label">📝 筆記 (Notes)</span><textarea class="nb-textarea card-note-notes" oninput="autoSave()">${d.cornell.notes || ''}</textarea></div>
+                                    <div class="nb-box cornell-summary"><span class="nb-label">📌 總結 (Summary)</span><textarea class="nb-textarea card-note-summary" oninput="autoSave()">${d.cornell.summary || ''}</textarea></div>
+                                </div>
+
+                                <div class="matrix-layout card-note-matrix" style="${d.template==='matrix'?'display:grid;':'display:none;'}">
+                                    <div class="nb-box"><span class="nb-label" style="color:#ef4444">🔥 重要緊急</span><textarea class="nb-textarea card-note-q1" oninput="autoSave()">${d.matrix.q1 || ''}</textarea></div>
+                                    <div class="nb-box"><span class="nb-label" style="color:#3b82f6">📅 重要不急</span><textarea class="nb-textarea card-note-q2" oninput="autoSave()">${d.matrix.q2 || ''}</textarea></div>
+                                    <div class="nb-box"><span class="nb-label" style="color:#f59e0b">⚡ 緊急不重</span><textarea class="nb-textarea card-note-q3" oninput="autoSave()">${d.matrix.q3 || ''}</textarea></div>
+                                    <div class="nb-box"><span class="nb-label" style="color:#10b981">☕ 不重不急</span><textarea class="nb-textarea card-note-q4" oninput="autoSave()">${d.matrix.q4 || ''}</textarea></div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     <div class="project-footer"><input type="text" class="footer-project-input" autocomplete="off" value="${item.project || ''}" placeholder="🏷️ 專案名稱..." oninput="autoSave(); refreshProjectBar();"></div>
                 </div>`;
@@ -1013,7 +1095,27 @@
                 autoSave(); 
             } 
         }
+        window.toggleCardNote = function(btn) {
+            const card = btn.closest('.card');
+            const panel = card.querySelector('.card-note-panel');
+            const isHidden = panel.style.display === 'none';
+            if (isHidden) {
+                panel.style.display = 'flex';
+                if (card.offsetWidth < 800) card.style.width = '850px'; 
+            } else {
+                panel.style.display = 'none';
+            }
+            autoSave();
+        };
 
+        window.switchCardTemplate = function(selectEl) {
+            const panel = selectEl.closest('.card-note-panel');
+            const val = selectEl.value;
+            panel.querySelector('.card-note-free').style.display = val === 'free' ? 'block' : 'none';
+            panel.querySelector('.card-note-cornell').style.display = val === 'cornell' ? 'grid' : 'none';
+            panel.querySelector('.card-note-matrix').style.display = val === 'matrix' ? 'grid' : 'none';
+            autoSave();
+        };
         function toggleCardMode(btn) { const card = btn.closest('.card'); const isMemo = card.classList.toggle('memo-mode'); btn.innerText = isMemo ? '♾️' : '📅'; autoSave(); }
         function setToday(btn) { btn.previousElementSibling.value = getTodayString(); autoSave(); }
         function insertBullet(btn) { btn.closest('.timeline-item').querySelector('.content').innerHTML += '<div>&nbsp;•&nbsp;內容</div>'; autoSave(); }
@@ -2026,18 +2128,6 @@
                 setTimeout(() => el.scrollIntoView({behavior:'smooth', block:'center'}), 100);
             }
         };
-
-        if (!document.getElementById('trash-btn')) {
-            const toolbar = document.getElementById('normal-toolbar');
-            if (toolbar) {
-                const btn = document.createElement('button');
-                btn.id = 'trash-btn'; btn.className = 'tool-btn trash-toggle-btn'; btn.innerHTML = '🗑️'; btn.title = '垃圾桶'; 
-                // 💡 關鍵修正：確保 openTrash 已經定義完成才綁定
-                btn.onclick = window.openTrash; 
-                const resetBtn = toolbar.querySelector('.danger-btn[onclick*="resetAllData"]');
-                toolbar.insertBefore(btn, resetBtn);
-            }
-        }
 
         console.log('✅ 操作體驗增強包 V3.1 (含連結還原功能) 載入完成');
     })();
