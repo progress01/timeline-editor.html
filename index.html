@@ -172,6 +172,7 @@
         /* --- 📝 卡片專屬筆記樣式 (改為外部懸浮) --- */
         .card-note-panel { position: absolute; left: calc(100% + 15px); top: 0; width: 380px; min-height: 100%; background: #fafafa; border: 1px solid #cbd5e1; border-radius: 12px; box-shadow: 4px 4px 15px rgba(0,0,0,0.1); flex-direction: column; padding: 15px; z-index: 100; cursor: default; }
         .card-note-template-select { padding: 4px 8px; border-radius: 4px; border: 1px solid #cbd5e1; outline: none; font-size: 0.85rem; font-weight: bold; color: #475569; background: white; cursor: pointer; }
+        .card-note-panel .resize-handle { bottom: 2px; right: 2px; z-index: 101; color: #94a3b8; }
         /* --- 📖 筆記本樣式 --- */
         .nb-textarea { width: 100%; height: 100%; resize: none; border: 1px solid #e2e8f0; padding: 15px; font-size: 1rem; line-height: 1.6; outline: none; border-radius: 8px; color: #334155; background: #fafafa; transition: 0.2s; }
         .nb-textarea:focus { border-color: #4f46e5; background: #fff; box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
@@ -585,7 +586,7 @@
             const newItem = {
                 id: Date.now(), pos: 'auto', mode: 'normal', color: 'blue', status: 0, isMemo: false,
                 project: '', label: '', date_single: getTodayString(), date_start: '', date_end: '', content: '',
-                cardNoteData: { template: 'free', free: '', cornell: {cues:'', notes:'', summary:''}, matrix: {q1:'',q2:'',q3:'',q4:''} }, isNoteOpen: false
+                cardNoteData: { template: 'free', free: '', cornell: {cues:'', notes:'', summary:''}, matrix: {q1:'',q2:'',q3:'',q4:''}, w: '', h: '' }, isNoteOpen: false
             };
             const el = createNodeElement(newItem);
             container.appendChild(el);
@@ -917,8 +918,10 @@
                         template: item.querySelector('.card-note-template-select').value,
                         free: item.querySelector('.card-note-free').value,
                         cornell: { cues: item.querySelector('.card-note-cues').value, notes: item.querySelector('.card-note-notes').value, summary: item.querySelector('.card-note-summary').value },
-                        matrix: { q1: item.querySelector('.card-note-q1').value, q2: item.querySelector('.card-note-q2').value, q3: item.querySelector('.card-note-q3').value, q4: item.querySelector('.card-note-q4').value }
-                    } : { template: 'free', free: '', cornell: {}, matrix: {} },
+                        matrix: { q1: item.querySelector('.card-note-q1').value, q2: item.querySelector('.card-note-q2').value, q3: item.querySelector('.card-note-q3').value, q4: item.querySelector('.card-note-q4').value },
+                        w: item.querySelector('.card-note-panel').style.width,
+                        h: item.querySelector('.card-note-panel').style.height
+                    } : { template: 'free', free: '', cornell: {}, matrix: {}, w: '', h: '' },
                     isNoteOpen: item.querySelector('.card-note-panel') ? (item.querySelector('.card-note-panel').style.display === 'flex') : false
                 };
             }).filter(i => i !== null);
@@ -982,7 +985,8 @@
                         <div class="content" contenteditable="true" oninput="handleCardInput(event)">${item.content}</div>
                     </div>
                         
-                    <div class="card-note-panel" style="${item.isNoteOpen ? 'display:flex;' : 'display:none;'}">
+                    <div class="card-note-panel" style="${item.isNoteOpen ? 'display:flex;' : 'display:none;'} ${d.w ? 'width:'+d.w+';' : ''} ${d.h ? 'height:'+d.h+';' : ''}">
+                        <div class="resize-handle" onmousedown="resizeNotePanel(event)">↘</div>
                         <div class="card-note-header">
                             <select class="card-note-template-select" onchange="switchCardTemplate(this)">
                                 <option value="free" ${d.template==='free'?'selected':''}>📝 自由筆記</option>
@@ -1016,6 +1020,24 @@
         }
 
         function resizeCard(e) { e.stopPropagation(); const card = e.target.parentElement; const startX = e.clientX, startY = e.clientY, startW = card.offsetWidth, startH = card.offsetHeight; function doDrag(ev) { const newW = startW + (ev.clientX - startX), newH = startH + (ev.clientY - startY); if (newW > 200) card.style.width = newW + 'px'; if (newH > 100) card.style.minHeight = newH + 'px'; } function stopDrag() { document.documentElement.removeEventListener('mousemove', doDrag); document.documentElement.removeEventListener('mouseup', stopDrag); autoSave(); } document.documentElement.addEventListener('mousemove', doDrag); document.documentElement.addEventListener('mouseup', stopDrag); }
+        window.resizeNotePanel = function(e) {
+            e.stopPropagation();
+            const panel = e.target.parentElement;
+            const startX = e.clientX, startY = e.clientY, startW = panel.offsetWidth, startH = panel.offsetHeight;
+            function doDrag(ev) {
+                const newW = startW + (ev.clientX - startX);
+                const newH = startH + (ev.clientY - startY);
+                if (newW > 250) panel.style.width = newW + 'px';
+                if (newH > 200) panel.style.height = newH + 'px';
+            }
+            function stopDrag() {
+                document.documentElement.removeEventListener('mousemove', doDrag);
+                document.documentElement.removeEventListener('mouseup', stopDrag);
+                autoSave();
+            }
+            document.documentElement.addEventListener('mousemove', doDrag);
+            document.documentElement.addEventListener('mouseup', stopDrag);
+        };
         function addStickyNote() { 
             const offsetX = Math.floor(Math.random() * 40) - 20;
             const offsetY = Math.floor(Math.random() * 40) - 20;
