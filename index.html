@@ -394,16 +394,18 @@
             <div class="tool-btn-group" id="normal-toolbar">
                 <button class="tool-btn filter-btn" onclick="toggleProjectBar()" title="過濾">📁 專案</button>
                 <button class="tool-btn view-btn mobile-hidden" onclick="toggleChronicleView()" id="chronicleBtn">📜 大事記</button>
-                <button class="tool-btn view-btn mobile-hidden" onclick="toggleCalendarView()" id="calendarBtn">📅 總日曆</button> <button class="tool-btn pres-btn mobile-hidden" onclick="togglePresentation()">📽️ 簡報</button>
+                <button class="tool-btn view-btn mobile-hidden" onclick="toggleCalendarView()" id="calendarBtn">📅 總日曆</button> 
+                <button class="tool-btn pres-btn mobile-hidden" onclick="togglePresentation()">📽️ 簡報</button>
                 <button class="tool-btn ai-btn" onclick="enterAIMode()">🤖 AI</button>
                 <button class="tool-btn cal-btn mobile-hidden" onclick="exportToCSV()">📅 CSV</button>
                 <button class="tool-btn highlight" onclick="sortByDate()">📅 排序</button>
-                <button class="tool-btn danger-btn mobile-hidden" onclick="clearAllImages()">🧹 清圖</button>
-                <button class="tool-btn camera-btn mobile-hidden" onclick="downloadAsImage()">📸 圖片</button>
+                
+                <button class="tool-btn danger-btn" onclick="clearAllImages()">🧹 清圖</button>
+                <button class="tool-btn danger-btn" onclick="resetAllData()">💥 重置</button>
+                
                 <button class="tool-btn" onclick="downloadJSON()">📥 備份</button>
                 <button class="tool-btn" onclick="document.getElementById('fileInput').click()">📤 讀取</button>
                 <button class="tool-btn mobile-hidden" onclick="document.getElementById('ics-upload').click()">📥 ICS</button>
-                <button class="tool-btn danger-btn mobile-hidden" onclick="resetAllData()">💥 重置</button>
                 <input type="file" id="fileInput" hidden onchange="loadJSON(this)">
             </div>
             <div class="tool-btn-group" id="ai-toolbar">
@@ -1021,7 +1023,16 @@
         function insertTodoLine(btn) { btn.closest('.timeline-item').querySelector('.content').innerHTML += '<div><span class="todo-box" onclick="toggleTodo(this)">☐</span>&nbsp;新項目</div>'; autoSave(); }
         window.toggleTodo = function(span) { span.innerText = span.innerText==='☐'?'☑':'☐'; autoSave(); event.stopPropagation(); }
         function handleCardInput(e) { autoSave(); }
-        function clearAllImages() { if(!confirm('清除卡片內的圖片（不含貼紙）？')) return; const data = gatherData(); const newData = data.map(item => ({...item, content: item.content.replace(/<img[^>]*>/g, '[圖]')})); renderFromData(newData); autoSave(); }
+        function clearAllImages() { 
+            if(!confirm('清除卡片內的圖片（不含貼紙）？')) return; 
+            const data = gatherData(); 
+            const newData = data.map(item => ({...item, content: item.content.replace(/<img[^>]*>/g, '[圖]')})); 
+            
+            container.innerHTML = ''; // 👉 新增這行：先清空舊畫面，避免卡片重複疊加
+            
+            renderFromData(newData); 
+            autoSave(); 
+        }
         function showTooltip(e, text) { tooltip.innerText = text; tooltip.style.display = 'block'; updateTooltipPos(e); }
         function hideTooltip() { tooltip.style.display = 'none'; }
         function updateTooltipPos(e) { const offset = 15; let left = e.clientX + offset; let top = e.clientY + offset; if (left + tooltip.offsetWidth > window.innerWidth) left = e.clientX - tooltip.offsetWidth - offset; if (top + tooltip.offsetHeight > window.innerHeight) top = e.clientY - tooltip.offsetHeight - offset; tooltip.style.left = left + 'px'; tooltip.style.top = top + 'px'; }
@@ -1620,7 +1631,7 @@
             else if (data.type === 'image') content = `<img src="${data.content}">`;
 
             // [關鍵修復]：加入 data.type.startsWith('arrow') 判斷
-            let allowResize = (data.type.startsWith('arrow') || data.type === 'circle-red' || data.type === 'rect-blue' || data.type === 'image');
+            let allowResize = (data.type && data.type.startsWith('arrow') || data.type === 'circle-red' || data.type === 'rect-blue' || data.type === 'image');
             let resizeHandle = allowResize ? '<div class="resize-handle" onmousedown="resizeSticker(event)">↘</div>' : ''; 
             
             div.innerHTML = `<div class="sticker-del" onclick="deleteSticky(this)">×</div>${content}${resizeHandle}`; 
