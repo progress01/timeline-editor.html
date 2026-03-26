@@ -35,7 +35,7 @@
 
         /* --- 工具列 --- */
         .toolbar { position: fixed; top: 0; left: 0; right: 0; background: #1e293b; color: white; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; z-index: 2000; height: 60px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); flex-wrap: nowrap; }
-        .tool-left { display: flex; align-items: center; gap: 15px; flex: 1 1 auto; min-width: 0; overflow: hidden; }
+        .tool-left { display: flex; align-items: center; gap: 15px; flex: 1 1 auto; min-width: 0; overflow: visible; }
         .tool-right { display: flex; align-items: center; gap: 10px; margin-left: auto; flex: 0 0 auto; flex-wrap: nowrap; white-space: nowrap; }
         .tool-title { font-weight: bold; font-size: 1.1rem; display: flex; align-items: center; gap: 10px; white-space: nowrap; flex-shrink: 0; }
         .search-box { position: relative; display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
@@ -227,7 +227,7 @@
         .card-top-area { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; border-bottom: 1px dashed #e2e8f0; flex-shrink: 0; background: rgba(255,255,255,0.5); }
         .card-top-left { display: flex; align-items: center; gap: 8px; flex: 1; }
         .card-top-right { display: flex; gap: 4px; flex-shrink: 0; }
-        .card-body { padding: 12px 40px 15px 20px; flex: 1; display: flex; flex-direction: column; }
+        .card-body { padding: 12px 40px 15px 20px; flex: 1; display: flex; flex-direction: column; position: relative; }
         .header-row { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
         .header-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
         .project-footer { width: 100%; height: 36px; display: flex; align-items: center; justify-content: flex-end; padding: 0 15px; background: #cbd5e1; margin-top: auto; flex-shrink: 0; }
@@ -236,7 +236,7 @@
         .footer-project-input { background: transparent; border: none; color: white; font-weight: bold; font-size: 0.95rem; text-align: right; width: 100%; outline: none; text-shadow: 0 1px 1px rgba(0,0,0,0.1); }
         .footer-project-input::placeholder { color: rgba(255,255,255,0.7); }
 
-        .card-side-tools { position: absolute; right: 6px; top: 60px; bottom: 40px; display: flex; flex-direction: column; gap: 6px; align-items: center; width: 32px; border-left: 1px dashed #e2e8f0; z-index: 20; padding-top: 5px; }
+        .card-side-tools { position: absolute; right: 6px; top: 15px; bottom: 15px; display: flex; flex-direction: column; gap: 6px; align-items: center; width: 32px; border-left: 1px dashed #e2e8f0; z-index: 20; padding-top: 5px; }
         .status-dot { width: 14px; height: 14px; border-radius: 50%; cursor: pointer; border: 2px solid rgba(0,0,0,0.1); }
         .status-0 { background: #9ca3af; } .status-1 { background: #f59e0b; } .status-2 { background: #10b981; } .status-3 { background: #ef4444; }
         .btn-icon { border: 1px solid #cbd5e1; background: white; color: #64748b; cursor: pointer; width: 26px; height: 26px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 14px; transition: 0.2s; }
@@ -946,13 +946,7 @@
                 <div class="dot"></div>
                 <div class="card ${isMemo}" data-color="${item.color}">
                     <div class="resize-handle" onmousedown="resizeCard(event)">↘</div>
-                    <div class="card-side-tools">
-                        <button class="btn-icon side-btn" onclick="changeColor(this)" title="換色">🎨</button>
-                        <button class="btn-icon side-btn mobile-hidden" onclick="moveNode(this,'up')">⬆️</button>
-                        <button class="btn-icon side-btn mobile-hidden" onclick="moveNode(this,'down')">⬇️</button>
-                        <button class="btn-icon side-btn mobile-hidden" onclick="togglePos(this,'left')">⬅️</button>
-                        <button class="btn-icon side-btn mobile-hidden" onclick="togglePos(this,'right')">➡️</button>
-                    </div>
+                    
                     <div class="card-top-area">
                         <div class="card-top-left"><input type="checkbox" class="select-chk"><div class="status-dot status-${item.status}" onclick="cycleStatus(this)"></div></div>
                         <div class="card-top-right">
@@ -971,6 +965,14 @@
                     
                     <div class="card-split-wrapper">
                         <div class="card-body">
+                            <div class="card-side-tools">
+                                <button class="btn-icon side-btn" onclick="changeColor(this)" title="換色">🎨</button>
+                                <button class="btn-icon side-btn mobile-hidden" onclick="moveNode(this,'up')">⬆️</button>
+                                <button class="btn-icon side-btn mobile-hidden" onclick="moveNode(this,'down')">⬇️</button>
+                                <button class="btn-icon side-btn mobile-hidden" onclick="togglePos(this,'left')">⬅️</button>
+                                <button class="btn-icon side-btn mobile-hidden" onclick="togglePos(this,'right')">➡️</button>
+                            </div>
+
                             <div class="header-row">
                                 <div class="header-meta">
                                     <button class="mode-toggle-btn" onclick="toggleCardMode(this)">${item.isMemo?'♾️':'📅'}</button>
